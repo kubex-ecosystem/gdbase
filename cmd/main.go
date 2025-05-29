@@ -7,7 +7,7 @@ import (
 	gl "github.com/rafa-mori/gdbase/logger"
 )
 
-func Main() {
+func main() {
 	if err := RegX().Execute(); err != nil {
 		gl.Log("error", fmt.Sprintf("Error: %v", err))
 	}

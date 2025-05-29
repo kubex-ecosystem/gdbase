@@ -24,7 +24,7 @@ type Column struct {
 }
 
 // GenUser gera os modelos de usuário a partir do banco de dados
-func main() {
+func Main() {
 	// Inicializa o banco de dados
 	_, dbSql, err := initDB()
 	if err != nil {
