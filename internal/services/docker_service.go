@@ -1,0 +1,485 @@
+package services
+
+import (
+	"bufio"
+	"context"
+	"fmt"
+	"io"
+	"reflect"
+	"strings"
+	"sync"
+
+	"github.com/docker/docker/api/types/container"
+	c "github.com/docker/docker/api/types/container"
+	i "github.com/docker/docker/api/types/image"
+	v "github.com/docker/docker/api/types/volume"
+	k "github.com/docker/docker/client"
+	nl "github.com/docker/docker/libnetwork/netlabel"
+	"github.com/docker/go-connections/nat"
+	l "github.com/faelmori/logz"
+	gbm "github.com/rafa-mori/gdbase"
+	evs "github.com/rafa-mori/gdbase/internal/events"
+	ci "github.com/rafa-mori/gdbase/internal/interfaces"
+	it "github.com/rafa-mori/gdbase/internal/types"
+	gl "github.com/rafa-mori/gdbase/logger"
+	t "github.com/rafa-mori/gdbase/types"
+
+	_ "embed"
+)
+
+//go:embed assets/init-db.sql
+var initDBSQL []byte
+
+var (
+	containersCache map[string]*Services
+)
+
+type Services struct {
+	Name     string
+	Image    string
+	Env      []string
+	Ports    []nat.PortMap
+	Volumes  map[string]struct{}
+	StateMap map[string]any
+}
+type StructuredVolume struct {
+	Name          string
+	HostPath      string
+	ContainerPath string
+}
+
+type Config[T t.Database | t.Redis | t.RabbitMQ | t.MongoDB] = *T
+type Configs[T t.Database | t.Redis | t.RabbitMQ | t.MongoDB] = map[reflect.Type]Config[T]
+
+func NewServices(name, image string, env []string, ports []nat.PortMap, volumes map[string]struct{}) *Services {
+	if containersCache == nil {
+		containersCache = make(map[string]*Services)
+	}
+	service := &Services{
+		Name:     name,
+		Image:    image,
+		Env:      env,
+		Ports:    ports,
+		Volumes:  volumes,
+		StateMap: make(map[string]any),
+	}
+	if _, ok := containersCache[name]; !ok {
+		containersCache[name] = service
+	} else {
+		containersCache[name].Name = name
+		containersCache[name].Image = image
+		containersCache[name].Env = env
+		containersCache[name].Ports = ports
+		containersCache[name].Volumes = volumes
+	}
+	return service
+}
+
+type IDockerService interface {
+	Initialize() error
+	StartContainer(serviceName, image string, envVars []string, portBindings map[nat.Port]struct{}, volumes map[string]struct{}) error
+	CreateVolume(volumeName, devicePath string) error
+	GetContainerLogs(containerName string) error
+	GetProperty(name string) any
+	GetContainersList() ([]c.Summary, error)
+	GetVolumesList() ([]*v.Volume, error)
+	StartContainerByName(containerName string) error
+	StopContainerByName(containerName string, options c.StopOptions) error
+	On(name string, event string, callback func(...any))
+	Off(name string, event string)
+	AddService(name string, image string, env []string, ports []nat.PortMap, volumes map[string]struct{}) *Services
+}
+type DockerService struct {
+	Logger    l.Logger
+	reference gbm.Reference
+	mutexes   gbm.Mutexes
+
+	services map[string]any
+
+	Cli  IDockerClient
+	pool *sync.Pool
+
+	properties map[string]any
+	eventBus   *evs.EventBus
+}
+
+func newDockerServiceBus(config *t.DBConfig, logger l.Logger) (IDockerService, error) {
+	EnsureDockerIsRunning()
+
+	if logger == nil {
+		logger = l.GetLogger("DockerService")
+	}
+
+	var propDBConfig ci.IProperty[*t.DBConfig]
+	if config != nil {
+		propDBConfig = it.NewProperty[*t.DBConfig]("dbConfig", &config, false, nil)
+	}
+
+	cli, err := k.NewClientWithOpts(k.FromEnv, k.WithAPIVersionNegotiation())
+	if err != nil {
+		return nil, fmt.Errorf("❌ Error creating Docker client: %v", err)
+	}
+	dockerService := &DockerService{
+		Logger:     logger,
+		reference:  gbm.NewReference("DockerService"),
+		mutexes:    gbm.NewMutexesType(),
+		pool:       &sync.Pool{},
+		Cli:        cli,
+		properties: nil,
+	}
+	if config != nil {
+		dockerService.properties = map[string]any{"dbConfig": propDBConfig}
+	}
+	if dockerService.eventBus == nil {
+		dockerService.eventBus = evs.NewEventBus()
+	}
+	return dockerService, nil
+}
+
+func newDockerService(config *t.DBConfig, logger l.Logger) (IDockerService, error) {
+	EnsureDockerIsRunning()
+
+	if logger == nil {
+		logger = l.GetLogger("DockerService")
+	}
+
+	cli, err := k.NewClientWithOpts(k.FromEnv, k.WithAPIVersionNegotiation())
+	if err != nil {
+		return nil, fmt.Errorf("❌ Error creating Docker client: %v", err)
+	}
+
+	dockerService := &DockerService{
+		Logger:    logger,
+		reference: gbm.NewReference("DockerService"),
+		mutexes:   gbm.NewMutexesType(),
+		pool:      &sync.Pool{},
+		Cli:       cli,
+		properties: map[string]any{
+			"dbConfig": it.NewProperty[*t.DBConfig]("dbConfig", &config, false, nil),
+		},
+	}
+	if dockerService.eventBus == nil {
+		dockerService.eventBus = evs.NewEventBus()
+	}
+
+	return dockerService, nil
+}
+
+func NewDockerService(config *t.DBConfig, logger l.Logger) (IDockerService, error) {
+	return newDockerService(config, logger)
+}
+
+func (d *DockerService) Initialize() error {
+	if d.properties != nil {
+		dbServiceConfigT, exists := d.properties["dbConfig"]
+		if exists {
+			if dbServiceConfig, ok := dbServiceConfigT.(*it.Property[*t.DBConfig]); !ok {
+				return fmt.Errorf("❌ Error converting database configuration")
+			} else {
+				dbSrvCfg := dbServiceConfig.GetValue()
+				if err := SetupDatabaseServices(d, dbSrvCfg); err != nil {
+					return fmt.Errorf("❌ Error setting up database services: %v", err)
+				}
+				d.properties["dbConfig"] = dbServiceConfig
+			}
+		} else {
+			return fmt.Errorf("❌ Database configuration not found")
+		}
+	}
+
+	d.properties["volumes"] = make(map[string]map[string]struct{})
+	d.properties["services"] = make(map[string]string)
+
+	return nil
+}
+func (d *DockerService) StartContainer(serviceName, image string, envVars []string, portBindings map[nat.Port]struct{}, volumes map[string]struct{}) error {
+	if !isDockerRunning() {
+		gl.Log("fatal", "Docker is not running. Please start Docker and try again.")
+		return fmt.Errorf("docker is not running")
+	}
+
+	if IsServiceRunning(serviceName) {
+		fmt.Printf("✅ %s is already running!\n", serviceName)
+		return nil
+	}
+
+	ctx := context.Background()
+
+	fmt.Println("🔄 Pulling image...")
+	reader, err := d.Cli.ImagePull(ctx, image, i.PullOptions{})
+	if err != nil {
+		gl.Log("error", fmt.Sprintf("Error pulling image: %v", err))
+		return fmt.Errorf("error pulling image: %w", err)
+	}
+	defer func(reader io.ReadCloser) {
+		_ = reader.Close()
+	}(reader)
+	_, _ = io.Copy(io.Discard, reader)
+
+	fmt.Println("🚀 Creating container...")
+	containerConfig := &c.Config{
+		Image:        image,
+		Env:          envVars,
+		ExposedPorts: extractPorts(portBindings),
+	}
+
+	binds := []string{}
+
+	for volume, _ := range volumes {
+		// Por enquanto coloquei os campos repetidos, mas depois PRECISAMOS melhorar isso
+		structuredVolume, err := getStructuredVolume(volume, volume)
+		if err != nil {
+			gl.Log("error", fmt.Sprintf("Error getting structured volume: %v", err))
+			return fmt.Errorf("error getting structured volume: %w", err)
+		}
+
+		binds = append(binds, fmt.Sprintf("%s:%s", structuredVolume.HostPath, structuredVolume.ContainerPath))
+	}
+
+	portBindingsT := make(nat.PortMap)
+	for hostPort, _ := range portBindings {
+		containerPort := strings.TrimSuffix(hostPort.Port(), "/tcp")
+		hostPortBinding := nat.PortBinding{
+			HostIP:   nl.HostIPv4,
+			HostPort: hostPort.Port(),
+		}
+		prtPort := nat.Port(containerPort + "/tcp")
+		portBindingsT[prtPort] = []nat.PortBinding{hostPortBinding}
+	}
+
+	hostConfig := &c.HostConfig{
+		Binds:        binds,
+		PortBindings: portBindingsT,
+		RestartPolicy: c.RestartPolicy{
+			Name: "unless-stopped",
+		},
+	}
+
+	resp, err := d.Cli.ContainerCreate(ctx, containerConfig, hostConfig, nil, nil, serviceName)
+	if err != nil {
+		return fmt.Errorf("error creating container %s: %w", serviceName, err)
+	}
+
+	if err := d.Cli.ContainerStart(ctx, resp.ID, c.StartOptions{}); err != nil {
+		return fmt.Errorf("error starting container %s: %w", serviceName, err)
+	}
+
+	fmt.Println("✅ Container started successfully!")
+	return nil
+}
+func (d *DockerService) CreateVolume(volumeName, pathsForBind string) error {
+	structuredVolume, err := getStructuredVolume(volumeName, pathsForBind)
+	if err != nil {
+		return fmt.Errorf("error getting structured volume: %w", err)
+	}
+
+	ctx := context.Background()
+
+	volumes, _ := d.Cli.VolumeList(ctx, v.ListOptions{})
+	for _, vol := range volumes.Volumes {
+		if vol.Name == volumeName {
+			gl.Log("debug", fmt.Sprintf("Volume %s already exists, skipping creation", volumeName))
+			return nil
+		}
+	}
+
+	vol, err := d.Cli.VolumeCreate(ctx, v.CreateOptions{
+		Name:   structuredVolume.Name,
+		Driver: "local",
+		DriverOpts: map[string]string{
+			"type":   "none",
+			"device": structuredVolume.HostPath,
+			"o":      "bind",
+		},
+	})
+
+	if err != nil {
+		return err
+	}
+
+	fmt.Printf("✅ Volume created: %s\n", vol.Name)
+	return nil
+}
+func (d *DockerService) GetContainersList() ([]c.Summary, error) {
+	containers, err := d.Cli.ContainerList(context.Background(), c.ListOptions{All: true})
+	if err != nil {
+		panic(err)
+	}
+
+	var containerList []c.Summary
+	for _, container := range containers {
+		if container.State == "running" {
+			containerList = append(containerList, container)
+		}
+	}
+
+	return containerList, nil
+}
+func (d *DockerService) GetVolumesList() ([]*v.Volume, error) {
+	volumes, err := d.Cli.VolumeList(context.Background(), v.ListOptions{})
+	if err != nil {
+		panic(err)
+	}
+
+	var volumeList []*v.Volume
+	for _, volume := range volumes.Volumes {
+		if volume.Name == "gdbase-pg-data" || volume.Name == "gdbase-redis-data" {
+			volumeList = append(volumeList, volume)
+		}
+	}
+
+	return volumeList, nil
+}
+func (d *DockerService) StartContainerByName(containerName string) error {
+	ctx := context.Background()
+	err := d.Cli.ContainerStart(ctx, containerName, c.StartOptions{})
+	if err != nil {
+		return fmt.Errorf("error starting container %s: %w", containerName, err)
+	}
+	fmt.Printf("✅ Container %s started successfully!\n", containerName)
+	return nil
+}
+func (d *DockerService) StopContainerByName(containerName string, stopOptions container.StopOptions) error {
+	ctx := context.Background()
+	err := d.Cli.ContainerStop(ctx, containerName, stopOptions)
+	if err != nil {
+		return fmt.Errorf("error stopping container %s: %w", containerName, err)
+	}
+	fmt.Printf("✅ Container %s stopped successfully!\n", containerName)
+	return nil
+}
+func (d *DockerService) GetContainerLogs(containerName string) error {
+	cli, err := k.NewClientWithOpts(k.FromEnv, k.WithAPIVersionNegotiation())
+	if err != nil {
+		return fmt.Errorf("error creating Docker client: %w", err)
+	}
+	ctx := context.Background()
+	logsReader, err := cli.ContainerLogs(ctx, containerName, c.LogsOptions{
+		ShowStdout: true,
+		ShowStderr: true,
+		Timestamps: true,
+		Follow:     false,
+	})
+	if err != nil {
+		return fmt.Errorf("error getting logs for container %s: %w", containerName, err)
+	}
+	defer func(logsReader io.ReadCloser) {
+		_ = logsReader.Close()
+	}(logsReader)
+	scanner := bufio.NewScanner(logsReader)
+	for scanner.Scan() {
+		fmt.Println(scanner.Text())
+	}
+	if scannerErr := scanner.Err(); scannerErr != nil {
+		return fmt.Errorf("error processing logs for container %s: %w", containerName, scannerErr)
+	}
+	return nil
+}
+func (d *DockerService) GetProperty(name string) any {
+	if prop, ok := d.properties[name]; ok {
+		return prop
+	}
+	return nil
+}
+func (d *DockerService) On(name string, event string, callback func(...any)) {
+	if d.mutexes == nil {
+		d.mutexes = gbm.NewMutexesType()
+	}
+	if d.pool == nil {
+		d.pool = &sync.Pool{}
+	}
+	// d.mutexes.MuRLock()
+	// defer d.mutexes.MuRUnlock()
+	if callback != nil {
+		d.pool.Put(callback)
+	}
+}
+func (d *DockerService) Off(name string, event string) {
+	if d.mutexes == nil {
+		d.mutexes = gbm.NewMutexesType()
+	}
+	if d.pool == nil {
+		d.pool = &sync.Pool{}
+	}
+	// d.mutexes.MuRLock()
+	// defer d.mutexes.MuRUnlock()
+	d.pool.Put(nil)
+}
+func (d *DockerService) GetContainersCache() map[string]*Services {
+	if containersCache == nil {
+		containersCache = make(map[string]*Services)
+	}
+	return containersCache
+}
+func (d *DockerService) GetEventBus() *evs.EventBus {
+	if d.eventBus == nil {
+		d.eventBus = evs.NewEventBus()
+	}
+	return d.eventBus
+}
+func (d *DockerService) AddService(name string, image string, env []string, ports []nat.PortMap, volumes map[string]struct{}) *Services {
+	if containersCache == nil {
+		containersCache = make(map[string]*Services)
+	}
+	service := &Services{
+		Name:     name,
+		Image:    image,
+		Env:      env,
+		Ports:    ports,
+		Volumes:  volumes,
+		StateMap: make(map[string]any),
+	}
+	if d.services == nil {
+		d.services = make(map[string]any)
+	}
+
+	d.services[name] = service
+
+	if _, ok := containersCache[name]; !ok {
+		containersCache[name] = service
+	} else {
+		containersCache[name].Name = name
+		containersCache[name].Image = image
+		containersCache[name].Env = env
+		containersCache[name].Ports = ports
+		containersCache[name].Volumes = volumes
+	}
+	return service
+}
+
+func mapPorts(hostPort, containerPort string) nat.PortMap {
+	if strings.HasSuffix(hostPort, "/tcp") {
+		hostPort = strings.TrimSuffix(hostPort, "/tcp")
+	}
+	hostPortBinding := nat.PortBinding{
+		HostIP:   nl.HostIPv4,
+		HostPort: hostPort,
+	}
+	if strings.HasSuffix(containerPort, "/tcp") {
+		containerPort = strings.TrimSuffix(containerPort, "/tcp")
+	}
+	prtPort := nat.Port(containerPort + "/tcp")
+	portBindings := nat.PortMap{
+		prtPort: []nat.PortBinding{hostPortBinding},
+	}
+	return portBindings
+}
+func extractPorts(portBindings map[nat.Port]struct{}) nat.PortSet {
+	portSet := nat.PortSet{}
+	for port := range portBindings {
+		portSet[port] = struct{}{}
+	}
+	return portSet
+}
+func getStructuredVolume(volumeName, pathsForBind string) (StructuredVolume, error) {
+	var volStructuredList = StructuredVolume{Name: volumeName}
+	pathsArr := strings.Split(pathsForBind, ":")
+	if len(pathsArr) > 1 {
+		volStructuredList.HostPath = pathsArr[0]
+		volStructuredList.ContainerPath = pathsArr[1]
+	} else {
+		volStructuredList.HostPath = pathsForBind
+		volStructuredList.ContainerPath = pathsForBind
+	}
+	return volStructuredList, nil
+}
