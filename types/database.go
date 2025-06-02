@@ -288,6 +288,9 @@ func NewDBConfig(dbConfig *DBConfig) *DBConfig {
 func NewDBConfigWithDBConnection(db *gorm.DB) *DBConfig {
 	return newDBConfig("default", "", true, nil, false)
 }
+func NewDBConfigWithFilePath(name, filePath string) *DBConfig {
+	return newDBConfig(name, filePath, true, nil, false)
+}
 func getPasswordFromKeyring(name string) (string, error) {
 	krPass, pgPassErr := krs.NewKeyringService(glb.KeyringService, fmt.Sprintf("gdbase-%s", name)).RetrievePassword()
 	if pgPassErr != nil && pgPassErr.Error() != "keyring: item not found" {
@@ -304,7 +307,4 @@ func getPasswordFromKeyring(name string) (string, error) {
 		krPass = string(krPassKey)
 	}
 	return base64.URLEncoding.EncodeToString([]byte(krPass)), nil
-}
-func NewDBConfigWithFilePath(name, filePath string) *DBConfig {
-	return newDBConfig(name, filePath, true, nil, false)
 }

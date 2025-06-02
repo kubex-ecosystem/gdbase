@@ -5,7 +5,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"reflect"
 	"strings"
 	"sync"
 
@@ -26,30 +25,6 @@ import (
 
 	_ "embed"
 )
-
-//go:embed assets/init-db.sql
-var initDBSQL []byte
-
-var (
-	containersCache map[string]*Services
-)
-
-type Services struct {
-	Name     string
-	Image    string
-	Env      []string
-	Ports    []nat.PortMap
-	Volumes  map[string]struct{}
-	StateMap map[string]any
-}
-type StructuredVolume struct {
-	Name          string
-	HostPath      string
-	ContainerPath string
-}
-
-type Config[T t.Database | t.Redis | t.RabbitMQ | t.MongoDB] = *T
-type Configs[T t.Database | t.Redis | t.RabbitMQ | t.MongoDB] = map[reflect.Type]Config[T]
 
 func NewServices(name, image string, env []string, ports []nat.PortMap, volumes map[string]struct{}) *Services {
 	if containersCache == nil {
@@ -76,10 +51,15 @@ func NewServices(name, image string, env []string, ports []nat.PortMap, volumes 
 }
 
 type IDockerService interface {
+	IDockerUtils
+	IContainerVolumeReport
+	IContainerImageReport
+	IContainerNameReport
+
 	Initialize() error
 	StartContainer(serviceName, image string, envVars []string, portBindings map[nat.Port]struct{}, volumes map[string]struct{}) error
 	CreateVolume(volumeName, devicePath string) error
-	GetContainerLogs(containerName string) error
+	GetContainerLogs(ctx context.Context, containerName string, follow bool) error
 	GetProperty(name string) any
 	GetContainersList() ([]c.Summary, error)
 	GetVolumesList() ([]*v.Volume, error)
@@ -90,6 +70,11 @@ type IDockerService interface {
 	AddService(name string, image string, env []string, ports []nat.PortMap, volumes map[string]struct{}) *Services
 }
 type DockerService struct {
+	*ContainerNameReport
+	*ContainerImageReport
+	*ContainerVolumeReport
+	*DockerUtils
+
 	Logger    l.Logger
 	reference gbm.Reference
 	mutexes   gbm.Mutexes
@@ -126,6 +111,11 @@ func newDockerServiceBus(config *t.DBConfig, logger l.Logger) (IDockerService, e
 		pool:       &sync.Pool{},
 		Cli:        cli,
 		properties: nil,
+
+		DockerUtils:           NewDockerUtils(),
+		ContainerNameReport:   NewContainerNameReport(),
+		ContainerImageReport:  NewContainerImageReport(),
+		ContainerVolumeReport: NewContainerVolumeReport(),
 	}
 	if config != nil {
 		dockerService.properties = map[string]any{"dbConfig": propDBConfig}
@@ -135,7 +125,6 @@ func newDockerServiceBus(config *t.DBConfig, logger l.Logger) (IDockerService, e
 	}
 	return dockerService, nil
 }
-
 func newDockerService(config *t.DBConfig, logger l.Logger) (IDockerService, error) {
 	EnsureDockerIsRunning()
 
@@ -164,11 +153,38 @@ func newDockerService(config *t.DBConfig, logger l.Logger) (IDockerService, erro
 
 	return dockerService, nil
 }
-
 func NewDockerService(config *t.DBConfig, logger l.Logger) (IDockerService, error) {
 	return newDockerService(config, logger)
 }
 
+func (d *DockerService) GetContainerLogs(ctx context.Context, containerName string, follow bool) error {
+	cli, err := k.NewClientWithOpts(k.FromEnv, k.WithAPIVersionNegotiation())
+	if err != nil {
+		return fmt.Errorf("error creating Docker client: %w", err)
+	}
+
+	logsReader, err := cli.ContainerLogs(ctx, containerName, c.LogsOptions{
+		ShowStdout: true,
+		ShowStderr: true,
+		Timestamps: true,
+		Follow:     follow,
+	})
+	if err != nil {
+		return fmt.Errorf("error getting logs for container %s: %w", containerName, err)
+	}
+	defer func(logsReader io.ReadCloser) {
+		_ = logsReader.Close()
+	}(logsReader)
+
+	scanner := bufio.NewScanner(logsReader)
+	for scanner.Scan() {
+		fmt.Println(scanner.Text())
+	}
+	if scannerErr := scanner.Err(); scannerErr != nil {
+		return fmt.Errorf("error processing logs for container %s: %w", containerName, scannerErr)
+	}
+	return nil
+}
 func (d *DockerService) Initialize() error {
 	if d.properties != nil {
 		dbServiceConfigT, exists := d.properties["dbConfig"]
@@ -220,14 +236,14 @@ func (d *DockerService) StartContainer(serviceName, image string, envVars []stri
 	containerConfig := &c.Config{
 		Image:        image,
 		Env:          envVars,
-		ExposedPorts: extractPorts(portBindings),
+		ExposedPorts: d.ExtractPorts(portBindings),
 	}
 
 	binds := []string{}
 
 	for volume, _ := range volumes {
 		// Por enquanto coloquei os campos repetidos, mas depois PRECISAMOS melhorar isso
-		structuredVolume, err := getStructuredVolume(volume, volume)
+		structuredVolume, err := d.GetStructuredVolume(volume, volume)
 		if err != nil {
 			gl.Log("error", fmt.Sprintf("Error getting structured volume: %v", err))
 			return fmt.Errorf("error getting structured volume: %w", err)
@@ -268,7 +284,7 @@ func (d *DockerService) StartContainer(serviceName, image string, envVars []stri
 	return nil
 }
 func (d *DockerService) CreateVolume(volumeName, pathsForBind string) error {
-	structuredVolume, err := getStructuredVolume(volumeName, pathsForBind)
+	structuredVolume, err := d.GetStructuredVolume(volumeName, pathsForBind)
 	if err != nil {
 		return fmt.Errorf("error getting structured volume: %w", err)
 	}
@@ -348,33 +364,6 @@ func (d *DockerService) StopContainerByName(containerName string, stopOptions co
 	fmt.Printf("✅ Container %s stopped successfully!\n", containerName)
 	return nil
 }
-func (d *DockerService) GetContainerLogs(containerName string) error {
-	cli, err := k.NewClientWithOpts(k.FromEnv, k.WithAPIVersionNegotiation())
-	if err != nil {
-		return fmt.Errorf("error creating Docker client: %w", err)
-	}
-	ctx := context.Background()
-	logsReader, err := cli.ContainerLogs(ctx, containerName, c.LogsOptions{
-		ShowStdout: true,
-		ShowStderr: true,
-		Timestamps: true,
-		Follow:     false,
-	})
-	if err != nil {
-		return fmt.Errorf("error getting logs for container %s: %w", containerName, err)
-	}
-	defer func(logsReader io.ReadCloser) {
-		_ = logsReader.Close()
-	}(logsReader)
-	scanner := bufio.NewScanner(logsReader)
-	for scanner.Scan() {
-		fmt.Println(scanner.Text())
-	}
-	if scannerErr := scanner.Err(); scannerErr != nil {
-		return fmt.Errorf("error processing logs for container %s: %w", containerName, scannerErr)
-	}
-	return nil
-}
 func (d *DockerService) GetProperty(name string) any {
 	if prop, ok := d.properties[name]; ok {
 		return prop
@@ -445,41 +434,4 @@ func (d *DockerService) AddService(name string, image string, env []string, port
 		containersCache[name].Volumes = volumes
 	}
 	return service
-}
-
-func mapPorts(hostPort, containerPort string) nat.PortMap {
-	if strings.HasSuffix(hostPort, "/tcp") {
-		hostPort = strings.TrimSuffix(hostPort, "/tcp")
-	}
-	hostPortBinding := nat.PortBinding{
-		HostIP:   nl.HostIPv4,
-		HostPort: hostPort,
-	}
-	if strings.HasSuffix(containerPort, "/tcp") {
-		containerPort = strings.TrimSuffix(containerPort, "/tcp")
-	}
-	prtPort := nat.Port(containerPort + "/tcp")
-	portBindings := nat.PortMap{
-		prtPort: []nat.PortBinding{hostPortBinding},
-	}
-	return portBindings
-}
-func extractPorts(portBindings map[nat.Port]struct{}) nat.PortSet {
-	portSet := nat.PortSet{}
-	for port := range portBindings {
-		portSet[port] = struct{}{}
-	}
-	return portSet
-}
-func getStructuredVolume(volumeName, pathsForBind string) (StructuredVolume, error) {
-	var volStructuredList = StructuredVolume{Name: volumeName}
-	pathsArr := strings.Split(pathsForBind, ":")
-	if len(pathsArr) > 1 {
-		volStructuredList.HostPath = pathsArr[0]
-		volStructuredList.ContainerPath = pathsArr[1]
-	} else {
-		volStructuredList.HostPath = pathsForBind
-		volStructuredList.ContainerPath = pathsForBind
-	}
-	return volStructuredList, nil
 }

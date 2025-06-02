@@ -27,14 +27,14 @@ type BrokerInfoLock struct {
 }
 
 func NewBrokerInfo(name, port string) *BrokerInfoLock {
-	path, pathErr := getBrokersPath()
+	path, pathErr := GetBrokersPath()
 	if pathErr != nil {
 		gl.Log("error", "Error getting brokers path")
 		return nil
 	}
 
 	if name == "" {
-		name = randomName()
+		name = RndomName()
 	}
 
 	path = filepath.Clean(filepath.Join(path, fmt.Sprintf("%s.json", name)))

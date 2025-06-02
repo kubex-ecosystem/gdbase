@@ -31,7 +31,7 @@ log_break = @printf "%b%s%b\n" "$(COLOR_BLUE)" "[INFO]" "$(COLOR_RESET)"
 log_error = @printf "%b%s%b %s\n" "$(COLOR_RED)" "[ERROR]" "$(COLOR_RESET)" "$(1)"
 
 ARGUMENTS := $(MAKECMDGOALS)
-INSTALL_SCRIPT=$(ROOT_DIR)support/installer/main.sh
+INSTALL_SCRIPT=$(ROOT_DIR)support/install.sh
 CMD_STR := $(strip $(firstword $(ARGUMENTS)))
 ARGS := $(filter-out $(strip $(CMD_STR)), $(ARGUMENTS))
 

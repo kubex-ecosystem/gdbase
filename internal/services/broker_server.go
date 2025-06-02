@@ -96,7 +96,7 @@ func NewBroker(verbose bool) (*BrokerImpl, error) {
 	}
 
 	broker := &BrokerImpl{
-		brokerInfo:  NewBrokerInfo(randomName(), "5555"),
+		brokerInfo:  NewBrokerInfo(RndomName(), "5555"),
 		context:     ctx,
 		frontend:    frontend,
 		backend:     backend,

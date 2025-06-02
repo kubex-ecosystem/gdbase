@@ -18,7 +18,7 @@ import (
 	u "github.com/rafa-mori/gdbase/utils"
 )
 
-func splitMessage(recPayload []string) (id, msg []string) {
+func SlitMessage(recPayload []string) (id, msg []string) {
 	if recPayload[1] == "" {
 		id = recPayload[:2]
 		msg = recPayload[2:]
@@ -28,7 +28,7 @@ func splitMessage(recPayload []string) (id, msg []string) {
 	}
 	return
 }
-func getBrokersPath() (string, error) {
+func GetBrokersPath() (string, error) {
 	brkDir, homeErr := os.UserHomeDir()
 	if homeErr != nil || brkDir == "" {
 		brkDir, homeErr = os.UserConfigDir()
@@ -53,7 +53,7 @@ func getBrokersPath() (string, error) {
 
 	return brkDir, nil
 }
-func randomName() string {
+func RndomName() string {
 	return "broker-" + randStringBytes(5)
 }
 func randStringBytes(n int) string {
@@ -200,7 +200,7 @@ func SetupDatabaseServices(d IDockerService, config *t.DBConfig) error {
 							}
 							dbConfig.Port = port
 							// Map the port to the container
-							portMap := mapPorts(fmt.Sprintf("%s", dbConfig.Port), "5432/tcp")
+							portMap := d.MapPorts(fmt.Sprintf("%s", dbConfig.Port), "5432/tcp")
 
 							// Check if the database name is empty, if so, generate a random one
 							if dbConfig.Name == "" {
@@ -278,7 +278,7 @@ func SetupDatabaseServices(d IDockerService, config *t.DBConfig) error {
 					rabbitCfg.ErlangCookie = "defaultcookie"
 				}
 				// Check if the port is already in use and find an available one if necessary
-				firstPortMap := mapPorts(fmt.Sprintf("%s", rabbitCfg.Port), "15672/tcp")
+				firstPortMap := d.MapPorts(fmt.Sprintf("%s", rabbitCfg.Port), "15672/tcp")
 
 				// Vhost não existe no struct original, mas se quiser adicionar:
 				// if rabbitCfg.Vhost == "" {
@@ -331,7 +331,7 @@ func SetupDatabaseServices(d IDockerService, config *t.DBConfig) error {
 					}
 					// Create the Redis service
 					servicesR := []*Services{
-						NewServices("gdbase-redis", "redis:latest", []string{"REDIS_PASSWORD=" + redisPass}, []nat.PortMap{mapPorts("6379", "6379/tcp")}, nil),
+						NewServices("gdbase-redis", "redis:latest", []string{"REDIS_PASSWORD=" + redisPass}, []nat.PortMap{d.MapPorts("6379", "6379/tcp")}, nil),
 					}
 					// append the Redis service to the services slice
 					services = append(services, servicesR...)
@@ -345,7 +345,7 @@ func SetupDatabaseServices(d IDockerService, config *t.DBConfig) error {
 	for _, srv := range services {
 		mapPorts := map[nat.Port]struct{}{}
 		for _, port := range srv.Ports {
-			pt := extractPort(port)
+			pt := ExtractPort(port)
 			if pt == "" {
 				gl.Log("error", fmt.Sprintf("❌ Erro ao mapear porta %s", pt))
 				continue
@@ -387,7 +387,7 @@ func SetupDatabaseServices(d IDockerService, config *t.DBConfig) error {
 	return nil
 }
 
-func extractPort(port nat.PortMap) any {
+func ExtractPort(port nat.PortMap) any {
 	// Verifica se a porta é válida
 	if port == nil {
 		return nil
@@ -407,7 +407,7 @@ func extractPort(port nat.PortMap) any {
 	}
 	return nil
 }
-func askToStartDocker() bool {
+func AskToStartDocker() bool {
 
 	// Exibe uma mensagem de aviso ao usuário
 	fmt.Printf("\033[1;36m%s\033[0m", `
@@ -492,20 +492,26 @@ func startDockerService() error {
 	cmd.Stderr = os.Stderr
 	return cmd.Run()
 }
-
 func EnsureDockerIsRunning() {
 	if !isDockerRunning() {
-		if askToStartDocker() {
-			gl.Log("info", "Starting Docker service...")
+		isInteractive := os.Getenv("IS_INTERACTIVE") == "true" || os.Getenv("IS_INTERACTIVE") == "1"
+		if isInteractive {
+			if AskToStartDocker() {
+				gl.Log("info", "Starting Docker service...")
+				if err := startDockerService(); err != nil {
+					gl.Log("fatal", fmt.Sprintf("Error starting Docker: %v", err))
+				}
+				gl.Log("success", "Docker service started successfully!")
+			} else {
+				gl.Log("warn", "Docker service is not running and user chose not to start it.")
+				gl.Log("warn", "Please start Docker manually to continue.")
+				gl.Log("warn", "Exiting...")
+				os.Exit(1)
+			}
+		} else {
 			if err := startDockerService(); err != nil {
 				gl.Log("fatal", fmt.Sprintf("Error starting Docker: %v", err))
 			}
-			gl.Log("success", "Docker service started successfully!")
-		} else {
-			gl.Log("warn", "Docker service is not running and user chose not to start it.")
-			gl.Log("warn", "Please start Docker manually to continue.")
-			gl.Log("warn", "Exiting...")
-			os.Exit(1)
 		}
 	}
 	return
