@@ -1,168 +1,178 @@
-# 🏛️ **GDBASE - Infraestrutura de Banco de Dados Modular** 
+# GDBASE - Infraestrutura de Banco de Dados Modular
 
-</br>
+![GDBASE Banner](docs/assets/top_banner.png)
 
-## 🔥 **Visão Geral**  
+[![Go](https://img.shields.io/badge/Go-1.19+-00ADD8?logo=go&logoColor=white)](https://go.dev/)
+[![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](https://github.com/rafa-mori/gdbase/blob/main/LICENSE)
+[![Automation](https://img.shields.io/badge/automation-zero%20config-blue)](#features)
 
-**GDBASE** é uma solução de gerenciamento de bancos de dados desenvolvida em Go, projetada para ser **modular, escalável e automática**. Ele permite **configuração zero**, mas também suporta customizações avançadas via arquivos de configuração.  
+---
 
-Além de gerenciar bancos locais e baseados em Docker, **ele suporta conexões simultâneas com múltiplos bancos de dados**, tornando-se uma solução robusta para sistemas distribuídos.  
+**Gerenciamento de bancos de dados modular, escalável e automático para sistemas modernos.**
 
-## 🔗 **Recursos Principais**  
+---
 
-✅ **Configuração dinâmica e automática** → Senhas são geradas randômicamente e armazenadas no keyring, enquanto portas ocupadas são ajustadas automaticamente.  
-✅ **Compatível com múltiplos DBs** → Redis, RabbitMQ, MongoDB, PostgreSQL e SQLite já configurados para uso imediato.  
-✅ **Estrutura arquitetural bem definida** → Models seguem padrão `Model → Repo → Service`, garantindo modularidade e organização.  
-✅ **Túnel SSH para bancos externos** → `gdbase ssh tunnel` permite conectar bancos remotos via SSH com segurança total.  
-✅ **Customização avançada** → Pode ser configurado manualmente via arquivos ou rodar sem necessidade de intervenção.  
-✅ **Orquestração via Docker** → Geração automática de containers, garantindo portabilidade e fácil implantação.  
-✅ **Monitoramento e eventos** → Implementação de event bus para rastreamento interno de ações no sistema.  
+## **Table of Contents**
 
-## 📝 **Instalação**  
+1. [About the Project](#about-the-project)
+2. [Features](#features)
+3. [Installation](#installation)
+4. [Usage](#usage)
+    - [CLI](#cli)
+    - [Project Structure](#project-structure)
+    - [Configuration](#configuration)
+5. [Roadmap](#roadmap)
+6. [Contributing](#contributing)
+7. [Contact](#contact)
 
-Clone o repositório e compile:  
+---
+
+## **About the Project**
+
+**GDBASE** é uma solução de gerenciamento de bancos de dados desenvolvida em Go, projetada para ser **modular, escalável e automática**. Permite configuração zero, mas suporta customizações avançadas via arquivos de configuração. Gerencia bancos locais, Docker e múltiplos bancos simultaneamente, ideal para sistemas distribuídos.
+
+---
+
+## **Features**
+
+✨ **Configuração dinâmica e automática**
+
+- Senhas geradas randômicamente e armazenadas no keyring.
+- Portas ocupadas ajustadas automaticamente.
+
+🗄️ **Compatível com múltiplos DBs**
+
+- Redis, RabbitMQ, MongoDB, PostgreSQL e SQLite prontos para uso.
+
+🏗️ **Arquitetura modular**
+
+- Models seguem padrão `Model → Repo → Service`.
+- Modularidade e organização garantidas.
+
+🔐 **Túnel SSH para bancos externos**
+
+- `gdbase ssh tunnel` conecta bancos remotos via SSH com segurança.
+
+⚙️ **Orquestração via Docker**
+
+- Geração automática de containers para portabilidade e fácil implantação.
+
+📡 **Monitoramento e eventos**
+
+- Event bus para rastreamento interno de ações.
+
+---
+
+## **Installation**
+
+Requisitos:
+
+- Go 1.19+
+- Docker (para bancos em container)
+
+Clone o repositório e compile:
 
 ```sh
+# Clone o repositório
 git clone https://github.com/rafa-mori/gdbase.git
 cd gdbase
 go build -o gdbase .
 ```
 
-## 🚀 **Iniciando o Servidor**  
+---
 
-Para inicializar **GDBASE**, basta rodar:  
+## **Usage**
+
+### CLI
+
+Inicie o servidor principal:
 
 ```sh
 ./gdbase start
 ```
 
-Isso **configura os bancos de dados, ajusta conexões e inicializa todos os serviços automaticamente**.  
-
-## 🔎 **Comandos da CLI**  
-
-A CLI integrada permite comandos avançados, incluindo **gerenciamento de bancos de dados e configurações de rede**:  
+Veja todos os comandos disponíveis:
 
 ```sh
 ./gdbase --help
 ```
 
-## 💡 **Resumo dos comandos essenciais:**  
+**Principais comandos:**
 
-| Comando           | Função                                             |
-|-------------------|----------------------------------------------------|
-| `start`           | Inicializa `gdbase` e configura todos os serviços  |
-| `status`          | Exibe status dos bancos de dados ativos            |
-| `config`          | Cria um arquivo de configuração para customização  |
-| `ssh tunnel`      | Cria um túnel seguro para bancos externos via SSH  |
-| `docker`          | Gerencia containers Docker para bancos de dados    |
+| Comando      | Função                                             |
+|--------------|----------------------------------------------------|
+| `start`      | Inicializa `gdbase` e configura todos os serviços  |
+| `status`     | Exibe status dos bancos de dados ativos            |
+| `config`     | Cria um arquivo de configuração para customização  |
+| `ssh tunnel` | Cria um túnel seguro para bancos externos via SSH  |
+| `docker`     | Gerencia containers Docker para bancos de dados    |
 
-## 📂 **Estrutura do Projeto (Implementação central)**
+### Project Structure
 
-``` plaintext
+A implementação central segue uma arquitetura clara e modular:
 
+```plaintext
 ./
-│
 ├── cmd
-│   ├── cli
-│   │   ├── cmds_ssh.go
-│   │   ├── cmds_utils.go
-│   │   ├── common.go
-│   │   ├── configs.go
-│   │   ├── database.go
-│   │   ├── docker.go
-│   │   ├── serverdata_types.go
-│   │   ├── webprocess_types.go
-│   │   ├── webserver_types.go
-│   │   ├── websrvproc_types.go
-│   │   └── websrvstatus_types.go
-│   │
-│   ├── gen_models.go # Extrai do banco de dados as informações necessárias para criar  as structs.
-│   ├── models.go # Esse é o arquivo gerado pelo anterior com as definições das structs.(sem erros. roda lisinho, porém não uso ainda)
-│   │
-│   ├── main.go
-│   ├── usage.go
-│   └── wrpr.go
-│
+│   ├── cli
+│   ├── gen_models.go
+│   ├── models.go
+│   ├── main.go
+│   ├── usage.go
+│   └── wrpr.go
 ├── docs
-│   ├── assets
-│   │   └── top_banner.png
-│   └── CONTRIBUTING.md
-│
+│   └── assets
 ├── go.mod
 ├── go.sum
-│
 ├── internal
-│   ├── events
-│   │   ├── dispatcher.go
-│   │   ├── event_bus.go
-│   │   ├── event.go
-│   │   └── screenning.go
-│   ├── models
-│   │   ├── clients
-│   │   │   ├── client_model.go
-│   │   │   ├── clients_repo.go
-│   │   │   └── clients_service.go
-│   │   ├── cron
-│   │   │   ├── common.go
-│   │   │   ├── cronjob_model.go
-│   │   │   ├── cronjob_repo.go
-│   │   │   └── cronjob_service.go
-│   │   ├── job_queue
-│   │   │   ├── job_queue.go
-│   │   │   ├── job_repo.go
-│   │   │   └── job_service.go
-│   │   ├── notification
-│   │   │   ├── notification_model.go
-│   │   │   ├── notification_repo.go
-│   │   │   └── notification_service.go
-│   │   ├── orders
-│   │   │   ├── order_model.go
-│   │   │   ├── order_repo.go
-│   │   │   ├── order_service.go
-│   │   │   └── order_status.go
-│   │   ├── products
-│   │   │   ├── product_model.go
-│   │   │   ├── products_repo.go
-│   │   │   └── products_service.go
-│   │   ├── users
-│   │   │   ├── user_model.go
-│   │   │   ├── user_repo.go
-│   │   │   └── user_service.go
-│   │   └── webhooks
-│   │       ├── webhook_model.go
-│   │       ├── webhook_repo.go
-│   │       └── webhook_service.go
-│   │
-│   └── services
-│       ├── assets
-│       │   ├── ddl_full_model.sql
-│       │   └── init-db.sql
-│       ├── broker_info.go
-│       ├── broker_manager.go
-│       ├── broker_server.go
-│       ├── db_service.go
-│       ├── docker_client.go
-│       ├── docker_service.go
-│       ├── execution_log_service.go
-│       ├── rabbitmq.go
-│       └── utils.go
-│
+│   ├── events
+│   ├── models
+│   └── services
 ├── tests
-│   ├── client_model_test.go
-│   ├── client_repo_test.go
-│   ├── database_test.go
-│   ├── dkr_abs_test.go
-│   ├── execution_log_test.go
-│   ├── order_repo_service_test.go
-│   ├── product_model_test.go
-│   ├── product_repo_test.go
-│   ├── user_model_crud_test.go
-│   ├── user_model_test.go
-│   ├── user_repo_test.go
-│   └── user_service_test.go
-│
 └── version
-    ├── CLI_VERSION
-    └── semantic.go
-
 ```
+
+---
+
+### Configuration
+
+O GDBASE pode rodar sem configuração inicial, mas aceita customização via arquivos YAML/JSON. Por padrão, tudo é gerado automaticamente no primeiro uso.
+
+Exemplo de configuração:
+
+```yaml
+postgres:
+  host: localhost
+  port: 5432
+  user: gdbase
+  password: secure
+redis:
+  host: localhost
+  port: 6379
+```
+
+---
+
+## **Roadmap**
+
+- [x] Configuração dinâmica e automática
+- [x] Suporte a múltiplos bancos (Redis, RabbitMQ, MongoDB, PostgreSQL, SQLite)
+- [x] Túnel SSH integrado
+- [x] Orquestração via Docker
+- [ ] Plugins para novos bancos
+- [ ] Dashboard web para monitoramento
+
+---
+
+## **Contributing**
+
+Contribuições são bem-vindas! Sinta-se à vontade para abrir issues ou enviar pull requests. Veja o [Guia de Contribuição](docs/CONTRIBUTING.md) para mais detalhes.
+
+---
+
+## **Contact**
+
+💌 **Developer**:  
+[Rafael Mori](mailto:faelmori@gmail.com)  
+💼 [Follow me on GitHub](https://github.com/rafa-mori)  
+Estou aberto a colaborações e novas ideias. Se achou o projeto interessante, entre em contato!
