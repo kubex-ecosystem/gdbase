@@ -1,5 +1,6 @@
 name: kubex_go_release
-
+# Release workflow by Rafa Mori
+# This workflow builds a Go application, compresses it with UPX, and creates a GitHub release with the binary.
 on:
   push:
     tags:
@@ -109,3 +110,6 @@ jobs:
 
       - name: Clean Go Build Cache
         run: go clean -cache -modcache -i -r
+
+
+# Made with care by the Mori family ❤️

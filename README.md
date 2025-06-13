@@ -1,14 +1,16 @@
-# GDBASE - Infraestrutura de Banco de Dados Modular
+#
 
 ![GDBASE Banner](docs/assets/top_banner.png)
 
 [![Go](https://img.shields.io/badge/Go-1.19+-00ADD8?logo=go&logoColor=white)](https://go.dev/)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](https://github.com/rafa-mori/gdbase/blob/main/LICENSE)
 [![Automation](https://img.shields.io/badge/automation-zero%20config-blue)](#features)
+[![Releases](https://img.shields.io/github/v/release/faelmori/goforge?include_prereleases)](https://github.com/faelmori/goforge/releases)
+[![Build](https://github.com/rafa-mori/gdbase/actions/workflows/release.yml/badge.svg)](https://github.com/rafa-mori/gdbase/actions/workflows/release.yml)
 
 ---
 
-**Gerenciamento de bancos de dados modular, escalável e automático para sistemas modernos.**
+**Modular, scalable, and automatic database management for modern systems.**
 
 ---
 
@@ -29,51 +31,51 @@
 
 ## **About the Project**
 
-**GDBASE** é uma solução de gerenciamento de bancos de dados desenvolvida em Go, projetada para ser **modular, escalável e automática**. Permite configuração zero, mas suporta customizações avançadas via arquivos de configuração. Gerencia bancos locais, Docker e múltiplos bancos simultaneamente, ideal para sistemas distribuídos.
+**GDBASE** is a database management solution developed in Go, designed to be **modular, scalable, and automatic**. It allows zero-configuration by default, but supports advanced customizations via configuration files. It manages local databases, Docker, and multiple databases simultaneously, making it ideal for distributed systems.
 
 ---
 
 ## **Features**
 
-✨ **Configuração dinâmica e automática**
+✨ **Dynamic and automatic configuration**
 
-- Senhas geradas randômicamente e armazenadas no keyring.
-- Portas ocupadas ajustadas automaticamente.
+- Randomly generated passwords stored in the keyring.
+- Automatically adjusts for occupied ports.
 
-🗄️ **Compatível com múltiplos DBs**
+🗄️ **Multi-DB support**
 
-- Redis, RabbitMQ, MongoDB, PostgreSQL e SQLite prontos para uso.
+- Redis, RabbitMQ, MongoDB, PostgreSQL, and SQLite ready to use.
 
-🏗️ **Arquitetura modular**
+🏗️ **Modular architecture**
 
-- Models seguem padrão `Model → Repo → Service`.
-- Modularidade e organização garantidas.
+- Models follow the `Model → Repo → Service` pattern.
+- Ensures modularity and organization.
 
-🔐 **Túnel SSH para bancos externos**
+🔐 **SSH tunnel for external databases**
 
-- `gdbase ssh tunnel` conecta bancos remotos via SSH com segurança.
+- `gdbase ssh tunnel` securely connects to remote databases via SSH.
 
-⚙️ **Orquestração via Docker**
+⚙️ **Docker orchestration**
 
-- Geração automática de containers para portabilidade e fácil implantação.
+- Automatic container generation for portability and easy deployment.
 
-📡 **Monitoramento e eventos**
+📡 **Monitoring and events**
 
-- Event bus para rastreamento interno de ações.
+- Event bus for internal action tracking.
 
 ---
 
 ## **Installation**
 
-Requisitos:
+Requirements:
 
 - Go 1.19+
-- Docker (para bancos em container)
+- Docker (for containerized databases)
 
-Clone o repositório e compile:
+Clone the repository and build:
 
 ```sh
-# Clone o repositório
+# Clone the repository
 git clone https://github.com/rafa-mori/gdbase.git
 cd gdbase
 go build -o gdbase .
@@ -85,31 +87,31 @@ go build -o gdbase .
 
 ### CLI
 
-Inicie o servidor principal:
+Start the main server:
 
 ```sh
 ./gdbase start
 ```
 
-Veja todos os comandos disponíveis:
+See all available commands:
 
 ```sh
 ./gdbase --help
 ```
 
-**Principais comandos:**
+**Main commands:**
 
-| Comando      | Função                                             |
-|--------------|----------------------------------------------------|
-| `start`      | Inicializa `gdbase` e configura todos os serviços  |
-| `status`     | Exibe status dos bancos de dados ativos            |
-| `config`     | Cria um arquivo de configuração para customização  |
-| `ssh tunnel` | Cria um túnel seguro para bancos externos via SSH  |
-| `docker`     | Gerencia containers Docker para bancos de dados    |
+| Command      | Function                                             |
+|--------------|-----------------------------------------------------|
+| `start`      | Initializes `gdbase` and sets up all services       |
+| `status`     | Shows status of active databases                    |
+| `config`     | Creates a configuration file for customization      |
+| `ssh tunnel` | Creates a secure tunnel for external DBs via SSH    |
+| `docker`     | Manages Docker containers for databases             |
 
 ### Project Structure
 
-A implementação central segue uma arquitetura clara e modular:
+The core implementation follows a clear and modular architecture:
 
 ```plaintext
 ./
@@ -136,9 +138,9 @@ A implementação central segue uma arquitetura clara e modular:
 
 ### Configuration
 
-O GDBASE pode rodar sem configuração inicial, mas aceita customização via arquivos YAML/JSON. Por padrão, tudo é gerado automaticamente no primeiro uso.
+GDBASE can run without any initial configuration, but supports customization via YAML/JSON files. By default, everything is generated automatically on first use.
 
-Exemplo de configuração:
+Example configuration:
 
 ```yaml
 postgres:
@@ -155,18 +157,18 @@ redis:
 
 ## **Roadmap**
 
-- [x] Configuração dinâmica e automática
-- [x] Suporte a múltiplos bancos (Redis, RabbitMQ, MongoDB, PostgreSQL, SQLite)
-- [x] Túnel SSH integrado
-- [x] Orquestração via Docker
-- [ ] Plugins para novos bancos
-- [ ] Dashboard web para monitoramento
+- [x] Dynamic and automatic configuration
+- [x] Multi-DB support (Redis, RabbitMQ, MongoDB, PostgreSQL, SQLite)
+- [x] Integrated SSH tunnel
+- [x] Docker orchestration
+- [ ] Plugins for new databases
+- [ ] Web dashboard for monitoring
 
 ---
 
 ## **Contributing**
 
-Contribuições são bem-vindas! Sinta-se à vontade para abrir issues ou enviar pull requests. Veja o [Guia de Contribuição](docs/CONTRIBUTING.md) para mais detalhes.
+Contributions are welcome! Feel free to open issues or submit pull requests. See the [Contribution Guide](docs/CONTRIBUTING.md) for more details.
 
 ---
 
@@ -175,4 +177,8 @@ Contribuições são bem-vindas! Sinta-se à vontade para abrir issues ou enviar
 💌 **Developer**:  
 [Rafael Mori](mailto:faelmori@gmail.com)  
 💼 [Follow me on GitHub](https://github.com/rafa-mori)  
-Estou aberto a colaborações e novas ideias. Se achou o projeto interessante, entre em contato!
+I'm open to collaborations and new ideas. If you found the project interesting, get in touch!
+
+---
+
+**Made with care by the Mori family!** ❤️
