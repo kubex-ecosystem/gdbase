@@ -1,12 +1,12 @@
 # **Contributing to GoSpider**
 
-Thank you for your interest in contributing to **[GoSpider](https://github.com/faelmori/gospider)**! We are excited to have you as part of our community. This guide will help you get started and contribute effectively to the project.
+Thank you for your interest in contributing to **[GoSpider](https://github.com/rafa-mori/gospider)**! We are excited to have you as part of our community. This guide will help you get started and contribute effectively to the project.
 
 ---
 
 ## **How to Contribute**
 
-There are several ways to contribute to [GoSpider](https://github.com/faelmori/gospider):
+There are several ways to contribute to [GoSpider](https://github.com/rafa-mori/gospider):
 
 1. **Report Issues**
    - Found bugs or issues in the code? Open an issue detailing the problem.
@@ -28,7 +28,7 @@ There are several ways to contribute to [GoSpider](https://github.com/faelmori/g
 
 ### 1. **Clone the Repository**
 ```bash
-git clone https://github.com/faelmori/gospider.git
+git clone https://github.com/rafa-mori/gospider.git
 cd gospider
 ```
 
@@ -37,9 +37,9 @@ Make sure you have Go installed:
 
 You can install Go using one of the following methods:
 
-- [A super easy way to install Go](https://github.com/faelmori/go-installer)
+- [A super easy way to install Go](https://github.com/rafa-mori/go-installer)
   ```shell
-    curl -sSfL 'https://raw.githubusercontent.com/faelmori/go-installer/refs/heads/main/go.sh' | bash
+    curl -sSfL 'https://raw.githubusercontent.com/rafa-mori/go-installer/refs/heads/main/go.sh' | bash
   ```
 
 - [Convencional way to download Go](https://go.dev/dl/)

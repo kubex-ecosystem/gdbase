@@ -1,9 +1,9 @@
 package factory
 
 import (
-	l "github.com/faelmori/logz"
 	dkrs "github.com/rafa-mori/gdbase/internal/services"
 	t "github.com/rafa-mori/gdbase/types"
+	l "github.com/rafa-mori/logz"
 )
 
 type DockerSrv interface {

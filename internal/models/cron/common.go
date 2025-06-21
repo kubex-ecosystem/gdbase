@@ -10,9 +10,9 @@ import (
 
 	"github.com/google/uuid"
 
-	l "github.com/faelmori/logz"
 	t "github.com/rafa-mori/gdbase/internal/types"
 	gl "github.com/rafa-mori/gdbase/logger"
+	l "github.com/rafa-mori/logz"
 )
 
 type ICronJobValidation interface {

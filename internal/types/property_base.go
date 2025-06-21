@@ -1,9 +1,9 @@
 package types
 
 import (
-	l "github.com/faelmori/logz"
 	ci "github.com/rafa-mori/gdbase/internal/interfaces"
 	gl "github.com/rafa-mori/gdbase/logger"
+	l "github.com/rafa-mori/logz"
 
 	"fmt"
 	"reflect"

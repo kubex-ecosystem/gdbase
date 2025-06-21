@@ -3,9 +3,9 @@ package cli
 import (
 	"fmt"
 
-	l "github.com/faelmori/logz"
 	"github.com/rafa-mori/gdbase/factory"
 	s "github.com/rafa-mori/gdbase/internal/services"
+	l "github.com/rafa-mori/logz"
 	"github.com/spf13/cobra"
 )
 

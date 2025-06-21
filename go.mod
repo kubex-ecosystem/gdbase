@@ -5,8 +5,8 @@ go 1.24.4
 require (
 	github.com/docker/docker v28.1.1+incompatible
 	github.com/docker/go-connections v0.5.0
-	github.com/faelmori/logz v1.2.0
-	github.com/faelmori/xtui v1.2.0
+	github.com/rafa-mori/logz v1.3.0
+	github.com/rafa-mori/xtui v1.2.0
 	github.com/fatih/color v1.18.0
 	github.com/goccy/go-json v0.10.5
 	github.com/google/uuid v1.6.0

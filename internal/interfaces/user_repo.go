@@ -1,6 +1,6 @@
 package interfaces
 
-import xtt "github.com/faelmori/xtui/types"
+import xtt "github.com/rafa-mori/xtui/types"
 
 type IUserRepo interface {
 	Create(u User) (User, error)

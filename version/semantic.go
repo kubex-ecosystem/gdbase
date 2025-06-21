@@ -1,8 +1,8 @@
 package version
 
 import (
-	l "github.com/faelmori/logz"
 	gl "github.com/rafa-mori/gdbase/logger"
+	l "github.com/rafa-mori/logz"
 
 	"github.com/spf13/cobra"
 
@@ -18,8 +18,8 @@ import (
 
 const moduleAlias = "GDBase"
 const moduleName = "gdbase"
-const gitModelUrl = "https://github.com/faelmori/" + moduleName + ".git"
-const currentVersionFallback = "v1.0.1" // First version with the version file
+const gitModelUrl = "https://github.com/rafa-mori/" + moduleName + ".git"
+const currentVersionFallback = "v1.0.0" // First version with the version file
 
 type Service interface {
 	GetLatestVersion() (string, error)

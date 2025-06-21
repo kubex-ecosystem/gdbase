@@ -3,7 +3,7 @@ package types
 import (
 	"fmt"
 
-	l "github.com/faelmori/logz"
+	l "github.com/rafa-mori/logz"
 	ci "github.com/rafa-mori/gdbase/internal/interfaces"
 	gl "github.com/rafa-mori/gdbase/logger"
 	tu "github.com/rafa-mori/gdbase/utils"
