@@ -3,7 +3,7 @@ module github.com/rafa-mori/gdbase
 go 1.24.4
 
 require (
-	github.com/docker/docker v28.2.2+incompatible
+	github.com/docker/docker v28.3.0+incompatible
 	github.com/docker/go-connections v0.5.0
 	github.com/faelmori/logz v1.2.0
 	github.com/faelmori/xtui v1.2.0
