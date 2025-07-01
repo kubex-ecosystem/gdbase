@@ -21,7 +21,7 @@ type IUserRepo interface {
 	Update(u IUser) (IUser, error)
 	Delete(id string) error
 	Close() error
-	List(where ...interface{}) (xtt.TableHandler, error)
+	List(where ...interface{}) (xtt.TableDataHandler, error)
 	GetContextDbService() t.DBService
 }
 
@@ -112,11 +112,11 @@ func (ur *UserRepo) Close() error {
 	}
 	return sqlDB.Close()
 }
-func (ur *UserRepo) List(where ...interface{}) (xtt.TableHandler, error) {
+func (ur *UserRepo) List(where ...interface{}) (xtt.TableDataHandler, error) {
 	var users []UserModel
 	err := ur.g.Where(where[0], where[1:]...).Find(&users).Error
 	if err != nil {
-		return xtt.TableHandler{}, fmt.Errorf("UserModel repository: failed to list users: %w", err)
+		return nil, fmt.Errorf("UserModel repository: failed to list users: %w", err)
 	}
 	tableHandlerMap := make([][]string, 0)
 	for i, usr := range users {
@@ -130,7 +130,8 @@ func (ur *UserRepo) List(where ...interface{}) (xtt.TableHandler, error) {
 			fmt.Sprintf("%t", usr.GetActive()),
 		})
 	}
-	return xtt.TableHandler{Rows: tableHandlerMap}, nil
+
+	return xtt.NewTableHandlerFromRows([]string{"#", "ID", "Name", "Username", "Email", "Phone", "Active"}, tableHandlerMap), nil
 }
 func (ur *UserRepo) GetContextDbService() t.IDBService {
 	dbService, dbServiceErr := is.NewDatabaseService(t.NewDBConfigWithDBConnection(ur.g), l.GetLogger("GodoBase"))

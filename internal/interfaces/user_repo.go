@@ -9,5 +9,5 @@ type IUserRepo interface {
 	Update(u User) (User, error)
 	Delete(id string) error
 	Close() error
-	List(where ...interface{}) (xtt.TableHandler, error)
+	List(where ...interface{}) (xtt.TableDataHandler, error)
 }

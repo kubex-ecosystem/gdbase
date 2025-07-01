@@ -3,7 +3,7 @@ name: kubex_go_release
 on:
   push:
     tags:
-      - "v*.*.*"  # Só será executado com push de tag: git push origin vX.Y.Z
+      - "v*.*.*"  # Match semantic versioning tags
   workflow_dispatch:
 
 permissions:
