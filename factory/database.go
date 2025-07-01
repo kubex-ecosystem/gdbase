@@ -1,7 +1,7 @@
 package factory
 
 import (
-	l "github.com/faelmori/logz"
+	l "github.com/rafa-mori/logz"
 	dbAbs "github.com/rafa-mori/gdbase/internal/services"
 	t "github.com/rafa-mori/gdbase/types"
 )

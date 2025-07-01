@@ -4,7 +4,7 @@ import (
 	"encoding/base64"
 	"reflect"
 
-	l "github.com/faelmori/logz"
+	l "github.com/rafa-mori/logz"
 	ci "github.com/rafa-mori/gdbase/internal/interfaces"
 	crp "github.com/rafa-mori/gdbase/internal/security/crypto"
 	sci "github.com/rafa-mori/gdbase/internal/security/interfaces"

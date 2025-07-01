@@ -8,10 +8,10 @@ import (
 	// gl "github.com/rafa-mori/gdbase/logger"
 	"sync"
 
-	l "github.com/faelmori/logz"
 	glb "github.com/rafa-mori/gdbase/internal/globals"
 	gl "github.com/rafa-mori/gdbase/logger"
 	t "github.com/rafa-mori/gdbase/types"
+	l "github.com/rafa-mori/logz"
 	"gorm.io/driver/mysql"
 	"gorm.io/driver/postgres"
 	"gorm.io/driver/sqlite"

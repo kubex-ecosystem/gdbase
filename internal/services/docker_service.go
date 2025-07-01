@@ -15,13 +15,13 @@ import (
 	k "github.com/docker/docker/client"
 	nl "github.com/docker/docker/libnetwork/netlabel"
 	"github.com/docker/go-connections/nat"
-	l "github.com/faelmori/logz"
 	gbm "github.com/rafa-mori/gdbase"
 	evs "github.com/rafa-mori/gdbase/internal/events"
 	ci "github.com/rafa-mori/gdbase/internal/interfaces"
 	it "github.com/rafa-mori/gdbase/internal/types"
 	gl "github.com/rafa-mori/gdbase/logger"
 	t "github.com/rafa-mori/gdbase/types"
+	l "github.com/rafa-mori/logz"
 
 	_ "embed"
 )

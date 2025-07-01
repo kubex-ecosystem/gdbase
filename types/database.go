@@ -8,7 +8,7 @@ import (
 	"os"
 	"path/filepath"
 
-	l "github.com/faelmori/logz"
+	l "github.com/rafa-mori/logz"
 	glb "github.com/rafa-mori/gdbase/internal/globals"
 	ci "github.com/rafa-mori/gdbase/internal/interfaces"
 	crp "github.com/rafa-mori/gdbase/internal/security/crypto"

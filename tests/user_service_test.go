@@ -6,7 +6,7 @@ package tests
 
 // 	um "github.com/rafa-mori/gdbase/internal/models/users"
 // 	"github.com/rafa-mori/gdbase/types"
-// 	"github.com/faelmori/xtui/types"
+// 	"github.com/rafa-mori/xtui/types"
 // 	"github.com/stretchr/testify/assert"
 // 	"github.com/stretchr/testify/mock"
 // )

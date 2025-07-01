@@ -4,7 +4,7 @@ import (
 	. "github.com/rafa-mori/gdbase/internal/interfaces"
 	t "github.com/rafa-mori/gdbase/internal/types"
 
-	l "github.com/faelmori/logz"
+	l "github.com/rafa-mori/logz"
 )
 
 type PropertyValBase[T any] interface{ IPropertyValBase[T] }
