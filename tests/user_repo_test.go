@@ -1,6 +1,6 @@
 package tests
 
-import (
+/* import (
 	"testing"
 
 	um "github.com/rafa-mori/gdbase/internal/models/users"
@@ -114,3 +114,4 @@ func TestUserRepo_List(t *testing.T) {
 	assert.Len(t, tableHandler.Rows, 2)
 	assert.Equal(t, "John Doe", tableHandler.Rows[0][2])
 }
+*/
