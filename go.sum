@@ -48,8 +48,8 @@ github.com/docker/go-connections v0.5.0 h1:USnMq7hx7gwdVZq1L49hLXaFtUdTADjXGp+uj
 github.com/docker/go-connections v0.5.0/go.mod h1:ov60Kzw0kKElRwhNs9UlUHAE/F9Fe6GLaXnqyDdmEXc=
 github.com/docker/go-units v0.5.0 h1:69rxXcBk27SvSaaxTtLh/8llcHD8vYHT7WSdRZ/jvr4=
 github.com/docker/go-units v0.5.0/go.mod h1:fgPhTUdO+D/Jk86RDLlptpiXQzgHJF7gydDDbaIK4Dk=
-github.com/faelmori/logz v1.2.0 h1:YeVpLRydVQWPXH6awaPy2UgsIVI43fUXCTJtuf+6qK8=
-github.com/faelmori/logz v1.2.0/go.mod h1:c/FPlVJFHXuDzy/AVJPTfLkMQPDbYWD9OOnqKPF0TgE=
+github.com/faelmori/logz v1.2.1 h1:cksXtAjA1BwGHkhVJObNJ5rEtjWw1LsD5rmwf1jt88k=
+github.com/faelmori/logz v1.2.1/go.mod h1:hLKNtSeo5R1EIk/537nvgzs6EDnOlqEVs0ZWWEkK60Y=
 github.com/faelmori/xtui v1.2.0 h1:tRpi4O8IrvgL1v+7HFmdmi7ZfrdxFeAb7r4yXvuAOFs=
 github.com/faelmori/xtui v1.2.0/go.mod h1:V9wDoeWpB/eU0QGq5yWNAYiE4GonsFw4itF78iJQZlg=
 github.com/fatih/color v1.18.0 h1:S8gINlzdQ840/4pfAwic/ZE0djQEH3wM94VfqLTZcOM=
