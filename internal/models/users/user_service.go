@@ -16,7 +16,7 @@ type IUserService interface {
 	GetUserByEmail(email string) (IUser, error)
 	GetUserByUsername(username string) (IUser, error)
 	GetUserByPhone(phone string) (IUser, error)
-	GetContextDbService() t.DBService
+	GetContextDBService() t.DBService
 }
 
 type UserService struct {
@@ -95,6 +95,6 @@ func (us *UserService) GetUserByPhone(phone string) (IUser, error) {
 	return user, nil
 }
 
-func (us *UserService) GetContextDbService() t.DBService {
-	return us.repo.GetContextDbService()
+func (us *UserService) GetContextDBService() t.DBService {
+	return us.repo.GetContextDBService()
 }

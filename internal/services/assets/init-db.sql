@@ -651,21 +651,6 @@ CREATE TABLE IF NOT EXISTS mcp_llm_models (
 );
 -- COMMIT;
 
--- Tabela para Tokens
--- CREATE TABLE IF NOT EXISTS mcp_tokens (
---     id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
---     provider TEXT NOT NULL,
---     user_identifier TEXT NOT NULL,
---     access_token TEXT NOT NULL,
---     refresh_token TEXT,
---     expires_at TIMESTAMP,
---     scopes TEXT[],
---     created_at TIMESTAMP DEFAULT now(),
---     updated_at TIMESTAMP DEFAULT now(),
---     UNIQUE(provider, user_identifier)
--- );
--- COMMIT;
-
 -- Tabela de preferências (flexível e armazenada em JSONB)
 CREATE TABLE IF NOT EXISTS mcp_user_preferences (
     id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
