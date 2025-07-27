@@ -22,7 +22,7 @@ type IUserRepo interface {
 	Delete(id string) error
 	Close() error
 	List(where ...interface{}) (xtt.TableDataHandler, error)
-	GetContextDbService() t.DBService
+	GetContextDBService() t.DBService
 }
 
 type UserRepo struct {
@@ -133,10 +133,10 @@ func (ur *UserRepo) List(where ...interface{}) (xtt.TableDataHandler, error) {
 
 	return xtt.NewTableHandlerFromRows([]string{"#", "ID", "Name", "Username", "Email", "Phone", "Active"}, tableHandlerMap), nil
 }
-func (ur *UserRepo) GetContextDbService() t.IDBService {
+func (ur *UserRepo) GetContextDBService() t.IDBService {
 	dbService, dbServiceErr := is.NewDatabaseService(t.NewDBConfigWithDBConnection(ur.g), l.GetLogger("GodoBase"))
 	if dbServiceErr != nil {
-		gl.Log("error", fmt.Sprintf("UserModel repository: failed to get context DB service", dbServiceErr))
+		gl.Log("error", fmt.Sprintf("UserModel repository: failed to get context DB service (%s)", dbServiceErr))
 		return nil
 	}
 	return dbService

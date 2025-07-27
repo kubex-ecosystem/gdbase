@@ -1,3 +1,4 @@
+// Package version provides functionality to manage and check the version of the GDBase module.
 package version
 
 import (
@@ -18,8 +19,8 @@ import (
 
 const moduleAlias = "GDBase"
 const moduleName = "gdbase"
-const gitModelUrl = "https://github.com/rafa-mori/" + moduleName + ".git"
-const currentVersionFallback = "v1.0.1" // First version with the version file
+const gitModelURL = "https://github.com/rafa-mori/" + moduleName + ".git"
+const currentVersionFallback = "v1.1.0" // First version with the version file
 
 type Service interface {
 	GetLatestVersion() (string, error)
@@ -27,7 +28,7 @@ type Service interface {
 	IsLatestVersion() (bool, error)
 }
 type ServiceImpl struct {
-	gitModelUrl    string
+	gitModelURL    string
 	latestVersion  string
 	currentVersion string
 }
@@ -66,7 +67,7 @@ func getLatestTag(repoURL string) (string, error) {
 }
 
 func (v *ServiceImpl) updateLatestVersion() error {
-	repoURL := strings.TrimSuffix(v.gitModelUrl, ".git")
+	repoURL := strings.TrimSuffix(v.gitModelURL, ".git")
 	tag, err := getLatestTag(repoURL)
 	if err != nil {
 		return err
@@ -145,7 +146,7 @@ func (v *ServiceImpl) GetCurrentVersion() string { return v.currentVersion }
 
 func NewVersionService() Service {
 	return &ServiceImpl{
-		gitModelUrl:    gitModelUrl,
+		gitModelURL:    gitModelURL,
 		currentVersion: currentVersion,
 		latestVersion:  "",
 	}
@@ -188,14 +189,14 @@ func GetVersion() string {
 	return currentVersion
 }
 
-func GetGitModelUrl() string {
-	return gitModelUrl
+func GetGitModelURL() string {
+	return gitModelURL
 }
 
 func GetVersionInfo() string {
 	gl.Log("info", "Version: "+GetVersion())
-	gl.Log("info", "Git repository: "+GetGitModelUrl())
-	return fmt.Sprintf("Version: %s\nGit repository: %s", GetVersion(), GetGitModelUrl())
+	gl.Log("info", "Git repository: "+GetGitModelURL())
+	return fmt.Sprintf("Version: %s\nGit repository: %s", GetVersion(), GetGitModelURL())
 }
 
 func GetLatestVersionFromGit() string {
@@ -203,18 +204,18 @@ func GetLatestVersionFromGit() string {
 		Timeout: time.Second * 10,
 	}
 
-	gitUrlWithoutGit := strings.TrimSuffix(gitModelUrl, ".git")
+	gitURLWithoutGit := strings.TrimSuffix(gitModelURL, ".git")
 
-	response, err := netClient.Get(gitUrlWithoutGit + "/releases/latest")
+	response, err := netClient.Get(gitURLWithoutGit + "/releases/latest")
 	if err != nil {
 		gl.Log("error", "ErrorCtx fetching latest version: "+err.Error())
-		gl.Log("error", gitUrlWithoutGit+"/releases/latest")
+		gl.Log("error", gitURLWithoutGit+"/releases/latest")
 		return err.Error()
 	}
 
 	if response.StatusCode != 200 {
 		gl.Log("error", "ErrorCtx fetching latest version: "+response.Status)
-		gl.Log("error", "Url: "+gitUrlWithoutGit+"/releases/latest")
+		gl.Log("error", "Url: "+gitURLWithoutGit+"/releases/latest")
 		body, _ := io.ReadAll(response.Body)
 		return fmt.Sprintf("ErrorCtx: %s\nResponse: %s", response.Status, string(body))
 	}

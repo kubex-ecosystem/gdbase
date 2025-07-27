@@ -16,8 +16,8 @@ package tests
 // 	mock.Mock
 // }
 
-// // GetContextDbService implements user.IUserRepo.
-// func (m *MockIUserRepo) GetContextDbService() types.DBService {
+// // GetContextDBService implements user.IUserRepo.
+// func (m *MockIUserRepo) GetContextDBService() types.DBService {
 // 	panic("unimplemented")
 // }
 

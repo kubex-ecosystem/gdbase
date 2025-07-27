@@ -1,3 +1,4 @@
+// Package user provides the UserModel and IUser interface for user management
 package user
 
 import (
@@ -114,11 +115,10 @@ func (um *UserModel) GetActive() bool {
 	return um.Active
 }
 func (um *UserModel) CheckPasswordHash(password string) bool {
-	err := bcrypt.CompareHashAndPassword([]byte(um.Password), []byte(password))
-	if err != nil {
-		return false
+	if err := bcrypt.CompareHashAndPassword([]byte(um.Password), []byte(password)); err == nil {
+		return true
 	}
-	return true
+	return false
 }
 func (um *UserModel) Sanitize() {
 	um.Password = ""
