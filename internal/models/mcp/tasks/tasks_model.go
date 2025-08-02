@@ -55,10 +55,10 @@ type ITasksModel interface {
 	TableName() string
 	GetID() string
 	SetID(id string)
-	GetProvider() string
-	SetProvider(provider string)
-	GetTarget() string
-	SetTarget(target string)
+	GetMCPProvider() string
+	SetMCPProvider(provider string)
+	GetTargetTask() string
+	SetTargetTask(target string)
 	GetTaskType() TaskType
 	SetTaskType(taskType TaskType)
 	GetTaskExpression() string
@@ -93,8 +93,8 @@ type ITasksModel interface {
 // TasksModel represents the MCP sync tasks table
 type TasksModel struct {
 	ID                 string          `gorm:"type:uuid;primaryKey" json:"id"`
-	Provider           string          `gorm:"type:text;not null" json:"provider" example:"github"`
-	Target             string          `gorm:"type:text;not null" json:"target" example:"my-repo"`
+	MCPProvider        string          `gorm:"type:text;not null" json:"mcp_provider" example:"github"`
+	TargetTask         string          `gorm:"type:text;not null" json:"target_task" example:"my-repo"`
 	LastSynced         *time.Time      `gorm:"type:timestamp;default:now()" json:"last_synced,omitempty"`
 	CreatedAt          string          `gorm:"type:timestamp;default:now()" json:"created_at,omitempty" example:"2024-01-01T00:00:00Z"`
 	CreatedBy          string          `gorm:"type:uuid;references:users(id)" json:"created_by,omitempty"`
@@ -149,8 +149,8 @@ type CronJobIntegration struct {
 func NewTasksModel() *TasksModel {
 	return &TasksModel{
 		ID:                 "",
-		Provider:           "",
-		Target:             "",
+		MCPProvider:        "",
+		TargetTask:         "",
 		TaskType:           TaskTypeSync,
 		TaskSchedule:       JobScheduleTypeCron,
 		TaskExpression:     "2 * * * *",
@@ -178,10 +178,10 @@ func NewTasksModel() *TasksModel {
 func (t *TasksModel) TableName() string                   { return "mcp_sync_tasks" }
 func (t *TasksModel) GetID() string                       { return t.ID }
 func (t *TasksModel) SetID(id string)                     { t.ID = id }
-func (t *TasksModel) GetProvider() string                 { return t.Provider }
-func (t *TasksModel) SetProvider(provider string)         { t.Provider = provider }
-func (t *TasksModel) GetTarget() string                   { return t.Target }
-func (t *TasksModel) SetTarget(target string)             { t.Target = target }
+func (t *TasksModel) GetMCPProvider() string              { return t.MCPProvider }
+func (t *TasksModel) SetMCPProvider(provider string)      { t.MCPProvider = provider }
+func (t *TasksModel) GetTargetTask() string               { return t.TargetTask }
+func (t *TasksModel) SetTargetTask(target string)         { t.TargetTask = target }
 func (t *TasksModel) GetTaskType() TaskType               { return t.TaskType }
 func (t *TasksModel) SetTaskType(taskType TaskType)       { t.TaskType = taskType }
 func (t *TasksModel) GetTaskExpression() string           { return t.TaskExpression }
@@ -214,17 +214,17 @@ func (t *TasksModel) GetUpdatedBy() string             { return t.UpdatedBy }
 func (t *TasksModel) SetUpdatedBy(updatedBy string)    { t.UpdatedBy = updatedBy }
 
 func (t *TasksModel) Validate() error {
-	if t.Provider == "" {
-		return fmt.Errorf("provider cannot be empty")
+	if t.MCPProvider == "" {
+		return fmt.Errorf("MCP provider cannot be empty")
 	}
-	if t.Target == "" {
-		return fmt.Errorf("target cannot be empty")
+	if t.TargetTask == "" {
+		return fmt.Errorf("target task cannot be empty")
 	}
 	if t.TaskType == "" {
-		return fmt.Errorf("task_type cannot be empty")
+		return fmt.Errorf("task type cannot be empty")
 	}
 	if t.TaskExpression == "" {
-		return fmt.Errorf("task_expression cannot be empty")
+		return fmt.Errorf("task expression cannot be empty")
 	}
 	return nil
 }
@@ -268,7 +268,7 @@ func (t *TasksModel) ToCronJob() (*CronJobIntegration, error) {
 	// Build command based on task type and configuration
 	command := t.TaskCommand
 	if command == "" && t.TaskAPIEndpoint != "" {
-		command = fmt.Sprintf("MCP_TASK:%s:%s:%s", t.Provider, t.Target, string(t.TaskType))
+		command = fmt.Sprintf("MCP_TASK:%s:%s:%s", t.MCPProvider, t.TargetTask, string(t.TaskType))
 	}
 
 	return &CronJobIntegration{

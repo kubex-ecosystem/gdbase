@@ -62,8 +62,8 @@ func NewTasksModel(
 ) TasksModel {
 	return &m.TasksModel{
 		ID:                 uuid.New().String(),
-		Provider:           provider,
-		Target:             target,
+		MCPProvider:        provider,
+		TargetTask:         target,
 		LastSynced:         nil,
 		CreatedAt:          time.Now().Format("2006-01-02 15:04:05"),
 		CreatedBy:          "",

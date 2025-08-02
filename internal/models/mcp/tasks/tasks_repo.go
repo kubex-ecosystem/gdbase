@@ -159,8 +159,8 @@ func (tr *TasksRepo) List(where ...interface{}) (xtt.TableDataHandler, error) {
 		tableHandlerMap = append(tableHandlerMap, []string{
 			fmt.Sprintf("%d", i+1),
 			task.GetID(),
-			task.GetProvider(),
-			task.GetTarget(),
+			task.GetMCPProvider(),
+			task.GetTargetTask(),
 			string(task.GetTaskType()),
 			task.GetTaskExpression(),
 			string(task.TaskStatus),
