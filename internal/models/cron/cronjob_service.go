@@ -11,6 +11,7 @@ import (
 	"github.com/google/uuid"
 	jobqueue "github.com/rafa-mori/gdbase/internal/models/job_queue"
 	gl "github.com/rafa-mori/gdbase/logger"
+	t "github.com/rafa-mori/gdbase/types"
 	"github.com/streadway/amqp"
 )
 
@@ -31,6 +32,10 @@ type ICronJobService interface {
 	GetExecutionLogs(ctx context.Context, cronJobID uuid.UUID) ([]jobqueue.ExecutionLog, error)
 }
 
+var (
+	dbConfig *t.DBConfig
+)
+
 type CronJobService struct {
 	Repo ICronJobRepo
 }
@@ -40,7 +45,17 @@ func NewCronJobService(repo ICronJobRepo) ICronJobService {
 }
 
 func (s *CronJobService) publishToRabbitMQ(ctx context.Context, queueName string, message string) error {
-	conn, err := amqp.Dial("amqp://guest:guest@localhost:5672/")
+	iDBConfig := t.NewDBConfig(dbConfig)
+	if iDBConfig == nil {
+		gl.Log("error", "Failed to create database config")
+		return errors.New("failed to create database config")
+	}
+	url := getRabbitMQURL(iDBConfig)
+	if url == "" {
+		gl.Log("error", "Failed to get RabbitMQ URL")
+		return errors.New("failed to get RabbitMQ URL")
+	}
+	conn, err := amqp.Dial(url)
 	if err != nil {
 		log.Printf("Failed to connect to RabbitMQ: %s", err)
 		return err
@@ -245,4 +260,20 @@ func (s *CronJobService) SaveCronJob(ctx context.Context, job *CronJob, defaultU
 	// Salvar no repositório usando o método Update
 	_, err := s.Repo.Update(ctx, job)
 	return err
+}
+
+func getRabbitMQURL(dbConfig *t.DBConfig) string {
+	if dbConfig != nil {
+		if dbConfig.Messagery != nil {
+			if dbConfig.Messagery.RabbitMQ != nil {
+				return fmt.Sprintf("amqp://%s:%s@%s:%d/",
+					dbConfig.Messagery.RabbitMQ.Username,
+					dbConfig.Messagery.RabbitMQ.Password,
+					dbConfig.Messagery.RabbitMQ.Host,
+					dbConfig.Messagery.RabbitMQ.Port,
+				)
+			}
+		}
+	}
+	return ""
 }

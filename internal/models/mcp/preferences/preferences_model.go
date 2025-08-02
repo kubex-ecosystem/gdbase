@@ -1,56 +1,6 @@
 // Package preferences provides the model for user preferences in the application.
 package preferences
 
-/*
-
-// TABELA REAL, DO DB, COMO ESTÁ ATUALMENTE:
-CREATE TABLE IF NOT EXISTS mcp_user_preferences (
-    id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
-    scope TEXT NOT NULL DEFAULT 'defaults',
-    config JSONB NOT NULL,
-    updated_at TIMESTAMP DEFAULT now(),
-    updated_by uuid REFERENCES users(id),
-    created_at TIMESTAMP DEFAULT now(),
-    created_by uuid REFERENCES users(id),
-    UNIQUE(scope)
-);
-
-// MODELO PREVISTO/PROPOSTO PARA LIDAR COM AS PREFERÊNCIAS DO USER NO CONTEXTO DO MCP:
-{
-  "defaults": {
-    "default_repo": ".github",
-    "default_branch": "main",
-    "default_file": "README.md",
-    "default_commit_message": "Updating repo",
-    "default_issue_title": "New Issue",
-    "default_issue_body": "Please provide details about the issue.",
-    "default_pr_title": "New Pull Request",
-    "default_pr_body": "This PR addresses the issue described above.",
-    "default_commit_author": "kubex Kosmos - MCP",
-    "default_issue_labels": ["bug", "enhancement", "question"],
-
-    "repos": ["!.*temp.*", "**"],
-    "branches": ["!release/.*", "!hotfix/.*", "main", "develop", "feature/.*"],
-    "files": ["!.*\\.log", "!.*\\.tmp", "README.md", "CONTRIBUTING.md", "LICENSE.md"],
-    "commit_messages": ["!WIP", "!Draft", "!Merge pull request", "Update .*", "Fix .*", "Add .*"],
-    "issue_titles": ["!Duplicate", "!Invalid", "!Closed", "Issue .*", "Bug .*", "Feature request .*"],
-    "issue_bodies": ["!Not a bug", "!Already fixed", "!Out of scope", "Please provide details", "Steps to reproduce", "Expected outcome"],
-    "pr_titles": ["!WIP", "!Draft", "!Revert", "Pull Request .*", "Merge .*", "Feature .*"],
-    "pr_bodies": ["!Not ready for review", "!Needs more work", "!Outdated changes", "This PR addresses", "Changes include", "Fixes include"],
-    "commit_authors": ["!WIP.*", "!Draft.*", "!Test.*", "kubex Kosmos - MCP", "Kosmos AI", "Kosmos Assistant"],
-
-    "sync_settings": {
-      "enabled": true,
-      "interval": "cron",
-      "cron": "0 0 * * *",
-      "last_synced": "2023-10-01T12:00:00Z",
-      "branches": ["main", "develop"],
-      "labels": ["bug", "enhancement"]
-    }
-  }
-}
-*/
-
 import (
 	"fmt"
 	"time"
