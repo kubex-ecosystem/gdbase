@@ -27,8 +27,8 @@ validate_versions() {
           return 1
       fi
     fi
-    # Check for required dependencies
-    check_dependencies "git" "curl" "jq" "upx" "go" "pkg-config" "libzmq3-dev" || return 1
+    local _DEPENDENCIES=( $(cat "${_ROOT_DIR:-$(git rev-parse --show-toplevel)}/info/manifest.json" | jq -r '.dependencies[]?') )
+    check_dependencies "${_DEPENDENCIES[@]}" || return 1
     return 0
 }
 
