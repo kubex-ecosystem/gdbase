@@ -45,16 +45,16 @@ func NewTasksService(repo ITasksRepo) ITasksService {
 }
 
 func (ts *TasksService) CreateTask(task ITasksModel) (ITasksModel, error) {
-	if task.GetProvider() == "" || task.GetTarget() == "" {
-		return nil, errors.New("missing required fields: provider and target are required")
+	if task.GetMCPProvider() == "" || task.GetTargetTask() == "" {
+		return nil, errors.New("missing required fields: MCP provider and target task are required")
 	}
 
 	if task.GetTaskType() == "" {
-		return nil, errors.New("missing required field: task_type is required")
+		return nil, errors.New("missing required field: task type is required")
 	}
 
 	if task.GetTaskExpression() == "" {
-		return nil, errors.New("missing required field: task_expression is required")
+		return nil, errors.New("missing required field: task expression is required")
 	}
 
 	// Validate the model
