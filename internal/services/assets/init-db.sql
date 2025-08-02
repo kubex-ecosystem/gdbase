@@ -553,6 +553,204 @@ CREATE INDEX IF NOT EXISTS idx_audit_events_created_at ON audit_events(created_a
 CREATE INDEX IF NOT EXISTS idx_audit_events_user_id ON audit_events(user_id);
 -- COMMIT;
 
+-----------------------------------------------------------------------------------
+
+-- Tabela para LLM Models
+CREATE TABLE IF NOT EXISTS mcp_llm_models (
+    id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+    enabled boolean DEFAULT true,
+    provider TEXT NOT NULL,
+    model TEXT NOT NULL,
+    temperature REAL DEFAULT 0.7,
+    max_tokens INTEGER DEFAULT 2048,
+    top_p REAL DEFAULT 1.0,
+    frequency_penalty REAL DEFAULT 0.0,
+    presence_penalty REAL DEFAULT 0.0,
+    stop_sequences TEXT[],
+    created_at TIMESTAMP DEFAULT now(),
+    updated_at TIMESTAMP DEFAULT now(),
+    created_by uuid REFERENCES users(id),
+    updated_by uuid REFERENCES users(id),
+    UNIQUE(provider, model)
+);
+-- COMMIT;
+
+-- Tabela de preferências (flexível e armazenada em JSONB)
+CREATE TABLE IF NOT EXISTS mcp_user_preferences (
+    id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+    scope TEXT NOT NULL DEFAULT 'defaults',
+    config JSONB NOT NULL,
+    updated_at TIMESTAMP DEFAULT now(),
+    updated_by uuid REFERENCES users(id),
+    created_at TIMESTAMP DEFAULT now(),
+    created_by uuid REFERENCES users(id),
+    UNIQUE(scope)
+);
+-- COMMIT;
+
+-- Tabela para provider_configurations (por ex: GitHub, GitLab, etc.)
+CREATE TABLE IF NOT EXISTS mcp_provider_configs (
+    id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+    provider TEXT NOT NULL,
+    org_or_group TEXT NOT NULL,
+    config JSONB NOT NULL,
+    created_at TIMESTAMP DEFAULT now(),
+    created_by uuid REFERENCES users(id),
+    updated_at TIMESTAMP DEFAULT now(),
+    updated_by uuid REFERENCES users(id),
+    UNIQUE(provider, org_or_group)
+);
+-- COMMIT;
+
+-- Tabela para agendamento/sincronização
+CREATE TABLE IF NOT EXISTS mcp_sync_tasks (
+    id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+    mcp_provider TEXT NOT NULL,
+    target_task TEXT NOT NULL,
+    last_synced TIMESTAMP DEFAULT now(),
+    created_at TIMESTAMP DEFAULT now(),
+    created_by uuid REFERENCES users(id),
+    updated_at TIMESTAMP DEFAULT now(),
+    updated_by uuid REFERENCES users(id),
+    task_type TEXT NOT NULL CHECK (task_type IN ('pull', 'push', 'sync')),
+    task_schedule job_type DEFAULT 'cron',
+    task_expression TEXT DEFAULT '2 * * * *',
+    task_command_type job_command_type DEFAULT 'api',
+    task_method http_method DEFAULT 'POST',
+    task_api_endpoint TEXT,
+    task_payload JSONB,
+    task_headers JSONB,
+    task_retries INTEGER DEFAULT 0,
+    task_timeout INTEGER DEFAULT 0,
+    task_status job_status DEFAULT 'PENDING',
+    task_next_run TIMESTAMP DEFAULT now() + INTERVAL '1 hour',
+    task_last_run TIMESTAMP,
+    task_last_run_status last_run_status DEFAULT 'pending',
+    task_last_run_message last_run_message DEFAULT 'pending',
+    task_command TEXT,
+    task_activated BOOLEAN DEFAULT true,
+    task_config JSONB NOT NULL DEFAULT '{}',
+    task_tags TEXT[],
+    task_priority INTEGER DEFAULT 0,
+    task_notes TEXT,
+    task_created_at TIMESTAMP DEFAULT now(),
+    task_updated_at TIMESTAMP DEFAULT now(),
+    task_created_by uuid REFERENCES users(id),
+    task_updated_by uuid REFERENCES users(id),
+    task_last_executed_by uuid REFERENCES users(id),
+    task_last_executed_at TIMESTAMP,
+    config JSONB NOT NULL DEFAULT '{}',
+    active BOOLEAN DEFAULT true,
+    UNIQUE(mcp_provider, target_task, task_type, task_schedule, task_expression, task_api_endpoint, task_method, task_payload, task_headers, task_retries, task_timeout, task_status, task_next_run, task_last_run_status, task_last_run_message)
+);
+-- COMMIT;
+
+-- Tabela de jobs de sincronização
+CREATE TABLE IF NOT EXISTS mcp_sync_jobs (
+    id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+    task_id uuid NOT NULL REFERENCES mcp_sync_tasks(id) ON DELETE CASCADE,
+    job_type TEXT NOT NULL CHECK (job_type IN ('pull', 'push', 'sync')),
+    job_target TEXT NOT NULL,
+    job_status job_status NOT NULL DEFAULT 'PENDING',
+    last_run TIMESTAMP DEFAULT now(),
+    last_run_status last_run_status DEFAULT 'pending',
+    last_run_message last_run_message DEFAULT 'pending',
+    next_run TIMESTAMP DEFAULT now() + INTERVAL '1 hour',
+    retries INTEGER DEFAULT 0,
+    max_retries INTEGER DEFAULT 3,
+    job_timeout INTEGER DEFAULT 0,
+    job_command TEXT,
+    job_method http_method DEFAULT 'POST',
+    api_endpoint TEXT,
+    payload JSONB,
+    headers JSONB,
+    tags TEXT[],
+    notes TEXT,
+    created_at TIMESTAMP NOT NULL DEFAULT now(),
+    updated_at TIMESTAMP NOT NULL DEFAULT now(),
+    created_by uuid REFERENCES users(id),
+    updated_by uuid REFERENCES users(id),
+    last_executed_by uuid REFERENCES users(id),
+    last_executed_at TIMESTAMP,
+    UNIQUE(task_id, target, job_type, next_run, status),
+    UNIQUE(task_id, target, job_type, last_run, status),
+    UNIQUE(task_id, target, job_type, last_run_status, last_run_message, next_run, status)
+);
+
+-- Tabela de logs de sincronização
+CREATE TABLE IF NOT EXISTS mcp_sync_logs (
+    id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+    job_id uuid NOT NULL REFERENCES mcp_sync_jobs(id) ON DELETE CASCADE,
+    status TEXT NOT NULL CHECK (status IN ('success', 'failure', 'pending')),
+    message TEXT,
+    started_at TIMESTAMP NOT NULL DEFAULT now(),
+    ended_at TIMESTAMP,
+    created_at TIMESTAMP NOT NULL DEFAULT now(),
+    created_by uuid REFERENCES users(id),
+    updated_at TIMESTAMP NOT NULL DEFAULT now(),
+    updated_by uuid REFERENCES users(id),
+    UNIQUE(job_id, started_at)
+);
+-- COMMIT;
+
+-- Criação da tabela mcp_discord_integrations
+CREATE TABLE IF NOT EXISTS mcp_discord_integrations (
+    id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+    discord_user_id TEXT NOT NULL,
+    username TEXT NOT NULL,
+    display_name TEXT,
+    discriminator TEXT,
+    avatar TEXT,
+    email TEXT,
+    locale TEXT,
+    user_type TEXT NOT NULL DEFAULT 'USER' CHECK (user_type IN ('BOT', 'USER', 'SYSTEM')),
+    status TEXT NOT NULL DEFAULT 'ACTIVE' CHECK (status IN ('ACTIVE', 'INACTIVE', 'DISCONNECTED', 'ERROR')),
+    integration_type TEXT NOT NULL DEFAULT 'BOT' CHECK (integration_type IN ('BOT', 'WEBHOOK', 'OAUTH2')),
+    guild_id TEXT,
+    channel_id TEXT,
+    access_token TEXT,
+    refresh_token TEXT,
+    token_expires_at TIMESTAMP,
+    webhook_url TEXT,
+    scopes TEXT[],
+    bot_permissions BIGINT DEFAULT 0,
+    config JSONB,
+    last_activity TIMESTAMP DEFAULT NOW(),
+    user_id UUID REFERENCES users(id),
+    target_task_id UUID REFERENCES mcp_sync_tasks(id),
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW(),
+    created_by UUID REFERENCES users(id),
+    updated_by UUID REFERENCES users(id)
+);
+-- COMMIT;
+
+-- Índices para performance
+CREATE UNIQUE INDEX IF NOT EXISTS idx_discord_integrations_discord_user_id ON mcp_discord_integrations(discord_user_id);
+CREATE INDEX IF NOT EXISTS idx_discord_integrations_user_id ON mcp_discord_integrations(user_id);
+CREATE INDEX IF NOT EXISTS idx_discord_integrations_status ON mcp_discord_integrations(status);
+CREATE INDEX IF NOT EXISTS idx_discord_integrations_integration_type ON mcp_discord_integrations(integration_type);
+CREATE INDEX IF NOT EXISTS idx_discord_integrations_guild_id ON mcp_discord_integrations(guild_id);
+CREATE INDEX IF NOT EXISTS idx_discord_integrations_target_task_id ON mcp_discord_integrations(target_task_id);
+
+-- Trigger para atualizar updated_at automaticamente
+CREATE OR REPLACE FUNCTION update_discord_integrations_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = NOW();
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trigger_update_discord_integrations_updated_at
+    BEFORE UPDATE ON mcp_discord_integrations
+    FOR EACH ROW
+    EXECUTE FUNCTION update_discord_integrations_updated_at();
+-- COMMIT;
+
+-----------------------------------------------------------------------------------
+
+
 -- Artefatos básicos iniciais
 INSERT INTO product_category (id, name, created_at, updated_at) VALUES (uuid_generate_v4(), 'Default', now(), now()) ON CONFLICT DO NOTHING;
 INSERT INTO addresses (id, street, number, city, state, country, zip_code, is_active, created_at, updated_at) VALUES (uuid_generate_v4(), 'Rua Exemplo', '100', 'Cidade', 'UF', 'Brasil', '00000-000', true, now(), now()) ON CONFLICT DO NOTHING;
@@ -628,147 +826,5 @@ SET "name" = 'TestUser',
     "updated_at" = now()
 RETURNING id;
 -- COMMIT;
-
------------------------------------------------------------------------------------
-
--- Tabela para LLM Models
-CREATE TABLE IF NOT EXISTS mcp_llm_models (
-    id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
-    enabled boolean DEFAULT true,
-    provider TEXT NOT NULL,
-    model TEXT NOT NULL,
-    temperature REAL DEFAULT 0.7,
-    max_tokens INTEGER DEFAULT 2048,
-    top_p REAL DEFAULT 1.0,
-    frequency_penalty REAL DEFAULT 0.0,
-    presence_penalty REAL DEFAULT 0.0,
-    stop_sequences TEXT[],
-    created_at TIMESTAMP DEFAULT now(),
-    updated_at TIMESTAMP DEFAULT now(),
-    created_by uuid REFERENCES users(id),
-    updated_by uuid REFERENCES users(id),
-    UNIQUE(provider, model)
-);
--- COMMIT;
-
--- Tabela de preferências (flexível e armazenada em JSONB)
-CREATE TABLE IF NOT EXISTS mcp_user_preferences (
-    id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
-    scope TEXT NOT NULL DEFAULT 'defaults',
-    config JSONB NOT NULL,
-    updated_at TIMESTAMP DEFAULT now(),
-    updated_by uuid REFERENCES users(id),
-    created_at TIMESTAMP DEFAULT now(),
-    created_by uuid REFERENCES users(id),
-    UNIQUE(scope)
-);
--- COMMIT;
-
--- Tabela para provider_configurations (por ex: GitHub, GitLab, etc.)
-CREATE TABLE IF NOT EXISTS mcp_provider_configs (
-    id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
-    provider TEXT NOT NULL,
-    org_or_group TEXT NOT NULL,
-    config JSONB NOT NULL,
-    created_at TIMESTAMP DEFAULT now(),
-    created_by uuid REFERENCES users(id),
-    updated_at TIMESTAMP DEFAULT now(),
-    updated_by uuid REFERENCES users(id),
-    UNIQUE(provider, org_or_group)
-);
--- COMMIT;
-
--- Tabela para agendamento/sincronização
-CREATE TABLE IF NOT EXISTS mcp_sync_tasks (
-    id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
-    provider TEXT NOT NULL,
-    target TEXT NOT NULL,
-    last_synced TIMESTAMP DEFAULT now(),
-    created_at TIMESTAMP DEFAULT now(),
-    created_by uuid REFERENCES users(id),
-    updated_at TIMESTAMP DEFAULT now(),
-    updated_by uuid REFERENCES users(id),
-    task_type TEXT NOT NULL CHECK (task_type IN ('pull', 'push', 'sync')),
-    task_schedule job_type DEFAULT 'cron',
-    task_expression TEXT DEFAULT '2 * * * *',
-    task_command_type job_command_type DEFAULT 'api',
-    task_method http_method DEFAULT 'POST',
-    task_api_endpoint TEXT,
-    task_payload JSONB,
-    task_headers JSONB,
-    task_retries INTEGER DEFAULT 0,
-    task_timeout INTEGER DEFAULT 0,
-    task_status job_status DEFAULT 'PENDING',
-    task_next_run TIMESTAMP DEFAULT now() + INTERVAL '1 hour',
-    task_last_run TIMESTAMP,
-    task_last_run_status last_run_status DEFAULT 'pending',
-    task_last_run_message last_run_message DEFAULT 'pending',
-    task_command TEXT,
-    task_activated BOOLEAN DEFAULT true,
-    task_config JSONB NOT NULL DEFAULT '{}',
-    task_tags TEXT[],
-    task_priority INTEGER DEFAULT 0,
-    task_notes TEXT,
-    task_created_at TIMESTAMP DEFAULT now(),
-    task_updated_at TIMESTAMP DEFAULT now(),
-    task_created_by uuid REFERENCES users(id),
-    task_updated_by uuid REFERENCES users(id),
-    task_last_executed_by uuid REFERENCES users(id),
-    task_last_executed_at TIMESTAMP,
-    config JSONB NOT NULL DEFAULT '{}',
-    active BOOLEAN DEFAULT true,
-    UNIQUE(provider, target, task_type, task_schedule, task_expression, task_api_endpoint, task_method, task_payload, task_headers, task_retries, task_timeout, task_status, task_next_run, task_last_run_status, task_last_run_message)
-);
--- COMMIT;
-
--- Tabela de jobs de sincronização
-CREATE TABLE IF NOT EXISTS mcp_sync_jobs (
-    id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
-    task_id uuid NOT NULL REFERENCES mcp_sync_tasks(id) ON DELETE CASCADE,
-    job_type TEXT NOT NULL CHECK (job_type IN ('pull', 'push', 'sync')),
-    job_target TEXT NOT NULL,
-    job_status job_status NOT NULL DEFAULT 'PENDING',
-    last_run TIMESTAMP DEFAULT now(),
-    last_run_status last_run_status DEFAULT 'pending',
-    last_run_message last_run_message DEFAULT 'pending',
-    next_run TIMESTAMP DEFAULT now() + INTERVAL '1 hour',
-    retries INTEGER DEFAULT 0,
-    max_retries INTEGER DEFAULT 3,
-    job_timeout INTEGER DEFAULT 0,
-    job_command TEXT,
-    job_method http_method DEFAULT 'POST',
-    api_endpoint TEXT,
-    payload JSONB,
-    headers JSONB,
-    tags TEXT[],
-    notes TEXT,
-    created_at TIMESTAMP NOT NULL DEFAULT now(),
-    updated_at TIMESTAMP NOT NULL DEFAULT now(),
-    created_by uuid REFERENCES users(id),
-    updated_by uuid REFERENCES users(id),
-    last_executed_by uuid REFERENCES users(id),
-    last_executed_at TIMESTAMP,
-    UNIQUE(task_id, target, job_type, next_run, status),
-    UNIQUE(task_id, target, job_type, last_run, status),
-    UNIQUE(task_id, target, job_type, last_run_status, last_run_message, next_run, status)
-);
-
--- Tabela de logs de sincronização
-CREATE TABLE IF NOT EXISTS mcp_sync_logs (
-    id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
-    job_id uuid NOT NULL REFERENCES mcp_sync_jobs(id) ON DELETE CASCADE,
-    status TEXT NOT NULL CHECK (status IN ('success', 'failure', 'pending')),
-    message TEXT,
-    started_at TIMESTAMP NOT NULL DEFAULT now(),
-    ended_at TIMESTAMP,
-    created_at TIMESTAMP NOT NULL DEFAULT now(),
-    created_by uuid REFERENCES users(id),
-    updated_at TIMESTAMP NOT NULL DEFAULT now(),
-    updated_by uuid REFERENCES users(id),
-    UNIQUE(job_id, started_at)
-);
--- COMMIT;
-
------------------------------------------------------------------------------------
 
 COMMIT;
