@@ -37,7 +37,7 @@ check_dependencies() {
     if ! command -v "$dep" > /dev/null; then
       if ! dpkg -l | grep -o "$dep" -q; then
         log error "$dep is not installed." true
-        if [[ -z "$NON_INTERACTIVE" ]]; then
+        if [[ -z "${_NON_INTERACTIVE:-}" ]]; then
           log warn "$dep is required for this script to run." true
           log question "Would you like to install it now? (y/n)" true
           read -r -n 1 -t 10 answer || answer="n"
@@ -50,7 +50,7 @@ check_dependencies() {
           fi
         else
           log warn "$dep is required for this script to run. Installing..." true
-          if [[ $FORCE =~ ^[Yy]$ ]]; then
+          if [[ $_FORCE =~ ^[Yy]$ ]]; then
             log warn "Force mode is enabled. Installing $dep without confirmation."
             sudo apt-get install -y "$dep" || {
             log error "Failed to install $dep. Please install it manually."
