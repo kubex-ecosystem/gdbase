@@ -133,11 +133,11 @@ func SetupDatabaseServices(d IDockerService, config *t.DBConfig) error {
 		return fmt.Errorf("❌ Configuração do banco de dados não encontrada")
 	}
 	if config.Databases == nil {
-		gl.Log("debug", fmt.Sprintf("Not found databases in config, skipping DB setup"))
+		gl.Log("debug", "Not found databases in config, skipping DB setup")
 	}
 	var services = make([]*Services, 0)
 
-	if config.Databases != nil && len(config.Databases) > 0 {
+	if len(config.Databases) > 0 {
 		for _, dbConfig := range config.Databases {
 			if dbConfig != nil {
 				if dbConfig.Type == "postgresql" && dbConfig.Enabled {
@@ -236,7 +236,7 @@ func SetupDatabaseServices(d IDockerService, config *t.DBConfig) error {
 			}
 		}
 	} else {
-		gl.Log("debug", fmt.Sprintf("Not found databases in config, skipping DB setup"))
+		gl.Log("debug", "Not found databases in config, skipping DB setup")
 	}
 	if config.Messagery != nil {
 		if config.Messagery.RabbitMQ != nil && config.Messagery.RabbitMQ.Enabled {
@@ -255,12 +255,12 @@ func SetupDatabaseServices(d IDockerService, config *t.DBConfig) error {
 				}
 
 				// secondPortMap := mapPorts(fmt.Sprintf("%s", dbConfig.Port), "5672/tcp")
-				var rabbitCfgVolume string
-				if rabbitCfgVolume == "" {
-					rabbitCfgVolume = os.ExpandEnv(glb.DefaultRabbitMQVolume)
-				} else {
-					rabbitCfgVolume = os.ExpandEnv(rabbitCfg.Volume)
-				}
+				// var rabbitCfgVolume string
+				// if rabbitCfgVolume == "" {
+				// 	rabbitCfgVolume = os.ExpandEnv(glb.DefaultRabbitMQVolume)
+				// } else {
+				// 	rabbitCfgVolume = os.ExpandEnv(rabbitCfg.Volume)
+				// }
 				// Insert the PostgreSQL service into the services slice
 				if rabbitCfg.Reference.Name == "" {
 					rabbitCfg.Reference.Name = "gdbase-rabbitmq"
@@ -339,7 +339,7 @@ func SetupDatabaseServices(d IDockerService, config *t.DBConfig) error {
 			}
 		}
 	} else {
-		gl.Log("debug", fmt.Sprintf("Not found messagery in config, skipping RabbitMQ setup"))
+		gl.Log("debug", "Not found messagery in config, skipping RabbitMQ setup")
 	}
 	gl.Log("debug", fmt.Sprintf("Iniciando %d serviços...", len(services)))
 	for _, srv := range services {
@@ -485,7 +485,7 @@ func startDockerService() error {
 	case "windows":
 		cmd = exec.Command("powershell", "Start-Service", "docker")
 	default:
-		return fmt.Errorf("Sistema operacional não suportado para ativação automática do Docker")
+		return fmt.Errorf("sistema operacional não suportado para ativação automática do Docker")
 	}
 
 	cmd.Stdout = os.Stdout
@@ -514,5 +514,4 @@ func EnsureDockerIsRunning() {
 			}
 		}
 	}
-	return
 }

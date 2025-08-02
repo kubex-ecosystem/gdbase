@@ -1,14 +1,15 @@
+// Package types provides type definitions and constructors for various interfaces used in the application.
 package types
 
 import (
 	"encoding/base64"
 	"reflect"
 
-	l "github.com/rafa-mori/logz"
 	ci "github.com/rafa-mori/gdbase/internal/interfaces"
 	crp "github.com/rafa-mori/gdbase/internal/security/crypto"
 	sci "github.com/rafa-mori/gdbase/internal/security/interfaces"
 	gl "github.com/rafa-mori/gdbase/logger"
+	l "github.com/rafa-mori/logz"
 
 	"context"
 	"fmt"
@@ -18,7 +19,6 @@ import (
 	"runtime"
 	"strings"
 	"sync"
-	"syscall"
 	"time"
 )
 
@@ -81,7 +81,30 @@ func newEnvironment(envFile string, isConfidential bool, logger l.Logger) (*Envi
 
 	gl.Log("notice", "Creating new Environment instance")
 	cpuCount := runtime.NumCPU()
-	memTotal := syscall.Sysinfo_t{}.Totalram
+	var memTotal uint64 = 0
+	if runtime.GOOS == "windows" {
+		// Get memory info
+		// windowsSysInfo := &windows.MemoryBasicInformation{}
+		// windowsSysInfo.Length = uint32(unsafe.Sizeof(*windowsSysInfo))
+		// if err := windows.GetSystemInfo(windowsSysInfo); err != nil {
+		// 	gl.Log("error", fmt.Sprintf("Error getting system info: %s", err.Error()))
+		// 	return nil, fmt.Errorf("error getting system info: %s", err.Error())
+		// }
+	} else {
+		gl.Log("error", fmt.Sprintf("Unsupported OS: %s", runtime.GOOS))
+		return nil, fmt.Errorf("unsupported OS: %s", runtime.GOOS)
+	}
+
+	switch runtime.GOOS {
+	case "windows":
+		cpuCount = 1 // Windows does not support multiple CPUs in the same way
+	case "darwin":
+		cpuCount = runtime.NumCPU() // macOS supports multiple CPUs
+	case "linux":
+		// Linux supports multiple CPUs, but we will use the number of logical CPUs
+		cpuCount = runtime.NumCPU()
+	}
+
 	hostname, hostnameErr := os.Hostname()
 	if hostnameErr != nil {
 		gl.Log("error", fmt.Sprintf("Error getting hostname: %s", hostnameErr.Error()))
@@ -127,7 +150,7 @@ func newEnvironment(envFile string, isConfidential bool, logger l.Logger) (*Envi
 	env.EnvCache.m["ENV_HOSTNAME"] = env.Hostname()
 	env.EnvCache.m["ENV_OS"] = env.Os()
 	env.EnvCache.m["ENV_KERNEL"] = env.Kernel()
-	env.EnvCache.m["ENV_CPU_COUNT"] = fmt.Sprintf("%d", env.CpuCount())
+	env.EnvCache.m["ENV_CPU_COUNT"] = fmt.Sprintf("%d", env.CPUCount())
 	env.EnvCache.m["ENV_MEM_TOTAL"] = fmt.Sprintf("%d", env.MemTotal())
 	env.EnvCache.m["ENV_MEM_AVAILABLE"] = fmt.Sprintf("%d", env.MemAvailable())
 	env.EnvCache.m["ENV_MEM_USED"] = fmt.Sprintf("%d", env.MemTotal()-env.MemAvailable())
@@ -153,7 +176,7 @@ func (e *Environment) Mu() ci.IMutexes {
 	}
 	return e.Mutexes
 }
-func (e *Environment) CpuCount() int {
+func (e *Environment) CPUCount() int {
 	e.Mutexes.MuRLock()
 	defer e.Mutexes.MuRUnlock()
 
@@ -166,16 +189,16 @@ func (e *Environment) MemTotal() int {
 	e.Mutexes.MuRLock()
 	defer e.Mutexes.MuRUnlock()
 
-	if e.memTotal == 0 {
-		var mem syscall.Sysinfo_t
-		err := syscall.Sysinfo(&mem)
-		if err != nil {
-			gl.Log("error", fmt.Sprintf("Error getting memory info: %s", err.Error()))
-			return 0
-		}
-		totalRAM := mem.Totalram * uint64(mem.Unit) / (1024 * 1024)
-		e.memTotal = int(totalRAM)
-	}
+	// if e.memTotal == 0 {
+	// var mem syscall.Sysinfo_t
+	// err := syscall.Sysinfo(&mem)
+	// if err != nil {
+	// 	gl.Log("error", fmt.Sprintf("Error getting memory info: %s", err.Error()))
+	// 	return 0
+	// }
+	// totalRAM := mem.Totalram * uint64(mem.Unit) / (1024 * 1024)
+	// e.memTotal = int(totalRAM)
+	// }
 	return e.memTotal
 }
 func (e *Environment) Hostname() string {
@@ -308,15 +331,16 @@ func (e *Environment) LoadEnvFromShell() error {
 	return nil
 }
 func (e *Environment) MemAvailable() int {
-	e.Mutexes.MuRLock()
-	defer e.Mutexes.MuRUnlock()
+	// e.Mutexes.MuRLock()
+	// defer e.Mutexes.MuRUnlock()
 
-	var mem syscall.Sysinfo_t
-	if err := syscall.Sysinfo(&mem); err != nil {
-		gl.Log("error", fmt.Sprintf("Erro ao obter RAM disponível: %v", err))
-		return -1
-	}
-	return int(mem.Freeram * uint64(mem.Unit) / (1024 * 1024))
+	// var mem syscall.Sysinfo_t
+	// if err := syscall.Sysinfo(&mem); err != nil {
+	// 	gl.Log("error", fmt.Sprintf("Erro ao obter RAM disponível: %v", err))
+	// 	return -1
+	// }
+	// return int(mem.Freeram * uint64(mem.Unit) / (1024 * 1024))
+	return e.MemTotal() / 2 // Placeholder for actual memory available calculation
 }
 func (e *Environment) GetShellName(s string) (string, int) {
 	switch {
@@ -635,7 +659,6 @@ func readEnvFile(e *Environment, ctx context.Context, wg *sync.WaitGroup) {
 			if err := os.Remove(tmpFile.Name()); err != nil {
 				gl.Log("error", fmt.Sprintf("Error removing temp file: %v", err))
 			}
-			return
 		}(tmpFile)
 
 		if _, err := tmpFile.Write(fileData); err != nil {
@@ -706,7 +729,7 @@ func getKey(e *Environment) (sci.ICryptoService, []byte, error) {
 		if err != nil {
 			return nil, nil, fmt.Errorf("failed to generate key: %v", err)
 		}
-		e.properties["key"] = NewProperty[[]byte]("key", &key, false, nil)
+		e.properties["key"] = NewProperty("key", &key, false, nil)
 		if e.properties["key"] == nil {
 			return nil, nil, fmt.Errorf("failed to get key")
 		}

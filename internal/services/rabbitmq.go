@@ -50,7 +50,7 @@ func SetupRabbitMQ(config *t.RabbitMQ, dockerService IDockerService) error {
 
 	// Mapeia as portas
 	portMap := []nat.PortMap{
-		dockerService.MapPorts(fmt.Sprintf("%s", config.ManagementPort), "15672/tcp"),
+		dockerService.MapPorts(config.ManagementPort, "15672/tcp"),
 		dockerService.MapPorts(fmt.Sprintf("%s", config.Port), "5672/tcp"),
 	}
 

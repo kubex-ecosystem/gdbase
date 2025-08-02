@@ -154,45 +154,45 @@ func (b *BrokerImpl) workerTask() {
 		return
 	}
 
-	for {
-		// msg, _ := worker.RecvMessage(0)
-		// if len(msg) < 2 {
-		// 	gl.Log("debug", "Malformed message received in WORKER")
-		// 	continue
-		// }
+	// for {
+	// msg, _ := worker.RecvMessage(0)
+	// if len(msg) < 2 {
+	// 	gl.Log("debug", "Malformed message received in WORKER")
+	// 	continue
+	// }
 
-		// //id, msg := splitMessage(msg)
+	// //id, msg := splitMessage(msg)
 
-		// //payload := msg[len(msg)-1]
-		// //pld := []byte(payload)
+	// //payload := msg[len(msg)-1]
+	// //pld := []byte(payload)
 
-		// // deserializedModel, deserializedModelErr := m.NewModelRegistryFromSerialized(pld).(Model)
-		// // if deserializedModelErr != nil {
-		// // 	gl.Log("error", "Error deserializing payload in WORKER")
-		// // 	continue
-		// // }
+	// // deserializedModel, deserializedModelErr := m.NewModelRegistryFromSerialized(pld).(Model)
+	// // if deserializedModelErr != nil {
+	// // 	gl.Log("error", "Error deserializing payload in WORKER")
+	// // 	continue
+	// // }
 
-		// gl.Log("debug", "Payload deserialized in WORKER")
+	// gl.Log("debug", "Payload deserialized in WORKER")
 
-		// // tp, tpErr := deserializedModel.GetType()
-		// // if tpErr != nil {
-		// // 	gl.Log("error", "Error getting payload type in WORKER")
-		// // 	continue
-		// // }
+	// // tp, tpErr := deserializedModel.GetType()
+	// // if tpErr != nil {
+	// // 	gl.Log("error", "Error getting payload type in WORKER")
+	// // 	continue
+	// // }
 
-		// gl.Log("debug", "Payload type in WORKER")
+	// gl.Log("debug", "Payload type in WORKER")
 
-		// if tp.Name() == "PingImpl" {
-		// 	response := fmt.Sprintf(`{"type":"ping","data":{"ping":"%v"}}`, "pong")
-		// 	if _, workerSendMessageErr := worker.SendMessage(id, response); workerSendMessageErr != nil {
-		// 		gl.Log("error", "Error sending response to BACKEND in WORKER")
-		// 	} else {
-		// 		gl.Log("debug", "Response sent to BACKEND in WORKER")
-		// 	}
-		// } else {
-		// 	gl.Log("debug", "Unknown command in WORKER")
-		// }
-	}
+	// if tp.Name() == "PingImpl" {
+	// 	response := fmt.Sprintf(`{"type":"ping","data":{"ping":"%v"}}`, "pong")
+	// 	if _, workerSendMessageErr := worker.SendMessage(id, response); workerSendMessageErr != nil {
+	// 		gl.Log("error", "Error sending response to BACKEND in WORKER")
+	// 	} else {
+	// 		gl.Log("debug", "Response sent to BACKEND in WORKER")
+	// 	}
+	// } else {
+	// 	gl.Log("debug", "Unknown command in WORKER")
+	// }
+	// }
 }
 func (b *BrokerImpl) handleHeartbeats() {
 	ticker := time.NewTicker(HeartbeatInterval)

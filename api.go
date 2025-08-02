@@ -1,3 +1,4 @@
+// Package gdbase provides a set of interfaces and types for creating properties, channels, validations, and other components in a Go application.
 package gdbase
 
 import (

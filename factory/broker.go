@@ -1,7 +1,12 @@
+// Package factory provides a factory for creating and managing broker services.
 package factory
+
+////go:build !windows
+//// +build !windows
 
 import (
 	"log"
+	"runtime"
 
 	"github.com/rafa-mori/gdbase/internal/services"
 	"github.com/streadway/amqp"
@@ -11,9 +16,27 @@ type Broker = services.BrokerImpl
 type BrokerInfo = services.BrokerInfoLock
 type BrokerManager = services.BrokerManager
 
-func NewBrokerService(verbose bool, port string) (*Broker, error) { return services.NewBroker(verbose) }
-func NewBrokerManager() *BrokerManager                            { return services.NewBrokerManager() }
-func NewBrokerInfo(port string) *BrokerInfo                       { return services.NewBrokerInfo("", port) }
+func NewBrokerService(verbose bool, port string) (*Broker, error) {
+	if runtime.GOOS == "windows" {
+		log.Println("Broker service is not supported on Windows.")
+		return nil, nil
+	}
+	return services.NewBroker(verbose)
+}
+func NewBrokerManager() *BrokerManager {
+	if runtime.GOOS == "windows" {
+		log.Println("Broker service is not supported on Windows.")
+		return nil
+	}
+	return services.NewBrokerManager()
+}
+func NewBrokerInfo(port string) *BrokerInfo {
+	if runtime.GOOS == "windows" {
+		log.Println("Broker service is not supported on Windows.")
+		return nil
+	}
+	return services.NewBrokerInfo("", port)
+}
 
 func PublishMessage(queueName string, message string) error {
 	conn, err := amqp.Dial("amqp://guest:guest@localhost:5672/")

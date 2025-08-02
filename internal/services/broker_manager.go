@@ -1,10 +1,12 @@
+// Package services provides functionality to manage brokers in the system.
 package services
 
 import (
-	"github.com/goccy/go-json"
 	"os"
 	"path/filepath"
 	"sync"
+
+	"github.com/goccy/go-json"
 )
 
 type BrokerManager struct{}

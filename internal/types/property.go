@@ -24,7 +24,7 @@ type Property[T any] struct {
 // NewProperty creates a new IProperty[T] with the given value and Reference.
 func NewProperty[T any](name string, v *T, withMetrics bool, cb func(any) (bool, error)) ci.IProperty[T] {
 	p := &Property[T]{
-		prop: newVal[T](name, v),
+		prop: newVal(name, v),
 		cb:   cb,
 	}
 	if withMetrics {
@@ -52,7 +52,7 @@ func (p *Property[T]) SetValue(v *T) {
 	p.prop.Set(v)
 	if p.cb != nil {
 		if _, err := p.cb(v); err != nil {
-			//p.metrics.Log("error", "Error in callback function: "+err.Error())
+			gl.Log("debug", "Error in callback function: "+err.Error())
 		}
 	}
 }
@@ -77,7 +77,7 @@ func (p *Property[T]) GetLogger() l.Logger {
 // Serialize serializes the ProcessInput instance to the specified format.
 func (p *Property[T]) Serialize(format, filePath string) ([]byte, error) {
 	value := p.GetValue()
-	mapper := NewMapper[T](&value, filePath)
+	mapper := NewMapper(&value, filePath)
 	return mapper.Serialize(format)
 }
 
@@ -91,7 +91,7 @@ func (p *Property[T]) Deserialize(data []byte, format, filePath string) error {
 	if !reflect.ValueOf(value).IsValid() {
 		p.SetValue(new(T))
 	}
-	mapper := NewMapper[T](&value, filePath)
+	mapper := NewMapper(&value, filePath)
 	if v, vErr := mapper.Deserialize(data, format); vErr != nil {
 		gl.Log("error", "Failed to deserialize data:", vErr.Error())
 		return vErr

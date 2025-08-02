@@ -8,7 +8,6 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/docker/docker/api/types/container"
 	c "github.com/docker/docker/api/types/container"
 	i "github.com/docker/docker/api/types/image"
 	v "github.com/docker/docker/api/types/volume"
@@ -241,7 +240,7 @@ func (d *DockerService) StartContainer(serviceName, image string, envVars []stri
 
 	binds := []string{}
 
-	for volume, _ := range volumes {
+	for volume := range volumes {
 		// Por enquanto coloquei os campos repetidos, mas depois PRECISAMOS melhorar isso
 		structuredVolume, err := d.GetStructuredVolume(volume, volume)
 		if err != nil {
@@ -253,7 +252,7 @@ func (d *DockerService) StartContainer(serviceName, image string, envVars []stri
 	}
 
 	portBindingsT := make(nat.PortMap)
-	for hostPort, _ := range portBindings {
+	for hostPort := range portBindings {
 		containerPort := strings.TrimSuffix(hostPort.Port(), "/tcp")
 		hostPortBinding := nat.PortBinding{
 			HostIP:   nl.HostIPv4,
@@ -355,7 +354,7 @@ func (d *DockerService) StartContainerByName(containerName string) error {
 	fmt.Printf("✅ Container %s started successfully!\n", containerName)
 	return nil
 }
-func (d *DockerService) StopContainerByName(containerName string, stopOptions container.StopOptions) error {
+func (d *DockerService) StopContainerByName(containerName string, stopOptions c.StopOptions) error {
 	ctx := context.Background()
 	err := d.Cli.ContainerStop(ctx, containerName, stopOptions)
 	if err != nil {

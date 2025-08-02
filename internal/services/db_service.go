@@ -70,7 +70,7 @@ func NewDatabaseService(config *t.DBConfig, logger l.Logger) (*DBService, error)
 					dbHost, dbPort, dbUser, dbPass, dbName,
 				)
 			} else {
-				dbPass = dbConfig.Password
+				// dbPass = dbConfig.Password
 				dbName = dbConfig.Name
 				dsn = fmt.Sprintf(
 					"host=%s port=%s user=%s dbname=%s sslmode=disable TimeZone=America/Sao_Paulo",

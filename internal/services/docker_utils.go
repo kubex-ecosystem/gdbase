@@ -137,16 +137,12 @@ func (d *DockerUtils) GetStateMap(stateMap map[string]any) map[string]any {
 	return newStateMap
 }
 func (d *DockerUtils) MapPorts(hostPort, containerPort string) nat.PortMap {
-	if strings.HasSuffix(hostPort, "/tcp") {
-		hostPort = strings.TrimSuffix(hostPort, "/tcp")
-	}
+	hostPort = strings.TrimSuffix(hostPort, "/tcp")
 	hostPortBinding := nat.PortBinding{
 		HostIP:   nl.HostIPv4,
 		HostPort: hostPort,
 	}
-	if strings.HasSuffix(containerPort, "/tcp") {
-		containerPort = strings.TrimSuffix(containerPort, "/tcp")
-	}
+	containerPort = strings.TrimSuffix(containerPort, "/tcp")
 	prtPort := nat.Port(containerPort + "/tcp")
 	portBindings := nat.PortMap{
 		prtPort: []nat.PortBinding{hostPortBinding},
