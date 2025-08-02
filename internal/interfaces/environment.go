@@ -4,7 +4,7 @@ import "context"
 
 type IEnvironment interface {
 	Mu() IMutexes
-	CpuCount() int
+	CPUCount() int
 	MemTotal() int
 	Hostname() string
 	Os() string

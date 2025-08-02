@@ -1,3 +1,4 @@
+// Package services provides an interface for database service operations.
 package services
 
 import (

@@ -3,10 +3,10 @@ package types
 import (
 	"fmt"
 
-	l "github.com/rafa-mori/logz"
 	ci "github.com/rafa-mori/gdbase/internal/interfaces"
 	gl "github.com/rafa-mori/gdbase/logger"
 	tu "github.com/rafa-mori/gdbase/utils"
+	l "github.com/rafa-mori/logz"
 
 	"reflect"
 
@@ -18,6 +18,7 @@ var (
 )
 
 type ChannelBase[T any] struct {
+	l.Logger              // Logger for this Channel instance
 	*Mutexes              // Mutexes for this Channel instance
 	Name     string       // The name of the channel.
 	Channel  any          // The channel for the value. Main channel for this struct.
@@ -36,6 +37,7 @@ func NewChannelBase[T any](name string, buffers int, logger l.Logger) ci.IChanne
 		buffers = lgBuf
 	}
 	return &ChannelBase[any]{
+		Logger:  logger,
 		Mutexes: mu,
 		Name:    name,
 		Channel: make(chan T, buffers),

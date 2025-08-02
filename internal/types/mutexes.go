@@ -193,15 +193,9 @@ func (m *Mutexes) MuDone() { m.MuCtxWg.Done() }
 func (m *Mutexes) MuWait() { m.MuCtxWg.Wait() }
 
 func (m *Mutexes) MuTryLock() bool {
-	if m.MuCtxM.TryLock() {
-		return true
-	}
-	return false
+	return m.MuCtxM.TryLock()
 }
 
 func (m *Mutexes) MuTryRLock() bool {
-	if m.MuCtxL.TryRLock() {
-		return true
-	}
-	return false
+	return m.MuCtxL.TryRLock()
 }

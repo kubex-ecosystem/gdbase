@@ -1,3 +1,4 @@
+// Package types provides interfaces and functions for various types used in the application.
 package types
 
 type DataExporter interface {
