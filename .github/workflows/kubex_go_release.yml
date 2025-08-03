@@ -60,16 +60,16 @@ jobs:
       - name: Load Module Manifest
         id: manifest
         run: |
-          if [[ ! -f "info/manifest.json" ]]; then
+          if [[ ! -f "$(git rev-parse --show-toplevel)/info/manifest.json" ]]; then
             echo "❌ info/manifest.json not found"
             exit 1
           fi
           
           # Extract module information
-          MODULE_NAME=$(cat info/manifest.json | jq -r '.bin // .name // "unknown"')
-          MODULE_VERSION=$(cat info/manifest.json | jq -r '.version // "0.0.0"')
-          PLATFORMS=$(cat info/manifest.json | jq -r '.platforms[]?' | tr '\n' ' ' | sed 's/ $//')
-          
+          MODULE_NAME=$(cat $(git rev-parse --show-toplevel)/info/manifest.json | jq -r '.bin // .name // "unknown"')
+          MODULE_VERSION=$(cat $(git rev-parse --show-toplevel)/info/manifest.json | jq -r '.version // "0.0.0"')
+          PLATFORMS=$(cat $(git rev-parse --show-toplevel)/info/manifest.json | jq -r '.platforms[]?' | tr '\n' ' ' | sed 's/ $//')
+
           # Validate required fields
           if [[ "$MODULE_NAME" == "unknown" || "$MODULE_NAME" == "null" ]]; then
             echo "❌ Module name not found in manifest (bin or name field required)"
@@ -143,7 +143,7 @@ jobs:
         id: go-setup
         if: steps.version-check.outputs.continue == 'true'
         run: |
-          GO_VERSION=$(grep '^go ' go.mod | awk '{print $2}')
+          GO_VERSION=$(grep '^go ' $(git rev-parse --show-toplevel)/go.mod | awk '{print $2}')
           
           bash -c "$(curl -sSfL 'https://raw.githubusercontent.com/rafa-mori/gosetup/main/go.sh')" -s --version "$GO_VERSION"
           
@@ -228,18 +228,18 @@ jobs:
             echo "arch=${ARCH:-}" >> $GITHUB_OUTPUT
             
             if [[ ! $(basename pwd) != "bin" ]]; then
-              ls -la ./bin/
-              cd bin || exit 1
+              ls -la $(git rev-parse --show-toplevel)/bin/
+              cd $(git rev-parse --show-toplevel)/bin || exit 1
             fi
 
             ARTIFACT_LIST+=("${MODULE_NAME:-}_${OS:-}_${ARCH:-}")
           done
 
-          cd .. || exit 1
+          cd $(git rev-parse --show-toplevel)/ || exit 1
 
           echo "ARTIFACT_LIST=${ARTIFACT_LIST[*]}" >> $GITHUB_OUTPUT
           echo "ARTIFACT_COUNT=${#ARTIFACT_LIST[@]}" >> $GITHUB_OUTPUT
-          echo "ARTIFACTS_DIR=./bin" >> $GITHUB_OUTPUT
+          echo "ARTIFACTS_DIR=$(git rev-parse --show-toplevel)/bin" >> $GITHUB_OUTPUT
 
           if [[ ${#ARTIFACT_LIST[@]} -eq 0 ]]; then
             echo "❌ No build artifacts found!"
@@ -248,12 +248,9 @@ jobs:
             echo "✅ Build artifacts verified: ${ARTIFACT_LIST[*]}"
           fi
 
-          sha256sum ./bin/* > ./bin/SHA256SUMS
-          
-          cat ./bin/SHA256SUMS
-          echo ""
+          sha256sum $(git rev-parse --show-toplevel)/bin/* > $(git rev-parse --show-toplevel)/bin/SHA256SUMS
 
-          ls -la ./bin/
+          ls -la $(git rev-parse --show-toplevel)/bin/
 
       - name: Upload Build Artifacts
         if: steps.version-check.outputs.continue == 'true'
@@ -261,7 +258,7 @@ jobs:
         with:
           name: ${{ steps.manifest.outputs.module-name }}-release-binaries
           path: |
-            bin/${{ steps.manifest.outputs.module-name }}*
+            $(git rev-parse --show-toplevel)/bin/${{ steps.manifest.outputs.module-name }}*
           retention-days: 30
 
       - name: Version Mismatch Summary
@@ -294,7 +291,7 @@ jobs:
 
       - name: Smart Go Setup
         run: |
-          GO_VERSION=$(grep '^go ' go.mod | awk '{print $2}')
+          GO_VERSION=$(grep '^go ' $(git rev-parse --show-toplevel)/go.mod | awk '{print $2}')
           
           bash -c "$(curl -sSfL 'https://raw.githubusercontent.com/rafa-mori/gosetup/main/go.sh')" -s --version "${GO_VERSION:-1.24.5}"
           
@@ -456,3 +453,7 @@ jobs:
               *) echo "- 📦 ${platform}" >> $GITHUB_STEP_SUMMARY ;;
             esac
           done
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 📄 Release Notes:" >> $GITHUB_STEP_SUMMARY
+          cat $(git rev-parse --show-toplevel)/RELEASE_NOTES.md >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
