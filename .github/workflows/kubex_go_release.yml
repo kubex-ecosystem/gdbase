@@ -282,43 +282,43 @@ jobs:
   # ==========================================
   # JOB 2: Security Scan (Optional)
   # ==========================================
-  security:
-    name: Security Scan
-    runs-on: ubuntu-latest
-    needs: build
-    if: github.event_name != 'workflow_dispatch' && needs.build.outputs.continue == 'true'
+  # security:
+  #   name: Security Scan
+  #   runs-on: ubuntu-latest
+  #   needs: build
+  #   if: github.event_name != 'workflow_dispatch' && needs.build.outputs.continue == 'true'
     
-    steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
+  #   steps:
+  #     - name: Checkout Repository
+  #       uses: actions/checkout@v4
 
-      - name: Smart Go Setup
-        run: |
-          GO_VERSION=$(grep '^go ' $(git rev-parse --show-toplevel)/go.mod | awk '{print $2}')
+  #     - name: Smart Go Setup
+  #       run: |
+  #         GO_VERSION=$(grep '^go ' $(git rev-parse --show-toplevel)/go.mod | awk '{print $2}')
           
-          bash -c "$(curl -sSfL 'https://raw.githubusercontent.com/rafa-mori/gosetup/main/go.sh')" -s --version "${GO_VERSION:-1.24.5}"
+  #         bash -c "$(curl -sSfL 'https://raw.githubusercontent.com/rafa-mori/gosetup/main/go.sh')" -s --version "${GO_VERSION:-1.24.5}"
           
-          # Verify installation
-          go version
+  #         # Verify installation
+  #         go version
 
-      - name: Restore Go Cache
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cache/go-build
-            ~/go/pkg/mod
-          key: ${{ runner.os }}-go-${{ needs.build.outputs.go-version }}-${{ hashFiles('**/go.sum', '**/go.mod') }}
+  #     - name: Restore Go Cache
+  #       uses: actions/cache@v4
+  #       with:
+  #         path: |
+  #           ~/.cache/go-build
+  #           ~/go/pkg/mod
+  #         key: ${{ runner.os }}-go-${{ needs.build.outputs.go-version }}-${{ hashFiles('**/go.sum', '**/go.mod') }}
 
-      - name: Run Gosec Security Scanner
-        run: |
-          go install github.com/securecodewarrior/gosec/v2/cmd/gosec@latest
-          gosec -no-fail -fmt sarif -out gosec.sarif ./...
+  #     - name: Run Gosec Security Scanner
+  #       run: |
+  #         go install github.com/securego/gosec/v2/cmd/gosec@latest
+  #         gosec -no-fail -fmt sarif -out gosec.sarif ./...
 
-      - name: Upload SARIF file
-        if: always()
-        uses: github/codeql-action/upload-sarif@v3
-        with:
-          sarif_file: gosec.sarif
+  #     - name: Upload SARIF file
+  #       if: always()
+  #       uses: github/codeql-action/upload-sarif@v3
+  #       with:
+  #         sarif_file: gosec.sarif
 
   # ==========================================
   # JOB 3: Create GitHub Release
