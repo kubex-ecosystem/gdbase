@@ -222,7 +222,6 @@ jobs:
               echo "❌ Invalid platform format: $platform (expected: os/arch or os-arch)"
               continue
             fi
-            
 
             echo "os=${OS:-}" >> $GITHUB_OUTPUT
             echo "arch=${ARCH:-}" >> $GITHUB_OUTPUT
@@ -246,6 +245,10 @@ jobs:
             exit 1
           else
             echo "✅ Build artifacts verified: ${ARTIFACT_LIST[*]}"
+          fi
+
+          if [[ ! -f $(git rev-parse --show-toplevel)/bin/SHA256SUMS ]]; then
+            touch $(git rev-parse --show-toplevel)/bin/SHA256SUMS
           fi
 
           sha256sum $(git rev-parse --show-toplevel)/bin/* > $(git rev-parse --show-toplevel)/bin/SHA256SUMS
