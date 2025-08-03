@@ -261,7 +261,7 @@ jobs:
         with:
           name: ${{ steps.manifest.outputs.module-name }}-release-binaries
           path: |
-            $(git rev-parse --show-toplevel)/bin/${{ steps.manifest.outputs.module-name }}*
+            bin/${{ steps.manifest.outputs.module-name }}_*
           retention-days: 30
 
       - name: Version Mismatch Summary
