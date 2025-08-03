@@ -192,9 +192,6 @@ jobs:
               continue
             fi
 
-            echo "${OS}" >> $GITHUB_OUTPUT
-            echo "${ARCH}" >> $GITHUB_OUTPUT
-
             # Set environment variables
             export NON_INTERACTIVE=${NON_INTERACTIVE:-${{ github.event.env.NON_INTERACTIVE }}}
             export FORCE=${FORCE:-${{ github.event.env.FORCE }}}
@@ -203,21 +200,60 @@ jobs:
             export DEBUG=${DEBUG:-${{ github.event.inputs.debug }}}
 
             echo "🔨 Building for $OS/$ARCH..."
-            make build "$OS" "$ARCH"
+            make build "${OS:-}" "${ARCH:-}"
           done
 
       - name: Verify Build Artifacts
         if: steps.version-check.outputs.continue == 'true'
         run: |
           MODULE_NAME="${{ steps.manifest.outputs.module-name }}"
-          OS="${{ steps.build.outputs.os }}"
-          ARCH="${{ steps.build.outputs.arch }}"
+          PLATFORM_LIST="${{ steps.manifest.outputs.platforms }}"
+          ARTIFACT_LIST=()
 
-          ls -la bin/
+          for platform in $PLATFORM_LIST; do
+            # Parse platform (format: os/arch or os-arch)
+            if [[ "$platform" == *"/"* ]]; then
+              OS=$(echo "$platform" | cut -d'/' -f1)
+              ARCH=$(echo "$platform" | cut -d'/' -f2)
+            elif [[ "$platform" == *"-"* ]]; then
+              OS=$(echo "$platform" | cut -d'-' -f1)
+              ARCH=$(echo "$platform" | cut -d'-' -f2)
+            else
+              echo "❌ Invalid platform format: $platform (expected: os/arch or os-arch)"
+              continue
+            fi
+            
+
+            echo "os=${OS:-}" >> $GITHUB_OUTPUT
+            echo "arch=${ARCH:-}" >> $GITHUB_OUTPUT
+            
+            if [[ ! $(basename pwd) != "bin" ]]; then
+              ls -la ./bin/
+              cd bin || exit 1
+            fi
+
+            ARTIFACT_LIST+=("${MODULE_NAME:-}_${OS:-}_${ARCH:-}")
+          done
+
+          cd .. || exit 1
+
+          echo "ARTIFACT_LIST=${ARTIFACT_LIST[*]}" >> $GITHUB_OUTPUT
+          echo "ARTIFACT_COUNT=${#ARTIFACT_LIST[@]}" >> $GITHUB_OUTPUT
+          echo "ARTIFACTS_DIR=./bin" >> $GITHUB_OUTPUT
+
+          if [[ ${#ARTIFACT_LIST[@]} -eq 0 ]]; then
+            echo "❌ No build artifacts found!"
+            exit 1
+          else
+            echo "✅ Build artifacts verified: ${ARTIFACT_LIST[*]}"
+          fi
+
+          sha256sum ./bin/* > ./bin/SHA256SUMS
           
-          cd bin
-          sha256sum "${MODULE_NAME:-}"_"${OS:-}"_"${ARCH:-}" > SHA256SUMS
-          ls -la "${MODULE_NAME:-}"_"${OS:-}"_"${ARCH:-}"*
+          cat ./bin/SHA256SUMS
+          echo ""
+
+          ls -la ./bin/
 
       - name: Upload Build Artifacts
         if: steps.version-check.outputs.continue == 'true'
@@ -225,11 +261,8 @@ jobs:
         with:
           name: ${{ steps.manifest.outputs.module-name }}-release-binaries
           path: |
-            bin/${{ steps.manifest.outputs.module-name }}_${{ env.OS }}_${{ env.ARCH }}_*
+            bin/${{ steps.manifest.outputs.module-name }}*
           retention-days: 30
-        env:
-          OS: ${{ steps.build.outputs.os }}
-          ARCH: ${{ steps.build.outputs.arch }}
 
       - name: Version Mismatch Summary
         if: steps.version-check.outputs.version-mismatch == 'true'
@@ -263,7 +296,7 @@ jobs:
         run: |
           GO_VERSION=$(grep '^go ' go.mod | awk '{print $2}')
           
-          bash -c "$(curl -sSfL 'https://raw.githubusercontent.com/rafa-mori/gosetup/main/go.sh')" -s --version "$GO_VERSION"
+          bash -c "$(curl -sSfL 'https://raw.githubusercontent.com/rafa-mori/gosetup/main/go.sh')" -s --version "${GO_VERSION:-1.24.5}"
           
           # Verify installation
           go version
@@ -313,27 +346,39 @@ jobs:
           MODULE_NAME="${{ needs.build.outputs.module-name }}"
           VERSION="${{ needs.build.outputs.version }}"
           PLATFORMS="${{ needs.build.outputs.platforms }}"
-          
+
           # Convert platforms to readable format
           PLATFORM_LIST=""
           for platform in $PLATFORMS; do
+            if [[ "$platform" == *"/"* ]]; then
+              OS=$(echo "$platform" | cut -d'/' -f1)
+              ARCH=$(echo "$platform" | cut -d'/' -f2)
+            elif [[ "$platform" == *"-"* ]]; then
+              OS=$(echo "$platform" | cut -d'-' -f1)
+              ARCH=$(echo "$platform" | cut -d'-' -f2)
+            else
+              echo "❌ Invalid platform format: $platform (expected: os/arch or os-arch)"
+              continue
+            fi
+
+            # Add platform-specific information
             case "$platform" in
-              "linux/amd64"|"linux-amd64") PLATFORM_LIST="$PLATFORM_LIST\n          - 🐧 **Linux (AMD64)**: \`${MODULE_NAME}_linux_amd64.tar.gz\`" ;;
-              "windows/amd64"|"windows-amd64") PLATFORM_LIST="$PLATFORM_LIST\n          - 🪟 **Windows (AMD64)**: \`${MODULE_NAME}_windows_amd64.zip\`" ;;
-              "darwin/amd64"|"darwin-amd64") PLATFORM_LIST="$PLATFORM_LIST\n          - 🍎 **macOS (AMD64)**: \`${MODULE_NAME}_darwin_amd64.tar.gz\`" ;;
-              "linux/arm64"|"linux-arm64") PLATFORM_LIST="$PLATFORM_LIST\n          - 🐧 **Linux (ARM64)**: \`${MODULE_NAME}_linux_arm64.tar.gz\`" ;;
-              "darwin/arm64"|"darwin-arm64") PLATFORM_LIST="$PLATFORM_LIST\n          - 🍎 **macOS (ARM64)**: \`${MODULE_NAME}_darwin_arm64.tar.gz\`" ;;
-              *) PLATFORM_LIST="$PLATFORM_LIST\n          - 📦 **${platform}**: \`${MODULE_NAME}-${platform//\//-}.tar.gz\`" ;;
+              "linux/amd64"|"linux-amd64") PLATFORM_LIST="$PLATFORM_LIST\n          - 🐧 **Linux (AMD64)**: \`${MODULE_NAME:-}_${OS:-}_${ARCH:-}.tar.gz\`" ;;
+              "windows/amd64"|"windows-amd64") PLATFORM_LIST="$PLATFORM_LIST\n          - 🪟 **Windows (AMD64)**: \`${MODULE_NAME:-}_${OS:-}_${ARCH:-}.zip\`" ;;
+              "windows/i386"|"windows-i386") PLATFORM_LIST="$PLATFORM_LIST\n          - 🪟 **Windows (i386)**: \`${MODULE_NAME:-}_${OS:-}_${ARCH:-}.zip\`" ;;
+              "darwin/amd64"|"darwin-amd64") PLATFORM_LIST="$PLATFORM_LIST\n          - 🍎 **macOS (AMD64)**: \`${MODULE_NAME:-}_${OS:-}_${ARCH:-}.tar.gz\`" ;;
+              "darwin/arm64"|"darwin-arm64") PLATFORM_LIST="$PLATFORM_LIST\n          - 🍎 **macOS (ARM64)**: \`${MODULE_NAME:-}_${OS:-}_${ARCH:-}.tar.gz\`" ;;
+              *) PLATFORM_LIST="$PLATFORM_LIST\n          - 📦 **${platform:-}**: \`${MODULE_NAME:-}_${OS:-}_${ARCH:-}.tar.gz\`" ;;
             esac
           done
           
           cat > RELEASE_NOTES.md << EOF
-          ## $MODULE_NAME Release $VERSION
+          ## ${MODULE_NAME:-} Release ${VERSION:-}
           
           ### What's Included
           
           This release contains cross-platform binaries for:
-          $PLATFORM_LIST
+          ${PLATFORM_LIST:-}
           
           ### Installation
           
@@ -341,9 +386,9 @@ jobs:
           \`\`\`bash
           # Download and extract
           wget https://github.com/${{ github.repository }}/releases/download/$VERSION/${MODULE_NAME}_linux_amd64.tar.gz
-          tar -xzf ${MODULE_NAME}_linux_amd64.tar.gz
-          chmod +x ${MODULE_NAME}_linux_amd64
-          sudo mv ${MODULE_NAME}_linux_amd64 /usr/local/bin/${MODULE_NAME}
+          tar -xzf ${MODULE_NAME:-}_linux_amd64.tar.gz
+          chmod +x ${MODULE_NAME:-}_linux_amd64
+          sudo mv ${MODULE_NAME:-}_linux_amd64 /usr/local/bin/${MODULE_NAME:-}
           \`\`\`
           
           #### Windows
@@ -378,9 +423,9 @@ jobs:
           MODULE_NAME="${{ needs.build.outputs.module-name }}"
           VERSION="${{ needs.build.outputs.version }}"
           
-          gh release create "$VERSION" \
+          gh release create "${VERSION:-}" \
             ./release-assets/* \
-            --title "$MODULE_NAME $VERSION" \
+            --title "${MODULE_NAME:-} ${VERSION:-}" \
             --notes-file RELEASE_NOTES.md \
             ${{ contains(needs.build.outputs.version, '-') && '--prerelease' || '' }}
           
@@ -395,7 +440,7 @@ jobs:
           
           echo "## Release Created Successfully!" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Module**: $MODULE_NAME" >> $GITHUB_STEP_SUMMARY
+          echo "**Module**: ${MODULE_NAME:-}" >> $GITHUB_STEP_SUMMARY
           echo "**Version**: ${{ needs.build.outputs.version }}" >> $GITHUB_STEP_SUMMARY
           echo "**Go Version**: ${{ needs.build.outputs.go-version }}" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
@@ -405,8 +450,8 @@ jobs:
             case "$platform" in
               "linux/amd64"|"linux-amd64") echo "- 🐧 Linux AMD64" >> $GITHUB_STEP_SUMMARY ;;
               "windows/amd64"|"windows-amd64") echo "- 🪟 Windows AMD64" >> $GITHUB_STEP_SUMMARY ;;
+              "windows/i386"|"windows-i386") echo "- 🪟 Windows i386" >> $GITHUB_STEP_SUMMARY ;;
               "darwin/amd64"|"darwin-amd64") echo "- 🍎 macOS AMD64" >> $GITHUB_STEP_SUMMARY ;;
-              "linux/arm64"|"linux-arm64") echo "- 🐧 Linux ARM64" >> $GITHUB_STEP_SUMMARY ;;
               "darwin/arm64"|"darwin-arm64") echo "- 🍎 macOS ARM64" >> $GITHUB_STEP_SUMMARY ;;
               *) echo "- 📦 ${platform}" >> $GITHUB_STEP_SUMMARY ;;
             esac
