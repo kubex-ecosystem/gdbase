@@ -192,6 +192,9 @@ jobs:
               continue
             fi
 
+            echo "${OS}" >> $GITHUB_OUTPUT
+            echo "${ARCH}" >> $GITHUB_OUTPUT
+
             # Set environment variables
             export NON_INTERACTIVE=${NON_INTERACTIVE:-${{ github.event.env.NON_INTERACTIVE }}}
             export FORCE=${FORCE:-${{ github.event.env.FORCE }}}
@@ -207,12 +210,14 @@ jobs:
         if: steps.version-check.outputs.continue == 'true'
         run: |
           MODULE_NAME="${{ steps.manifest.outputs.module-name }}"
-          
+          OS="${{ steps.build.outputs.os }}"
+          ARCH="${{ steps.build.outputs.arch }}"
+
           ls -la bin/
           
           cd bin
-          sha256sum ${MODULE_NAME}-* > SHA256SUMS
-          ls -la
+          sha256sum "${MODULE_NAME:-}"_"${OS:-}"_"${ARCH:-}" > SHA256SUMS
+          ls -la "${MODULE_NAME:-}"_"${OS:-}"_"${ARCH:-}"*
 
       - name: Upload Build Artifacts
         if: steps.version-check.outputs.continue == 'true'
@@ -220,8 +225,11 @@ jobs:
         with:
           name: ${{ steps.manifest.outputs.module-name }}-release-binaries
           path: |
-            bin/${{ steps.manifest.outputs.module-name }}-*
+            bin/${{ steps.manifest.outputs.module-name }}_${{ env.OS }}_${{ env.ARCH }}_*
           retention-days: 30
+        env:
+          OS: ${{ steps.build.outputs.os }}
+          ARCH: ${{ steps.build.outputs.arch }}
 
       - name: Version Mismatch Summary
         if: steps.version-check.outputs.version-mismatch == 'true'
@@ -310,11 +318,11 @@ jobs:
           PLATFORM_LIST=""
           for platform in $PLATFORMS; do
             case "$platform" in
-              "linux/amd64"|"linux-amd64") PLATFORM_LIST="$PLATFORM_LIST\n          - 🐧 **Linux (AMD64)**: \`${MODULE_NAME}-linux-amd64.tar.gz\`" ;;
-              "windows/amd64"|"windows-amd64") PLATFORM_LIST="$PLATFORM_LIST\n          - 🪟 **Windows (AMD64)**: \`${MODULE_NAME}-windows-amd64.zip\`" ;;
-              "darwin/amd64"|"darwin-amd64") PLATFORM_LIST="$PLATFORM_LIST\n          - 🍎 **macOS (AMD64)**: \`${MODULE_NAME}-darwin-amd64.tar.gz\`" ;;
-              "linux/arm64"|"linux-arm64") PLATFORM_LIST="$PLATFORM_LIST\n          - 🐧 **Linux (ARM64)**: \`${MODULE_NAME}-linux-arm64.tar.gz\`" ;;
-              "darwin/arm64"|"darwin-arm64") PLATFORM_LIST="$PLATFORM_LIST\n          - 🍎 **macOS (ARM64)**: \`${MODULE_NAME}-darwin-arm64.tar.gz\`" ;;
+              "linux/amd64"|"linux-amd64") PLATFORM_LIST="$PLATFORM_LIST\n          - 🐧 **Linux (AMD64)**: \`${MODULE_NAME}_linux_amd64.tar.gz\`" ;;
+              "windows/amd64"|"windows-amd64") PLATFORM_LIST="$PLATFORM_LIST\n          - 🪟 **Windows (AMD64)**: \`${MODULE_NAME}_windows_amd64.zip\`" ;;
+              "darwin/amd64"|"darwin-amd64") PLATFORM_LIST="$PLATFORM_LIST\n          - 🍎 **macOS (AMD64)**: \`${MODULE_NAME}_darwin_amd64.tar.gz\`" ;;
+              "linux/arm64"|"linux-arm64") PLATFORM_LIST="$PLATFORM_LIST\n          - 🐧 **Linux (ARM64)**: \`${MODULE_NAME}_linux_arm64.tar.gz\`" ;;
+              "darwin/arm64"|"darwin-arm64") PLATFORM_LIST="$PLATFORM_LIST\n          - 🍎 **macOS (ARM64)**: \`${MODULE_NAME}_darwin_arm64.tar.gz\`" ;;
               *) PLATFORM_LIST="$PLATFORM_LIST\n          - 📦 **${platform}**: \`${MODULE_NAME}-${platform//\//-}.tar.gz\`" ;;
             esac
           done
@@ -332,10 +340,10 @@ jobs:
           #### Linux/macOS
           \`\`\`bash
           # Download and extract
-          wget https://github.com/${{ github.repository }}/releases/download/$VERSION/${MODULE_NAME}-linux-amd64.tar.gz
-          tar -xzf ${MODULE_NAME}-linux-amd64.tar.gz
-          chmod +x ${MODULE_NAME}-linux-amd64
-          sudo mv ${MODULE_NAME}-linux-amd64 /usr/local/bin/${MODULE_NAME}
+          wget https://github.com/${{ github.repository }}/releases/download/$VERSION/${MODULE_NAME}_linux_amd64.tar.gz
+          tar -xzf ${MODULE_NAME}_linux_amd64.tar.gz
+          chmod +x ${MODULE_NAME}_linux_amd64
+          sudo mv ${MODULE_NAME}_linux_amd64 /usr/local/bin/${MODULE_NAME}
           \`\`\`
           
           #### Windows
