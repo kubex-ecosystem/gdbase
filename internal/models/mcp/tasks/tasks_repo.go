@@ -87,7 +87,12 @@ func (tr *TasksRepo) FindOne(where ...interface{}) (ITasksModel, error) {
 
 func (tr *TasksRepo) FindAll(where ...interface{}) ([]ITasksModel, error) {
 	var tms []TasksModel
-	err := tr.g.Where(where[0], where[1:]...).Find(&tms).Error
+
+	err := tr.g.
+		Where(where[0], where[1:]...).
+		Find(&tms).
+		Error
+
 	if err != nil {
 		return nil, fmt.Errorf("TasksModel repository: failed to find all tasks: %w", err)
 	}
