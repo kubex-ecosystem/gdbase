@@ -112,9 +112,10 @@ func (ts *TasksService) DeleteTask(id string) error {
 }
 
 func (ts *TasksService) ListTasks(opts *TaskSearchOptions) ([]ITasksModel, error) {
-
-	whereClause := map[string]interface{}{"id != ?": "0000"} // Default to true for all tasks
+	var whereClause any
+	// Get the default uuid, nil uuid is not allowed, so we use a zero UUID
 	if opts != nil {
+		whereClause := make(map[string]any)
 		if opts.Active {
 			whereClause["active"] = true
 		}

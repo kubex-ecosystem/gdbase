@@ -16,12 +16,12 @@ type ITasksRepo interface {
 	// TableName returns the name of the table in the database.
 	TableName() string
 	Create(task ITasksModel) (ITasksModel, error)
-	FindOne(where ...interface{}) (ITasksModel, error)
-	FindAll(where ...interface{}) ([]ITasksModel, error)
+	FindOne(where ...any) (ITasksModel, error)
+	FindAll(where ...any) ([]ITasksModel, error)
 	Update(task ITasksModel) (ITasksModel, error)
 	Delete(id string) error
 	Close() error
-	List(where ...interface{}) (xtt.TableDataHandler, error)
+	List(where ...any) (xtt.TableDataHandler, error)
 	GetContextDBService() t.IDBService
 }
 
@@ -76,7 +76,7 @@ func (tr *TasksRepo) Create(task ITasksModel) (ITasksModel, error) {
 	return tModel, nil
 }
 
-func (tr *TasksRepo) FindOne(where ...interface{}) (ITasksModel, error) {
+func (tr *TasksRepo) FindOne(where ...any) (ITasksModel, error) {
 	var tm TasksModel
 	err := tr.g.Where(where[0], where[1:]...).First(&tm).Error
 	if err != nil {
@@ -85,13 +85,21 @@ func (tr *TasksRepo) FindOne(where ...interface{}) (ITasksModel, error) {
 	return &tm, nil
 }
 
-func (tr *TasksRepo) FindAll(where ...interface{}) ([]ITasksModel, error) {
+func (tr *TasksRepo) FindAll(where ...any) ([]ITasksModel, error) {
+	var err error
 	var tms []TasksModel
 
-	err := tr.g.
-		Where(where[0], where[1:]...).
-		Find(&tms).
-		Error
+	if len(where) >= 1 {
+		// Só vou jogar considerando que passou pelo serviço, então tá relativamente seguro
+		err = tr.g.
+			Where(where).
+			Find(&tms).
+			Error
+
+	} else {
+		// Aqui vou deixar assim pra trazer TUDO literalmente caso não seja passado nada de condição
+		err = tr.g.Find(&tms).Error
+	}
 
 	if err != nil {
 		return nil, fmt.Errorf("TasksModel repository: failed to find all tasks: %w", err)
@@ -144,7 +152,7 @@ func (tr *TasksRepo) Close() error {
 	return sqlDB.Close()
 }
 
-func (tr *TasksRepo) List(where ...interface{}) (xtt.TableDataHandler, error) {
+func (tr *TasksRepo) List(where ...any) (xtt.TableDataHandler, error) {
 	var tasks []TasksModel
 	err := tr.g.Where(where[0], where[1:]...).Find(&tasks).Error
 	if err != nil {
