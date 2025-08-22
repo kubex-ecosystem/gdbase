@@ -8,12 +8,25 @@ import (
 	t "github.com/rafa-mori/gdbase/types"
 )
 
+type TaskSearchOptions struct {
+	Active       bool
+	OutOfDate    bool
+	Running      bool
+	Provider     string
+	Target       string
+	TaskType     string
+	TaskStatus   string
+	UserID       string
+	IncludeCron  bool
+	IncludeTasks bool
+}
+
 type ITasksService interface {
 	CreateTask(task ITasksModel) (ITasksModel, error)
 	GetTaskByID(id string) (ITasksModel, error)
 	UpdateTask(task ITasksModel) (ITasksModel, error)
 	DeleteTask(id string) error
-	ListTasks() ([]ITasksModel, error)
+	ListTasks(opts *TaskSearchOptions) ([]ITasksModel, error)
 	GetTasksByProvider(provider string) ([]ITasksModel, error)
 	GetTasksByTarget(target string) ([]ITasksModel, error)
 	GetTasksByProviderAndTarget(provider, target string) ([]ITasksModel, error)
@@ -98,8 +111,23 @@ func (ts *TasksService) DeleteTask(id string) error {
 	return nil
 }
 
-func (ts *TasksService) ListTasks() ([]ITasksModel, error) {
-	tasks, err := ts.repo.FindAll("")
+func (ts *TasksService) ListTasks(opts *TaskSearchOptions) ([]ITasksModel, error) {
+	var whereClause any
+	// Get the default uuid, nil uuid is not allowed, so we use a zero UUID
+	if opts != nil {
+		whereClause := make(map[string]any)
+		if opts.Active {
+			whereClause["active"] = true
+		}
+		if opts.OutOfDate {
+			whereClause["task_next_run < ?"] = time.Now().Format(time.RFC3339)
+		}
+		if opts.Running {
+			whereClause["task_status"] = string(TaskStatusRunning)
+		}
+	}
+
+	tasks, err := ts.repo.FindAll(whereClause)
 	if err != nil {
 		return nil, fmt.Errorf("error listing tasks: %w", err)
 	}

@@ -115,3 +115,81 @@ func NewModelRegistryFromSerialized[T Model](data []byte) (ModelRegistryInterfac
 	mr := ModelRegistryImpl[T]{}
 	return mr.FromSerialized(data)
 }
+
+// func ParseConditionClause(conditions ...any) (string, []any, error) {
+// 	if len(conditions) == 0 {
+// 		return "", nil, fmt.Errorf("no conditions provided")
+// 	}
+
+// 	var whereClause strings.Builder
+// 	var clauseSliceObj = make([]any, 0) // É slice de interfaces, então a merda que vier de valor é só jogar e
+// 	// dane-se o Gorm.. Ele se vira pra lá. A gente evita o mínimo/médio de dentro da responsabilidade dele....
+
+// 	// Cada posição da condição pode ser um slice, um map ou qualquer outra coisa...
+// 	for _, condition := range conditions {
+// 		value := reflect.ValueOf(condition)
+
+// 		// Então primeiro detecto se é slice, se for, trato como slice
+// 		switch reflect.TypeOf(condition).Kind() {
+// 		case reflect.Slice, reflect.SliceOf(reflect.TypeFor[map[string]string]()).Kind():
+// 			if value.Len() == 0 {
+// 				// If the slice is empty, assign the deserialized object to the slice
+// 				gl.Log("debug", "Query conditions are empty")
+// 				continue
+// 			} else if value.Len() == 1 {
+// 				// If the slice has only one element, assign it directly
+// 				clauseSliceObj = append(clauseSliceObj, value.Index(0).Interface())
+// 				continue
+// 			} else if value.Len() > 1 {
+// 				if value.Type().Elem().Kind() == reflect.Map {
+// 					for i := 0; i < value.Len(); i++ {
+// 						clauseSliceObj = append(clauseSliceObj, value.Index(i).Interface())
+// 					}
+// 				}
+// 				continue
+// 			} else {
+// 				for i := 0; i < value.Len(); i++ {
+// 					clauseSliceObj = append(clauseSliceObj, value.Index(i).Interface())
+// 				}
+// 			}
+// 		// Segundo verifico se é map, se for, trato como map
+// 		case reflect.Map:
+// 			if value.Len() == 0 {
+// 				// If the map is empty, assign the deserialized object to the map
+// 				clauseSliceObj = reflect.ValueOf(conditions).Interface().([]any)
+// 			} else {
+// 				for _, key := range value.MapKeys() {
+// 					clauseSliceObj = append(clauseSliceObj, fmt.Sprintf("%s = ?", key.String()))
+// 					clauseSliceObj = append(clauseSliceObj, value.MapIndex(key).Interface())
+// 				}
+// 			}
+// 		default:
+// 			// If the type is neither a slice nor a map, assign the first object to m.object
+// 			if len(conditions) == 0 {
+// 				gl.Log("debug", "Query conditions are empty")
+// 				continue
+// 			}
+// 			if len(conditions) > 1 {
+// 				gl.Log("debug", "Multiple query conditions found")
+// 				continue
+// 			}
+// 			clauseSliceObj = append(clauseSliceObj, condition)
+// 		}
+// 	}
+
+// 	var whereClause strings.Builder
+// 	for i, condition := range clauseSliceObj {
+// 		switch keyType := condition.(type) {
+// 		case int:
+// 			whereClause.WriteString(fmt.Sprintf("column%d = ?", i))
+// 		case string:
+// 			whereClause.WriteString(fmt.Sprintf("%s = ?", keyType))
+// 		default:
+// 			return "", nil, fmt.Errorf("unsupported type for where clause: %T", keyType)
+// 		}
+// 		if i < len(clauseSliceObj)-1 {
+// 			whereClause.WriteString(" AND ")
+// 		}
+// 	}
+// 	return whereClause.String(), clauseSliceObj, nil
+// }

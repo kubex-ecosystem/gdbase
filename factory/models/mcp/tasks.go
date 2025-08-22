@@ -9,6 +9,7 @@ import (
 	"gorm.io/gorm"
 )
 
+type TaskSearchOptions = m.TaskSearchOptions
 type JobScheduleType = m.JobScheduleType
 type CronJobIntegration = m.CronJobIntegration
 type HTTPMethod = m.HTTPMethod
