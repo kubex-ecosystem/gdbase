@@ -8,26 +8,26 @@ import (
 	"os"
 	"path/filepath"
 
-	l "github.com/rafa-mori/logz"
 	glb "github.com/rafa-mori/gdbase/internal/globals"
 	ci "github.com/rafa-mori/gdbase/internal/interfaces"
 	crp "github.com/rafa-mori/gdbase/internal/security/crypto"
 	krs "github.com/rafa-mori/gdbase/internal/security/external"
 	t "github.com/rafa-mori/gdbase/internal/types"
 	gl "github.com/rafa-mori/gdbase/logger"
+	l "github.com/rafa-mori/logz"
 	"gorm.io/gorm"
 )
 
-type JsonB map[string]any
+type JSONB map[string]any
 
 // Serializer manual para o GORM
-func (m JsonB) Value() (driver.Value, error) {
+func (m JSONB) Value() (driver.Value, error) {
 	return json.Marshal(m)
 }
 
-func (m *JsonB) Scan(vl any) error {
+func (m *JSONB) Scan(vl any) error {
 	if vl == nil {
-		*m = JsonB{}
+		*m = JSONB{}
 		return nil
 	}
 	return json.Unmarshal(vl.([]byte), m)

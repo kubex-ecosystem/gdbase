@@ -82,8 +82,8 @@ type JobQueue struct {
 	JobCommand     string    `json:"job_command" xml:"job_command" yaml:"job_command" gorm:"column:job_command"`
 	JobMethod      string    `json:"job_method" xml:"job_method" yaml:"job_method" gorm:"column:job_method"`
 	JobAPIEndpoint string    `json:"job_api_endpoint" xml:"job_api_endpoint" yaml:"job_api_endpoint" gorm:"column:job_api_endpoint"`
-	JobPayload     t.JsonB   `json:"job_payload" xml:"job_payload" yaml:"job_payload" gorm:"column:job_payload"`
-	JobHeaders     t.JsonB   `json:"job_headers" xml:"job_headers" yaml:"job_headers" gorm:"column:job_headers"`
+	JobPayload     t.JSONB   `json:"job_payload" xml:"job_payload" yaml:"job_payload" gorm:"column:job_payload"`
+	JobHeaders     t.JSONB   `json:"job_headers" xml:"job_headers" yaml:"job_headers" gorm:"column:job_headers"`
 	JobRetries     int       `json:"job_retries" xml:"job_retries" yaml:"job_retries" gorm:"column:job_retries;default:0"`
 	JobTimeout     int       `json:"job_timeout" xml:"job_timeout" yaml:"job_timeout" gorm:"column:job_timeout;default:0"`
 }
@@ -131,10 +131,10 @@ func (j *JobQueue) GetJobMethod() string                       { return j.JobMet
 func (j *JobQueue) SetJobMethod(jobMethod string)              { j.JobMethod = jobMethod }
 func (j *JobQueue) GetJobAPIEndpoint() string                  { return j.JobAPIEndpoint }
 func (j *JobQueue) SetJobAPIEndpoint(jobAPIEndpoint string)    { j.JobAPIEndpoint = jobAPIEndpoint }
-func (j *JobQueue) GetJobPayload() t.JsonB                     { return j.JobPayload }
-func (j *JobQueue) SetJobPayload(jobPayload t.JsonB)           { j.JobPayload = jobPayload }
-func (j *JobQueue) GetJobHeaders() t.JsonB                     { return j.JobHeaders }
-func (j *JobQueue) SetJobHeaders(jobHeaders t.JsonB)           { j.JobHeaders = jobHeaders }
+func (j *JobQueue) GetJobPayload() t.JSONB                     { return j.JobPayload }
+func (j *JobQueue) SetJobPayload(jobPayload t.JSONB)           { j.JobPayload = jobPayload }
+func (j *JobQueue) GetJobHeaders() t.JSONB                     { return j.JobHeaders }
+func (j *JobQueue) SetJobHeaders(jobHeaders t.JSONB)           { j.JobHeaders = jobHeaders }
 func (j *JobQueue) GetJobRetries() int                         { return j.JobRetries }
 func (j *JobQueue) SetJobRetries(jobRetries int)               { j.JobRetries = jobRetries }
 func (j *JobQueue) GetJobTimeout() int                         { return j.JobTimeout }

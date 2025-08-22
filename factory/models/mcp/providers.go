@@ -25,7 +25,7 @@ func NewProvidersRepo(db *gorm.DB) ProvidersRepo {
 func NewProvidersModel(
 	provider string,
 	orgOrGroup string,
-	config t.JsonB,
+	config t.JSONB,
 ) ProvidersModel {
 	return &m.ProvidersModel{
 		ID:         uuid.New().String(),

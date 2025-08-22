@@ -41,8 +41,8 @@ type IDiscordService interface {
 	IsTokenExpired(id string) (bool, error)
 
 	// Configuration management
-	UpdateDiscordIntegrationConfig(id string, config t.JsonB) error
-	GetDiscordIntegrationConfig(id string) (t.JsonB, error)
+	UpdateDiscordIntegrationConfig(id string, config t.JSONB) error
+	GetDiscordIntegrationConfig(id string) (t.JSONB, error)
 
 	// Upsert operations
 	UpsertDiscordIntegrationByDiscordUserID(discordUserID string, discord IDiscordModel) (IDiscordModel, error)
@@ -260,7 +260,7 @@ func (ds *DiscordService) IsTokenExpired(id string) (bool, error) {
 }
 
 // Configuration management
-func (ds *DiscordService) UpdateDiscordIntegrationConfig(id string, config t.JsonB) error {
+func (ds *DiscordService) UpdateDiscordIntegrationConfig(id string, config t.JSONB) error {
 	discord, err := ds.GetDiscordIntegrationByID(id)
 	if err != nil {
 		return err
@@ -272,7 +272,7 @@ func (ds *DiscordService) UpdateDiscordIntegrationConfig(id string, config t.Jso
 	return err
 }
 
-func (ds *DiscordService) GetDiscordIntegrationConfig(id string) (t.JsonB, error) {
+func (ds *DiscordService) GetDiscordIntegrationConfig(id string) (t.JSONB, error) {
 	discord, err := ds.GetDiscordIntegrationByID(id)
 	if err != nil {
 		return nil, err

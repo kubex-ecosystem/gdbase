@@ -24,7 +24,7 @@ func NewPreferencesRepo(db *gorm.DB) PreferencesRepo {
 
 func NewPreferencesModel(
 	scope string,
-	config t.JsonB,
+	config t.JSONB,
 ) PreferencesModel {
 	return &m.PreferencesModel{
 		ID:        uuid.New().String(),
