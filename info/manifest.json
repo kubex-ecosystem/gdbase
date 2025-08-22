@@ -1,10 +1,13 @@
 {
   "name": "Kubex GDBase",
   "application": "gdbase",
-  "version": "1.2.1",
+  "version": "1.2.2",
   "private": false,
   "published": true,
-  "aliases": ["gdbase", "kbxdb"],
+  "aliases": [
+    "gdbase",
+    "kbxdb"
+  ],
   "repository": "https://github.com/rafa-mori/gdbase",
   "homepage": "https://github.com/rafa-mori/gdbase",
   "description": "Kubex GDBase: A complete tool for managing databases, data models, and more.",
@@ -13,8 +16,17 @@
   "author": "Rafael Mori <faelmori@gmail.com>",
   "organization": "rafa-mori",
   "license": "MIT",
-  "keywords": ["gdbase", "kubex", "control", "command-line", "tool", "management"],
-  "platforms": ["linux/amd64"],
+  "keywords": [
+    "gdbase",
+    "kubex",
+    "control",
+    "command-line",
+    "tool",
+    "management"
+  ],
+  "platforms": [
+    "linux/amd64"
+  ],
   "dependencies": [
     "pkg-config",
     "tar",
