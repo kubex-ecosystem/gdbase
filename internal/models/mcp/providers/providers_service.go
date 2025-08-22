@@ -18,7 +18,7 @@ type IProvidersService interface {
 	GetProviderByOrgOrGroup(orgOrGroup string) ([]IProvidersModel, error)
 	GetProviderByNameAndOrg(providerName, orgOrGroup string) (IProvidersModel, error)
 	GetProvidersByUserID(userID string) ([]IProvidersModel, error)
-	UpsertProviderByNameAndOrg(providerName, orgOrGroup string, config t.JsonB, userID string) (IProvidersModel, error)
+	UpsertProviderByNameAndOrg(providerName, orgOrGroup string, config t.JSONB, userID string) (IProvidersModel, error)
 	GetContextDBService() t.IDBService
 }
 
@@ -120,7 +120,7 @@ func (ps *ProvidersService) GetProvidersByUserID(userID string) ([]IProvidersMod
 	return providers, nil
 }
 
-func (ps *ProvidersService) UpsertProviderByNameAndOrg(providerName, orgOrGroup string, config t.JsonB, userID string) (IProvidersModel, error) {
+func (ps *ProvidersService) UpsertProviderByNameAndOrg(providerName, orgOrGroup string, config t.JSONB, userID string) (IProvidersModel, error) {
 	// Try to find existing provider by name and org
 	existing, err := ps.repo.FindOne("provider = ? AND org_or_group = ?", providerName, orgOrGroup)
 	if err != nil {

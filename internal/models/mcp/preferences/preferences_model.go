@@ -14,8 +14,8 @@ type IPreferencesModel interface {
 	SetID(id string)
 	GetScope() string
 	SetScope(scope string)
-	GetConfig() t.JsonB
-	SetConfig(config t.JsonB)
+	GetConfig() t.JSONB
+	SetConfig(config t.JSONB)
 	GetCreatedAt() time.Time
 	SetCreatedAt(createdAt time.Time)
 	GetUpdatedAt() time.Time
@@ -31,7 +31,7 @@ type IPreferencesModel interface {
 type PreferencesModel struct {
 	ID        string  `gorm:"type:uuid;primaryKey" json:"id"`
 	Scope     string  `gorm:"type:text;not null;default:'defaults';uniqueIndex" json:"scope" example:"defaults"`
-	Config    t.JsonB `json:"config" binding:"omitempty"`
+	Config    t.JSONB `json:"config" binding:"omitempty"`
 	CreatedAt string  `gorm:"type:timestamp;default:now()" json:"created_at,omitempty" example:"2024-01-01T00:00:00Z"`
 	UpdatedAt string  `gorm:"type:timestamp;default:now()" json:"updated_at,omitempty" example:"2024-01-01T00:00:00Z"`
 	CreatedBy string  `gorm:"type:uuid;references:users(id)" json:"created_by,omitempty" example:"123e4567-e89b-12d3-a456-426614174001"`
@@ -42,7 +42,7 @@ func NewPreferencesModel() *PreferencesModel {
 	return &PreferencesModel{
 		ID:        "",
 		Scope:     "defaults",
-		Config:    t.JsonB{},
+		Config:    t.JSONB{},
 		CreatedAt: time.Now().Format(time.RFC3339),
 		UpdatedAt: time.Now().Format(time.RFC3339),
 	}
@@ -53,8 +53,8 @@ func (p *PreferencesModel) GetID() string            { return p.ID }
 func (p *PreferencesModel) SetID(id string)          { p.ID = id }
 func (p *PreferencesModel) GetScope() string         { return p.Scope }
 func (p *PreferencesModel) SetScope(scope string)    { p.Scope = scope }
-func (p *PreferencesModel) GetConfig() t.JsonB       { return p.Config }
-func (p *PreferencesModel) SetConfig(config t.JsonB) { p.Config = config }
+func (p *PreferencesModel) GetConfig() t.JSONB       { return p.Config }
+func (p *PreferencesModel) SetConfig(config t.JSONB) { p.Config = config }
 func (p *PreferencesModel) GetCreatedAt() time.Time {
 	createdAt, _ := time.Parse(time.RFC3339, p.CreatedAt)
 	return createdAt

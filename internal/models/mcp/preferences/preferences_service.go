@@ -15,7 +15,7 @@ type IPreferencesService interface {
 	ListPreferences() ([]IPreferencesModel, error)
 	GetPreferencesByScope(scope string) (IPreferencesModel, error)
 	GetPreferencesByUserID(userID string) ([]IPreferencesModel, error)
-	UpsertPreferencesByScope(scope string, config t.JsonB, userID string) (IPreferencesModel, error)
+	UpsertPreferencesByScope(scope string, config t.JSONB, userID string) (IPreferencesModel, error)
 	GetContextDBService() t.IDBService
 }
 
@@ -101,7 +101,7 @@ func (ps *PreferencesService) GetPreferencesByUserID(userID string) ([]IPreferen
 	return preferences, nil
 }
 
-func (ps *PreferencesService) UpsertPreferencesByScope(scope string, config t.JsonB, userID string) (IPreferencesModel, error) {
+func (ps *PreferencesService) UpsertPreferencesByScope(scope string, config t.JSONB, userID string) (IPreferencesModel, error) {
 	// Try to find existing preferences by scope
 	existing, err := ps.repo.FindOne("scope = ?", scope)
 	if err != nil {

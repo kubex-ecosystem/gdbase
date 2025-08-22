@@ -78,8 +78,8 @@ type IDiscordModel interface {
 	SetScopes(scopes []string)
 	GetBotPermissions() int64
 	SetBotPermissions(permissions int64)
-	GetConfig() t.JsonB
-	SetConfig(config t.JsonB)
+	GetConfig() t.JSONB
+	SetConfig(config t.JSONB)
 	GetLastActivity() time.Time
 	SetLastActivity(lastActivity time.Time)
 	GetUserID() string
@@ -119,7 +119,7 @@ type DiscordModel struct {
 	WebhookURL      string                 `gorm:"type:text" json:"webhook_url,omitempty"`
 	Scopes          []string               `gorm:"type:text[]" json:"scopes,omitempty" example:"[\"bot\", \"identify\"]"`
 	BotPermissions  int64                  `gorm:"type:bigint;default:0" json:"bot_permissions" example:"274877908992"`
-	Config          t.JsonB                `json:"config" binding:"omitempty"`
+	Config          t.JSONB                `json:"config" binding:"omitempty"`
 	LastActivity    string                 `gorm:"type:timestamp;default:now()" json:"last_activity,omitempty" example:"2024-01-01T00:00:00Z"`
 	UserID          string                 `gorm:"type:uuid;references:users(id)" json:"user_id,omitempty" example:"123e4567-e89b-12d3-a456-426614174001"`
 	TargetTaskID    string                 `gorm:"type:uuid;references:mcp_sync_tasks(id)" json:"target_task_id,omitempty" example:"123e4567-e89b-12d3-a456-426614174002"`
@@ -150,7 +150,7 @@ func NewDiscordModel() *DiscordModel {
 		WebhookURL:      "",
 		Scopes:          []string{},
 		BotPermissions:  0,
-		Config:          t.JsonB{},
+		Config:          t.JSONB{},
 		LastActivity:    time.Now().Format(time.RFC3339),
 		UserID:          "",
 		TargetTaskID:    "",
@@ -215,8 +215,8 @@ func (d *DiscordModel) GetScopes() []string                 { return d.Scopes }
 func (d *DiscordModel) SetScopes(scopes []string)           { d.Scopes = scopes }
 func (d *DiscordModel) GetBotPermissions() int64            { return d.BotPermissions }
 func (d *DiscordModel) SetBotPermissions(permissions int64) { d.BotPermissions = permissions }
-func (d *DiscordModel) GetConfig() t.JsonB                  { return d.Config }
-func (d *DiscordModel) SetConfig(config t.JsonB)            { d.Config = config }
+func (d *DiscordModel) GetConfig() t.JSONB                  { return d.Config }
+func (d *DiscordModel) SetConfig(config t.JSONB)            { d.Config = config }
 
 func (d *DiscordModel) GetLastActivity() time.Time {
 	lastActivity, _ := time.Parse(time.RFC3339, d.LastActivity)
