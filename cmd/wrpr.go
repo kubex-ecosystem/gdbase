@@ -71,7 +71,7 @@ func (m *GDBase) Command() *cobra.Command {
 
 	cmd.AddCommand(cli.UtilsCmds())
 
-	cmd.AddCommand(cli.SshCmds())
+	cmd.AddCommand(cli.SSHCmds())
 
 	setUsageDefinition(cmd)
 
