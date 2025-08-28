@@ -14,7 +14,7 @@ require (
 	github.com/rafa-mori/logz v1.4.0
 	github.com/spf13/cobra v1.9.1
 	github.com/spf13/viper v1.20.1
-	github.com/stretchr/testify v1.10.0
+	github.com/stretchr/testify v1.11.1
 	github.com/subosito/gotenv v1.6.0
 	github.com/zalando/go-keyring v0.2.6
 	golang.org/x/crypto v0.41.0
@@ -23,7 +23,7 @@ require (
 	gorm.io/driver/mysql v1.6.0
 	gorm.io/driver/postgres v1.6.0
 	gorm.io/driver/sqlite v1.6.0
-	gorm.io/gorm v1.30.1
+	gorm.io/gorm v1.30.2
 )
 
 require (
@@ -32,7 +32,7 @@ require (
 	github.com/cloudwego/base64x v0.1.6 // indirect
 	github.com/containerd/errdefs v1.0.0 // indirect
 	github.com/containerd/errdefs/pkg v0.3.0 // indirect
-	github.com/gabriel-vasile/mimetype v1.4.9 // indirect
+	github.com/gabriel-vasile/mimetype v1.4.10 // indirect
 	github.com/gin-contrib/sse v1.1.0 // indirect
 	github.com/go-playground/locales v0.14.1 // indirect
 	github.com/go-playground/universal-translator v0.18.1 // indirect
