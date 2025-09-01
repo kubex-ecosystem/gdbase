@@ -8,8 +8,8 @@ import (
 	"strings"
 	"text/template"
 
+	gl "github.com/rafa-mori/gdbase/internal/module/logger"
 	is "github.com/rafa-mori/gdbase/internal/services"
-	gl "github.com/rafa-mori/gdbase/logger"
 	t "github.com/rafa-mori/gdbase/types"
 	l "github.com/rafa-mori/logz"
 	_ "gorm.io/driver/mysql"

@@ -1,12 +1,13 @@
+// Package globals provides global variables and constants for the application
 package globals
 
 import (
 	"fmt"
 	"os"
 
+	gl "github.com/rafa-mori/gdbase/internal/module/logger"
 	crp "github.com/rafa-mori/gdbase/internal/security/crypto"
 	krs "github.com/rafa-mori/gdbase/internal/security/external"
-	gl "github.com/rafa-mori/gdbase/logger"
 )
 
 var (

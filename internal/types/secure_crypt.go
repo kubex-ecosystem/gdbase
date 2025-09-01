@@ -11,7 +11,7 @@ import (
 	"os"
 	"strings"
 
-	gl "github.com/rafa-mori/gdbase/logger"
+	gl "github.com/rafa-mori/gdbase/internal/module/logger"
 )
 
 func EncryptEnv(value string, isConfidential bool) (string, error) {

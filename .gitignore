@@ -51,3 +51,15 @@ tests/**/*
 *_linux_amd64*
 */docs/mcp_implementation
 *.sarif
+
+*/prompt/*.md
+*/prompt/**/*.md
+*/prompt/*.sh
+*/prompt/**/*.sh
+*/prompt/*.txt
+*/prompt/**/*.txt
+*/prompt/*.go
+*/prompt/**/*.go
+*/prompt/*.py
+*/prompt/**/*.py
+dist/*

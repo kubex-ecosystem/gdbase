@@ -10,10 +10,10 @@ import (
 
 	glb "github.com/rafa-mori/gdbase/internal/globals"
 	ci "github.com/rafa-mori/gdbase/internal/interfaces"
+	gl "github.com/rafa-mori/gdbase/internal/module/logger"
 	crp "github.com/rafa-mori/gdbase/internal/security/crypto"
 	krs "github.com/rafa-mori/gdbase/internal/security/external"
 	t "github.com/rafa-mori/gdbase/internal/types"
-	gl "github.com/rafa-mori/gdbase/logger"
 	l "github.com/rafa-mori/logz"
 	"gorm.io/gorm"
 )

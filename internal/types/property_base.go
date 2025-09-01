@@ -2,7 +2,7 @@ package types
 
 import (
 	ci "github.com/rafa-mori/gdbase/internal/interfaces"
-	gl "github.com/rafa-mori/gdbase/logger"
+	gl "github.com/rafa-mori/gdbase/internal/module/logger"
 	l "github.com/rafa-mori/logz"
 
 	"fmt"

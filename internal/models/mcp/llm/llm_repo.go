@@ -4,8 +4,8 @@ import (
 	"fmt"
 
 	"github.com/google/uuid"
+	gl "github.com/rafa-mori/gdbase/internal/module/logger"
 	is "github.com/rafa-mori/gdbase/internal/services"
-	gl "github.com/rafa-mori/gdbase/logger"
 	t "github.com/rafa-mori/gdbase/types"
 	l "github.com/rafa-mori/logz"
 	xtt "github.com/rafa-mori/xtui/types"

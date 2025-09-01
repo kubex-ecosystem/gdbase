@@ -1,7 +1,7 @@
 package cli
 
 import (
-	gl "github.com/rafa-mori/gdbase/logger"
+	gl "github.com/rafa-mori/gdbase/internal/module/logger"
 )
 
 type IWebSrvServerData interface {

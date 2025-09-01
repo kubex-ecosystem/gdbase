@@ -10,8 +10,8 @@ import (
 
 	"github.com/google/uuid"
 
+	gl "github.com/rafa-mori/gdbase/internal/module/logger"
 	t "github.com/rafa-mori/gdbase/internal/types"
-	gl "github.com/rafa-mori/gdbase/logger"
 	l "github.com/rafa-mori/logz"
 )
 

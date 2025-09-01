@@ -1,14 +1,16 @@
-package main
+// Package module provides internal types and functions for the GoBE application.
+package module
 
 import (
 	"fmt"
-	"os"
-	"strings"
 
 	"github.com/rafa-mori/gdbase/cmd/cli"
-	gl "github.com/rafa-mori/gdbase/logger"
-	"github.com/rafa-mori/gdbase/version"
+	gl "github.com/rafa-mori/gdbase/internal/module/logger"
+	"github.com/rafa-mori/gdbase/internal/module/version"
 	"github.com/spf13/cobra"
+
+	"os"
+	"strings"
 )
 
 type GDBase struct {
@@ -107,21 +109,4 @@ func (m *GDBase) concatenateExamples() string {
 		examples += rtCmd + example + "\n  "
 	}
 	return examples
-}
-
-func RegX() *GDBase {
-	var configPath = os.Getenv("GODOBASE_CONFIGFILE")
-	var keyPath = os.Getenv("GODOBASE_KEYFILE")
-	var certPath = os.Getenv("GODOBASE_CERTFILE")
-	var printBannerV = os.Getenv("GODOBASE_PRINTBANNER")
-	if printBannerV == "" {
-		printBannerV = "true"
-	}
-
-	return &GDBase{
-		configPath:  configPath,
-		keyPath:     keyPath,
-		certPath:    certPath,
-		printBanner: strings.ToLower(printBannerV) == "true",
-	}
 }

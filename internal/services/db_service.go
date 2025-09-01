@@ -9,7 +9,7 @@ import (
 	"sync"
 
 	glb "github.com/rafa-mori/gdbase/internal/globals"
-	gl "github.com/rafa-mori/gdbase/logger"
+	gl "github.com/rafa-mori/gdbase/internal/module/logger"
 	t "github.com/rafa-mori/gdbase/types"
 	l "github.com/rafa-mori/logz"
 	"gorm.io/driver/mysql"

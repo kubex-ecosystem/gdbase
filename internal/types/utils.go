@@ -6,7 +6,7 @@ import (
 	"os"
 
 	ci "github.com/rafa-mori/gdbase/internal/interfaces"
-	gl "github.com/rafa-mori/gdbase/logger"
+	gl "github.com/rafa-mori/gdbase/internal/module/logger"
 )
 
 func IsShellSpecialVar(c uint8) bool {

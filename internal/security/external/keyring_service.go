@@ -6,9 +6,9 @@ import (
 	"os"
 
 	ci "github.com/rafa-mori/gdbase/internal/interfaces"
+	gl "github.com/rafa-mori/gdbase/internal/module/logger"
 	sci "github.com/rafa-mori/gdbase/internal/security/interfaces"
 	t "github.com/rafa-mori/gdbase/internal/types"
-	gl "github.com/rafa-mori/gdbase/logger"
 	"github.com/zalando/go-keyring"
 )
 
