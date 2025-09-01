@@ -1,18 +1,25 @@
 package cli
 
 import (
+	"os"
+
 	"github.com/rafa-mori/gdbase/utils/helpers"
 	"github.com/spf13/cobra"
 )
 
-// SshCmdsList retorna uma lista de comandos Cobra relacionados a SSH.
+// UtilsCmds retorna uma lista de comandos Cobra relacionados a utilitários do sistema.
 // Retorna um slice de ponteiros para comandos Cobra.
 func UtilsCmds() *cobra.Command {
+
+	shortDesc := "Configura os utilitários do sistema"
+	longDesc := "Configura os utilitários do sistema"
+
 	uCmd := &cobra.Command{
-		Use:     "utils",
-		Aliases: []string{"u", "util"},
-		Short:   "Configura os utilitários do sistema",
-		Long:    "Configura os utilitários do sistema",
+		Use:         "utils",
+		Aliases:     []string{"u", "util"},
+		Short:       shortDesc,
+		Long:        longDesc,
+		Annotations: GetDescriptions([]string{shortDesc, longDesc}, (os.Getenv("GDBASE_HIDEBANNER") == "true")),
 	}
 	uCmd.AddCommand(installUtilsCmd())
 	uCmd.AddCommand(uninstallUtilsCmd())
@@ -22,9 +29,15 @@ func UtilsCmds() *cobra.Command {
 // sshTunnelServiceCmd cria um comando Cobra para configurar um serviço de túnel SSH em segundo plano.
 // Retorna um ponteiro para o comando Cobra configurado.
 func installUtilsCmd() *cobra.Command {
+
+	shortDesc := "Install the bash helpers."
+	longDesc := "Install the bash helpers."
+
 	rootCmd := &cobra.Command{
-		Use:  "install",
-		Long: "Install the bash helpers.",
+		Use:         "install",
+		Short:       shortDesc,
+		Long:        longDesc,
+		Annotations: GetDescriptions([]string{shortDesc, longDesc}, (os.Getenv("GDBASE_HIDEBANNER") == "true")),
 		Run: func(cmd *cobra.Command, args []string) {
 			helpers.InstallBashHelpers()
 		},
@@ -35,9 +48,15 @@ func installUtilsCmd() *cobra.Command {
 // sshTunnelCmd cria um comando Cobra para configurar um túnel SSH.
 // Retorna um ponteiro para o comando Cobra configurado.
 func uninstallUtilsCmd() *cobra.Command {
+
+	shortDesc := "Uninstall the bash helpers."
+	longDesc := "Uninstall the bash helpers."
+
 	rootCmd := &cobra.Command{
-		Use:  "uninstall",
-		Long: "Uninstall the bash helpers.",
+		Use:         "uninstall",
+		Short:       shortDesc,
+		Long:        longDesc,
+		Annotations: GetDescriptions([]string{shortDesc, longDesc}, (os.Getenv("GDBASE_HIDEBANNER") == "true")),
 		Run: func(cmd *cobra.Command, args []string) {
 			helpers.UninstallBashHelpers()
 		},

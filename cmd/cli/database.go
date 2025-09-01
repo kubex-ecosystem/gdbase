@@ -1,17 +1,20 @@
 package cli
 
 import (
+	"os"
+
 	"github.com/spf13/cobra"
 )
 
 func DatabaseCmd() *cobra.Command {
 	var configFile string
-	short := "Database management commands for GodoBase"
-	long := "Database management commands for GodoBase"
+	shortDesc := "Database management commands for GodoBase"
+	longDesc := "Database management commands for GodoBase"
 	cmd := &cobra.Command{
-		Use:   "database",
-		Short: short,
-		Long:  long,
+		Use:         "database",
+		Short:       shortDesc,
+		Long:        longDesc,
+		Annotations: GetDescriptions([]string{shortDesc, longDesc}, (os.Getenv("GDBASE_HIDEBANNER") == "true")),
 		Run: func(cmd *cobra.Command, args []string) {
 			err := cmd.Help()
 			if err != nil {
@@ -31,10 +34,13 @@ func DatabaseCmd() *cobra.Command {
 }
 
 func startDatabaseCmd() *cobra.Command {
+	shortDesc := "Start Database services"
+	longDesc := "Start Database services"
 	cmd := &cobra.Command{
-		Use:   "start",
-		Short: "Start Database services",
-		Long:  "Start Database services",
+		Use:         "start",
+		Short:       shortDesc,
+		Long:        longDesc,
+		Annotations: GetDescriptions([]string{shortDesc, longDesc}, (os.Getenv("GDBASE_HIDEBANNER") == "true")),
 		Run: func(cmd *cobra.Command, args []string) {
 			_ = cmd.Help()
 		},
@@ -43,10 +49,15 @@ func startDatabaseCmd() *cobra.Command {
 }
 
 func stopDatabaseCmd() *cobra.Command {
+
+	shortDesc := "Stop Docker"
+	longDesc := "Stop Docker service"
+
 	cmd := &cobra.Command{
-		Use:   "stop",
-		Short: "Stop Docker",
-		Long:  "Stop Docker service",
+		Use:         "stop",
+		Short:       shortDesc,
+		Long:        longDesc,
+		Annotations: GetDescriptions([]string{shortDesc, longDesc}, (os.Getenv("GDBASE_HIDEBANNER") == "true")),
 		Run: func(cmd *cobra.Command, args []string) {
 			_ = cmd.Help()
 		},
@@ -55,10 +66,15 @@ func stopDatabaseCmd() *cobra.Command {
 }
 
 func statusDatabaseCmd() *cobra.Command {
+
+	shortDesc := "Status Docker"
+	longDesc := "Status Docker service"
+
 	cmd := &cobra.Command{
-		Use:   "status",
-		Short: "Status Docker",
-		Long:  "Status Docker service",
+		Use:         "status",
+		Short:       shortDesc,
+		Long:        longDesc,
+		Annotations: GetDescriptions([]string{shortDesc, longDesc}, (os.Getenv("GDBASE_HIDEBANNER") == "true")),
 		Run: func(cmd *cobra.Command, args []string) {
 			_ = cmd.Help()
 		},

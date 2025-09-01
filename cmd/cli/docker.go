@@ -2,6 +2,7 @@ package cli
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/rafa-mori/gdbase/factory"
 	s "github.com/rafa-mori/gdbase/internal/services"
@@ -11,12 +12,15 @@ import (
 
 func DockerCmd() *cobra.Command {
 	var configFile string
-	short := "Docker management commands for GodoBase"
-	long := "Docker management commands for GodoBase"
+
+	shortDesc := "Docker management commands for GodoBase"
+	longDesc := "Docker management commands for GodoBase"
+
 	cmd := &cobra.Command{
-		Use:   "docker",
-		Short: short,
-		Long:  long,
+		Use:         "docker",
+		Short:       shortDesc,
+		Long:        longDesc,
+		Annotations: GetDescriptions([]string{shortDesc, longDesc}, (os.Getenv("GDBASE_HIDEBANNER") == "true")),
 		Run: func(cmd *cobra.Command, args []string) {
 			err := cmd.Help()
 			if err != nil {
@@ -36,10 +40,15 @@ func DockerCmd() *cobra.Command {
 }
 
 func startDockerCmd() *cobra.Command {
+
+	shortDesc := "Start Docker"
+	longDesc := "Start Docker service"
+
 	cmd := &cobra.Command{
-		Use:   "start",
-		Short: "Start Docker",
-		Long:  "Start Docker service",
+		Use:         "start",
+		Short:       shortDesc,
+		Long:        longDesc,
+		Annotations: GetDescriptions([]string{shortDesc, longDesc}, (os.Getenv("GDBASE_HIDEBANNER") == "true")),
 		Run: func(cmd *cobra.Command, args []string) {
 			dkr, dkrErr := factory.NewDockerService(nil, l.GetLogger("GodoBase"))
 			if dkrErr != nil {
@@ -58,10 +67,15 @@ func startDockerCmd() *cobra.Command {
 }
 
 func stopDockerCmd() *cobra.Command {
+
+	shortDesc := "Stop Docker"
+	longDesc := "Stop Docker service"
+
 	cmd := &cobra.Command{
-		Use:   "stop",
-		Short: "Stop Docker",
-		Long:  "Stop Docker service",
+		Use:         "stop",
+		Short:       shortDesc,
+		Long:        longDesc,
+		Annotations: GetDescriptions([]string{shortDesc, longDesc}, (os.Getenv("GDBASE_HIDEBANNER") == "true")),
 		Run: func(cmd *cobra.Command, args []string) {
 			//dkr, dkrErr := factory.NewDockerService(nil, l.GetLogger("GodoBase"))
 			//if dkrErr != nil {
@@ -73,17 +87,22 @@ func stopDockerCmd() *cobra.Command {
 			//	fmt.Printf("Error stopping Docker service: %v\n", dkrErr)
 			//	return
 			//}
-			return
+			// return
 		},
 	}
 	return cmd
 }
 
 func statusDockerCmd() *cobra.Command {
+
+	shortDesc := "Status Docker"
+	longDesc := "Status Docker service"
+
 	cmd := &cobra.Command{
-		Use:   "status",
-		Short: "Status Docker",
-		Long:  "Status Docker service",
+		Use:         "status",
+		Short:       shortDesc,
+		Long:        longDesc,
+		Annotations: GetDescriptions([]string{shortDesc, longDesc}, (os.Getenv("GDBASE_HIDEBANNER") == "true")),
 		Run: func(cmd *cobra.Command, args []string) {
 			//dkr, dkrErr := factory.NewDockerService(nil, l.GetLogger("GodoBase"))
 			//if dkrErr != nil {
