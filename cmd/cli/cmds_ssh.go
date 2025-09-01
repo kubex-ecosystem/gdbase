@@ -14,11 +14,15 @@ import (
 // SSHCmds retorna uma lista de comandos Cobra relacionados a SSH.
 // Retorna um slice de ponteiros para comandos Cobra.
 func SSHCmds() *cobra.Command {
+	shortDesc := "Configura os utilitários SSH do sistema"
+	longDesc := "Configura os utilitários SSH do sistema"
+
 	rootCmd := &cobra.Command{
-		Use:     "ssh",
-		Aliases: []string{"s", "ss"},
-		Short:   "Configura os utilitários SSH do sistema",
-		Long:    "Configura os utilitários SSH do sistema",
+		Use:         "ssh",
+		Aliases:     []string{"s", "ss"},
+		Short:       shortDesc,
+		Long:        longDesc,
+		Annotations: GetDescriptions([]string{shortDesc, longDesc}, false),
 	}
 
 	rootCmd.AddCommand(sshTunnelCmd())

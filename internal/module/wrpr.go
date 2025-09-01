@@ -9,7 +9,7 @@ func RegX() *GDBase {
 	var configPath = os.Getenv("GDBASE_CONFIGFILE")
 	var keyPath = os.Getenv("GDBASE_KEYFILE")
 	var certPath = os.Getenv("GDBASE_CERTFILE")
-	var hideBannerV = os.Getenv("GDBASE_PRINTBANNER")
+	var hideBannerV = os.Getenv("GDBASE_HIDEBANNER")
 
 	return &GDBase{
 		configPath: configPath,

@@ -60,7 +60,7 @@ func (m *GDBase) Command() *cobra.Command {
 			[]string{
 				m.LongDescription(),
 				m.ShortDescription(),
-			}, true,
+			}, m.hideBanner,
 		),
 		Version: version.GetVersion(),
 		Run: func(cmd *cobra.Command, args []string) {
