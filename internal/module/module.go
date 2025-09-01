@@ -2,8 +2,6 @@
 package module
 
 import (
-	"fmt"
-
 	"github.com/rafa-mori/gdbase/cmd/cli"
 	gl "github.com/rafa-mori/gdbase/internal/module/logger"
 	"github.com/rafa-mori/gdbase/internal/module/version"
@@ -15,7 +13,7 @@ import (
 
 type GDBase struct {
 	parentCmdName string
-	printBanner   bool
+	hideBanner    bool
 	certPath      string
 	keyPath       string
 	configPath    string
@@ -57,26 +55,26 @@ func (m *GDBase) Command() *cobra.Command {
 	cmd := &cobra.Command{
 		Use: m.Module(),
 		//Aliases:     []string{m.Alias(), "w", "wb", "webServer", "http"},
-		Example:     m.concatenateExamples(),
-		Annotations: m.getDescriptions(nil, true),
-		Version:     version.GetVersion(),
+		Example: m.concatenateExamples(),
+		Annotations: m.GetDescriptions(
+			[]string{
+				m.LongDescription(),
+				m.ShortDescription(),
+			}, true,
+		),
+		Version: version.GetVersion(),
 		Run: func(cmd *cobra.Command, args []string) {
 			_ = cmd.Help()
 		},
 	}
 
 	cmd.AddCommand(version.CliCommand())
-
 	cmd.AddCommand(cli.DockerCmd())
-
 	cmd.AddCommand(cli.DatabaseCmd())
-
 	cmd.AddCommand(cli.UtilsCmds())
-
 	cmd.AddCommand(cli.SSHCmds())
 
 	setUsageDefinition(cmd)
-
 	for _, c := range cmd.Commands() {
 		setUsageDefinition(c)
 		if !strings.Contains(strings.Join(os.Args, " "), c.Use) {
@@ -88,13 +86,9 @@ func (m *GDBase) Command() *cobra.Command {
 
 	return cmd
 }
-func (m *GDBase) preRunEMethod(cmd *cobra.Command, args []string) error {
-	gl.Log("debug", fmt.Sprintf("PreRunE: %s", cmd.Name()))
 
-	return nil
-}
-func (m *GDBase) getDescriptions(descriptionArg []string, _ bool) map[string]string {
-	return cli.GetDescriptions(descriptionArg, m.printBanner)
+func (m *GDBase) GetDescriptions(descriptionArg []string, hideBanner bool) map[string]string {
+	return cli.GetDescriptions(descriptionArg, (m.hideBanner || hideBanner))
 }
 func (m *GDBase) SetParentCmdName(rtCmd string) {
 	m.parentCmdName = rtCmd
