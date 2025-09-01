@@ -23,25 +23,25 @@ type Column struct {
 	Type string
 }
 
-// GenUser gera os modelos de usuário a partir do banco de dados
+// Main GenerateModels generates user models from database
 func Main() {
-	// Inicializa o banco de dados
-	_, dbSql, err := initDB()
+	// Initialize database
+	_, dbSQL, err := initDB()
 	if err != nil {
-		gl.Log("fatal", fmt.Sprintf("Erro ao inicializar o banco de dados: %v", err))
+		gl.Log("fatal", fmt.Sprintf("Error initializing database: %v", err))
 		return
 	}
-	defer dbSql.Close()
+	defer dbSQL.Close()
 
-	// Consulta para obter estrutura das tabelas
-	rows, err := dbSql.Query(`
+	// Query to get table structure
+	rows, err := dbSQL.Query(`
         SELECT table_name, column_name, data_type
         FROM information_schema.columns
         WHERE table_schema = 'public';
     `)
 
 	if err != nil {
-		gl.Log("fatal", fmt.Sprintf("Erro ao executar consulta: %v", err))
+		gl.Log("fatal", fmt.Sprintf("Error executing query: %v", err))
 		return
 	}
 
@@ -52,17 +52,17 @@ func Main() {
 	for rows.Next() {
 		var tableName, columnName, dataType string
 		if err := rows.Scan(&tableName, &columnName, &dataType); err != nil {
-			gl.Log("fatal", fmt.Sprintf("Erro ao escanear linha: %v", err))
+			gl.Log("fatal", fmt.Sprintf("Error scanning row: %v", err))
 			return
 		}
 		tables[tableName] = append(tables[tableName], Column{Name: titleCase(columnName), Type: mapSQLType(dataType)})
 	}
 
-	// Gerar código Go a partir da estrutura
+	// Generate Go code from structure
 	generateGoModels(tables)
 }
 
-// Função para colocar título no nome dos campos
+// Function to title case field names
 func titleCase(s string) string {
 	if len(s) == 0 {
 		return s
@@ -73,46 +73,46 @@ func titleCase(s string) string {
 func initDB() (*gorm.DB, *sql.DB, error) {
 	dbConfig := t.NewDBConfigWithFilePath("GoBE-DB", "/home/user/.kubex/gdbase/config/config.json")
 	if dbConfig == nil {
-		gl.Log("fatal", "Erro ao carregar configuração do banco de dados")
-		return nil, nil, fmt.Errorf("erro ao carregar configuração do banco de dados")
+		gl.Log("fatal", "Error loading database configuration")
+		return nil, nil, fmt.Errorf("error loading database configuration")
 	}
-	// Inicializa o banco de dados
-	// Criação do serviço de banco de dados
+	// Initialize database
+	// Create database service
 	dbService, err := is.NewDatabaseService(dbConfig, l.GetLogger("gen_models"))
 	if err != nil {
-		gl.Log("fatal", fmt.Sprintf("Erro ao criar serviço de banco de dados: %v", err))
+		gl.Log("fatal", fmt.Sprintf("Error creating database service: %v", err))
 		return nil, nil, err
 	}
-	// Inicialização do serviço de banco de dados
+	// Initialize database service
 	err = dbService.Initialize()
 	if err != nil {
-		gl.Log("fatal", fmt.Sprintf("Erro ao inicializar serviço de banco de dados: %v", err))
+		gl.Log("fatal", fmt.Sprintf("Error initializing database service: %v", err))
 		return nil, nil, err
 	}
-	// Configuração do banco de dados
+	// Get database configuration
 	db, err := dbService.GetDB()
 	if err != nil {
-		gl.Log("fatal", fmt.Sprintf("Erro ao obter banco de dados: %v", err))
+		gl.Log("fatal", fmt.Sprintf("Error getting database: %v", err))
 		return nil, nil, err
 	}
-	// Conexão com o banco de dados
-	dbSql, err := db.DB()
+	// Database connection
+	dbSQL, err := db.DB()
 	if err != nil {
-		gl.Log("fatal", fmt.Sprintf("Erro ao obter conexão com o banco de dados: %v", err))
+		gl.Log("fatal", fmt.Sprintf("Error getting database connection: %v", err))
 		return nil, nil, err
 	}
 	//defer dbSql.Close()
 
-	if err := dbSql.Ping(); err != nil {
-		gl.Log("fatal", fmt.Sprintf("Erro ao conectar ao banco de dados: %v", err))
+	if err := dbSQL.Ping(); err != nil {
+		gl.Log("fatal", fmt.Sprintf("Error connecting to database: %v", err))
 		return nil, nil, err
 	}
-	fmt.Println("Conexão com o banco de dados estabelecida com sucesso!")
+	fmt.Println("Database connection established successfully!")
 
-	return db, dbSql, nil
+	return db, dbSQL, nil
 }
 
-// Gera structs Go dinamicamente
+// Generate Go structs dynamically
 func generateGoModels(tables map[string][]Column) {
 	modelTemplate := `package main
 
@@ -126,7 +126,7 @@ type {{$table | title}} struct {
 
 	file, err := os.Create("models.go")
 	if err != nil {
-		gl.Log("fatal", fmt.Sprintf("Erro ao criar arquivo: %v", err))
+		gl.Log("fatal", fmt.Sprintf("Error creating file: %v", err))
 		return
 	}
 	defer file.Close()
@@ -134,22 +134,22 @@ type {{$table | title}} struct {
 	tmpl, err := template.New("models").
 		Funcs(template.FuncMap{"title": titleCase}).
 		Parse(modelTemplate)
-	// Option("missingkey=zero") para evitar erro de chave ausente
+	// Option("missingkey=zero") to avoid missing key error
 	if err != nil {
-		gl.Log("fatal", fmt.Sprintf("Erro ao criar template: %v", err))
+		gl.Log("fatal", fmt.Sprintf("Error creating template: %v", err))
 		return
 	}
 
 	writer := io.Writer(file)
 	if err = tmpl.Execute(writer, tables); err != nil {
-		gl.Log("fatal", fmt.Sprintf("Erro ao executar template: %v", err))
+		gl.Log("fatal", fmt.Sprintf("Error executing template: %v", err))
 		return
 	}
 	file.Sync()
-	fmt.Println("Arquivo models.go gerado com sucesso!")
+	fmt.Println("models.go file generated successfully!")
 }
 
-// Mapeia tipos SQL para Go
+// Maps SQL types to Go types
 func mapSQLType(sqlType string) string {
 	switch strings.ToLower(sqlType) {
 	case "integer":
