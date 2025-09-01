@@ -1,3 +1,4 @@
+// Package cron provides functionality for managing cron jobs.
 package cron
 
 import (
@@ -10,7 +11,7 @@ import (
 
 	"github.com/google/uuid"
 	jobqueue "github.com/rafa-mori/gdbase/internal/models/job_queue"
-	gl "github.com/rafa-mori/gdbase/logger"
+	gl "github.com/rafa-mori/gdbase/internal/module/logger"
 	t "github.com/rafa-mori/gdbase/types"
 	"github.com/streadway/amqp"
 )

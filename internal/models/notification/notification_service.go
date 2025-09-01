@@ -1,3 +1,4 @@
+// Package notification fornece a interface e o modelo para notificações.
 package notification
 
 import (
@@ -8,7 +9,7 @@ import (
 	"net/http"
 	"time"
 
-	gl "github.com/rafa-mori/gdbase/logger"
+	gl "github.com/rafa-mori/gdbase/internal/module/logger"
 )
 
 // Service: NotificationService encapsula a lógica de negócio e envio.

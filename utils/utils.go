@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	gl "github.com/rafa-mori/gdbase/logger"
+	gl "github.com/rafa-mori/gdbase/internal/module/logger"
 )
 
 // ValidateWorkerLimit valida o limite de workers

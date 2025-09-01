@@ -6,9 +6,9 @@ import (
 	"reflect"
 
 	ci "github.com/rafa-mori/gdbase/internal/interfaces"
+	gl "github.com/rafa-mori/gdbase/internal/module/logger"
 	crp "github.com/rafa-mori/gdbase/internal/security/crypto"
 	sci "github.com/rafa-mori/gdbase/internal/security/interfaces"
-	gl "github.com/rafa-mori/gdbase/logger"
 	l "github.com/rafa-mori/logz"
 
 	"context"

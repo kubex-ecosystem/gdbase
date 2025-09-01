@@ -1,9 +1,10 @@
+// Package clients fornece funcionalidades para gerenciar clientes.
 package clients
 
 import (
 	"fmt"
 
-	gl "github.com/rafa-mori/gdbase/logger"
+	gl "github.com/rafa-mori/gdbase/internal/module/logger"
 	"gorm.io/gorm"
 )
 

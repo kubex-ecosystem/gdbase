@@ -11,8 +11,8 @@ import (
 	"strings"
 	"time"
 
-	manifest "github.com/rafa-mori/gdbase/info"
-	"github.com/rafa-mori/gdbase/logger"
+	manifest "github.com/rafa-mori/gdbase/internal/module/info"
+	"github.com/rafa-mori/gdbase/internal/module/logger"
 	"github.com/spf13/cobra"
 )
 

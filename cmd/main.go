@@ -1,14 +1,13 @@
-// go:generate go run github.com/rafa-mori/gdbase/internalmodels/user GenUser
 package main
 
 import (
-	"fmt"
-
-	gl "github.com/rafa-mori/gdbase/logger"
+	"github.com/rafa-mori/gdbase/internal/module"
+	gl "github.com/rafa-mori/gdbase/internal/module/logger"
 )
 
+// main initializes the logger and creates a new GDBase instance.
 func main() {
-	if err := RegX().Execute(); err != nil {
-		gl.Log("error", fmt.Sprintf("Error: %v", err))
+	if err := module.RegX().Command().Execute(); err != nil {
+		gl.Log("fatal", err.Error())
 	}
 }

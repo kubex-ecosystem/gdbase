@@ -1,3 +1,4 @@
+// Package webhooks provides the webhook model and interface for the application
 package webhooks
 
 import (
@@ -6,8 +7,8 @@ import (
 
 	"github.com/google/uuid"
 	ci "github.com/rafa-mori/gdbase/internal/interfaces"
+	gl "github.com/rafa-mori/gdbase/internal/module/logger"
 	t "github.com/rafa-mori/gdbase/internal/types"
-	gl "github.com/rafa-mori/gdbase/logger"
 )
 
 type IWebhook interface {

@@ -1,22 +1,29 @@
+// Package cli contém comandos relacionados à linha de comando.
 package cli
 
 import (
 	"log"
+	"os"
 	"os/exec"
 	"strings"
+	"time"
 
 	"github.com/rafa-mori/gdbase/utils"
 	"github.com/spf13/cobra"
 )
 
-// SshCmdsList retorna uma lista de comandos Cobra relacionados a SSH.
+// SSHCmds retorna uma lista de comandos Cobra relacionados a SSH.
 // Retorna um slice de ponteiros para comandos Cobra.
-func SshCmds() *cobra.Command {
+func SSHCmds() *cobra.Command {
+	shortDesc := "Configura os utilitários SSH do sistema"
+	longDesc := "Configura os utilitários SSH do sistema"
+
 	rootCmd := &cobra.Command{
-		Use:     "ssh",
-		Aliases: []string{"s", "ss"},
-		Short:   "Configura os utilitários SSH do sistema",
-		Long:    "Configura os utilitários SSH do sistema",
+		Use:         "ssh",
+		Aliases:     []string{"s", "ss"},
+		Short:       shortDesc,
+		Long:        longDesc,
+		Annotations: GetDescriptions([]string{shortDesc, longDesc}, (os.Getenv("GDBASE_HIDEBANNER") == "true")),
 	}
 
 	rootCmd.AddCommand(sshTunnelCmd())
@@ -32,10 +39,14 @@ func sshTunnelCmd() *cobra.Command {
 	var tunnels []string
 	var background bool
 
+	shortDesc := "Configura um túnel SSH"
+	longDesc := "Configura um túnel SSH"
+
 	rootCmd := &cobra.Command{
-		Use:     "tunnel",
-		Aliases: []string{"tun", "t"},
-		Short:   "Configura um túnel SSH",
+		Use:         "tunnel",
+		Aliases:     []string{"tun", "t"},
+		Short:       shortDesc,
+		Annotations: GetDescriptions([]string{shortDesc, longDesc}, (os.Getenv("GDBASE_HIDEBANNER") == "true")),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if background {
 				sshCmdRun := exec.Command("kbx", "u", "s", "tunnel-service-background", "--sshUser", sshUser, "--sshCert", sshCert, "--sshPassword", sshPassword, "--sshAddress", sshAddress, "--sshPort", sshPort, "--tunnels", strings.Join(tunnels, ","))
@@ -53,7 +64,20 @@ func sshTunnelCmd() *cobra.Command {
 				return nil
 			}
 
-			return utils.SshTunnel(sshUser, sshCert, sshPassword, sshAddress, sshPort, tunnels...)
+			var sshCred utils.SSHCred
+			sshCred.User = sshUser
+			sshCred.PrivateKey = []byte(sshCert)
+			sshCred.Password = sshPassword
+			timeout := 10 * time.Second
+
+			tnl, err := utils.SSHConnect(sshAddress, sshCred, timeout)
+			if err != nil {
+				log.Println("Erro ao conectar via SSH:", err)
+				return nil
+			}
+			defer tnl.Close()
+
+			return nil
 		},
 	}
 
@@ -77,7 +101,19 @@ func sshTunnelServiceCmd() *cobra.Command {
 		Use:    "tunnel-service-background",
 		Hidden: true,
 		Run: func(cmd *cobra.Command, args []string) {
-			_ = utils.SshTunnel(sshUser, sshCert, sshPassword, sshAddress, sshPort, tunnels...)
+			var sshCred utils.SSHCred
+			sshCred.User = sshUser
+			sshCred.PrivateKey = []byte(sshCert)
+			sshCred.Password = sshPassword
+			timeout := 10 * time.Second
+
+			tnl, err := utils.SSHConnect(sshAddress, sshCred, timeout)
+			if err != nil {
+				log.Println("Erro ao conectar via SSH:", err)
+				return
+			}
+			defer tnl.Close()
+
 		},
 	}
 	rootCmd.Flags().StringVarP(&sshUser, "sshUser", "l", "", "Usuário SSH")
@@ -88,3 +124,30 @@ func sshTunnelServiceCmd() *cobra.Command {
 	rootCmd.Flags().StringSliceVarP(&tunnels, "tunnels", "L", []string{}, "Túneis")
 	return rootCmd
 }
+
+// TODO: FIX USAGE
+
+// cred := utils.SSHCred{
+//   User: "ubuntu",
+//   // Password: "xxx",                      // ou
+//   PrivateKey: os.ReadFile("~/.ssh/id_rsa"), // o que preferir
+// }
+
+// t, err := utils.SshConnect("meu-vps:22", cred, 5*time.Second)
+// if err != nil { panic(err) }
+// defer t.Close()
+
+// // 1) Local forward: expõe localmente 15432 → conecta no remoto 127.0.0.1:5432 (via SSH)
+// lf := "L:127.0.0.1:15432->127.0.0.1:5432"
+
+// // 2) Remote forward: expõe remotamente 0.0.0.0:8080 → conecta no local 127.0.0.1:8080
+// rf := "R:0.0.0.0:8080->127.0.0.1:8080"
+
+// sp1, _ := utils.ParseForwardSpec(lf)
+// sp2, _ := utils.ParseForwardSpec(rf)
+
+// stopAll, err := t.Start(sp1, sp2)
+// if err != nil { panic(err) }
+// defer stopAll()
+
+// select {} // fica de pé

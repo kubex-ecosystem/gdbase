@@ -2,20 +2,22 @@ package cli
 
 import (
 	"fmt"
+	"os"
+
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
 
 func configCmd() *cobra.Command {
 	var configFile string
-	short := "Edit configuration"
-	long := "Edit configuration file interactively"
+	shortDesc := "Edit configuration"
+	longDesc := "Edit configuration file interactively"
 
 	cmd := &cobra.Command{
 		Use:         "config",
-		Short:       short,
-		Long:        long,
-		Annotations: GetDescriptions([]string{short, long}, false),
+		Short:       shortDesc,
+		Long:        longDesc,
+		Annotations: GetDescriptions([]string{shortDesc, longDesc}, (os.Getenv("GDBASE_HIDEBANNER") == "true")),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			config, err := ReadConfig(configFile)
 			if err != nil {

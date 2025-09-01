@@ -1,175 +1,198 @@
+// Package utils fornece utilitários diversos.
 package utils
 
 import (
 	"fmt"
-	"golang.org/x/crypto/ssh"
 	"io"
-	"log"
 	"net"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
+	"time"
+
+	"golang.org/x/crypto/ssh"
+	"golang.org/x/crypto/ssh/knownhosts"
 )
 
-// acquireHostKey adquire a chave do host.
-// host: o endereço do host.
-// Retorna a chave pública do host e um erro, se houver.
-func acquireHostKey(host string) (ssh.PublicKey, error) {
-	var pubKey ssh.PublicKey
+// ForwardMode: L = local forward (listen local -> dial remoto via SSH)
+//
+//	R = remote forward (listen remoto -> dial local)
 
-	pubKey = getKnownHostKey(host, "")
-	if pubKey != nil {
-		return pubKey, nil
-	}
+type ForwardMode byte
 
-	pubKey = getKnownHostKey(host, filepath.Join(os.Getenv("HOME"), ".ssh", "id_rsa.pub"))
-	if pubKey != nil {
-		return pubKey, nil
-	}
+const (
+	LocalForward  ForwardMode = 'L'
+	RemoteForward ForwardMode = 'R'
+)
 
-	return nil, fmt.Errorf("chave do host não encontrada")
+// ForwardSpec descreve um túnel.
+// Ex.: "L:127.0.0.1:15432->127.0.0.1:5432"  (listen local 15432; alvo remoto 5432)
+//
+//	"R:0.0.0.0:5432->127.0.0.1:5432"     (listen remoto 5432; alvo local 5432)
+type ForwardSpec struct {
+	Mode   ForwardMode
+	Listen string // host:port onde escuta (local p/ L; remoto p/ R)
+	Target string // host:port destino (remoto p/ L; local p/ R)
 }
 
-// saveHostKey salva a chave do host no arquivo known_hosts.
-// host: o endereço do host.
-// pubKey: a chave pública do host.
-// Retorna um erro, se houver.
-func saveHostKey(host string, pubKey ssh.PublicKey) error {
-	knownHostsPath := filepath.Join(os.Getenv("HOME"), ".ssh", "known_hosts")
-	file, err := os.OpenFile(knownHostsPath, os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0644)
-	if err != nil {
-		return fmt.Errorf("falha ao abrir o arquivo known_hosts: %v", err)
+func ParseForwardSpec(s string) (ForwardSpec, error) {
+	parts := strings.SplitN(s, ":", 2)
+	if len(parts) != 2 {
+		return ForwardSpec{}, fmt.Errorf("spec inválida: %q", s)
 	}
-	defer file.Close()
-
-	_, err = file.WriteString(fmt.Sprintf("%s %s\n", host, strings.TrimSpace(string(ssh.MarshalAuthorizedKey(pubKey)))))
-	if err != nil {
-		return fmt.Errorf("falha ao escrever no arquivo known_hosts: %v", err)
+	mode := ForwardMode(parts[0][0])
+	rest := parts[1]
+	lr := strings.Split(rest, "->")
+	if len(lr) != 2 {
+		return ForwardSpec{}, fmt.Errorf("esperado 'listen->target' em %q", s)
 	}
-
-	return nil
+	return ForwardSpec{Mode: mode, Listen: lr[0], Target: lr[1]}, nil
 }
 
-// SshTunnel configura um túnel SSH com base nos parâmetros fornecidos.
-// sshUser: o nome de usuário SSH.
-// sshCert: o certificado SSH.
-// sshPassword: a senha SSH.
-// sshAddress: o endereço do servidor SSH.
-// sshPort: a porta do servidor SSH.
-// tunnels: os túneis a serem configurados.
-// Retorna um erro, se houver.
-func SshTunnel(sshUser string, sshCert string, sshPassword string, sshAddress string, sshPort string, tunnels ...string) error {
-	if sshUser == "" || sshAddress == "" || sshPort == "" || len(tunnels) == 0 {
-		return fmt.Errorf("argumentos inválidos")
-	}
-
-	var sshHost string
-	var sshConfig *ssh.ClientConfig
-
-	sshHost = fmt.Sprintf("%s:%s", sshAddress, sshPort)
-
-	if sshCert != "" {
-		sshSigner, sshSignerErr := ssh.ParsePrivateKey([]byte(sshCert))
-		if sshSignerErr != nil {
-			return fmt.Errorf("falha ao analisar a chave privada: %v", sshSignerErr)
-		}
-		sshConfig = &ssh.ClientConfig{
-			User: sshUser,
-			Auth: []ssh.AuthMethod{
-				ssh.PublicKeys(sshSigner),
-			},
-			HostKeyCallback: ssh.InsecureIgnoreHostKey(), // Adiciona um HostKeyCallback
-		}
-	} else {
-		sshConfig = &ssh.ClientConfig{
-			User: sshUser,
-			Auth: []ssh.AuthMethod{
-				ssh.Password(sshPassword),
-			},
-			HostKeyCallback: ssh.InsecureIgnoreHostKey(), // Adiciona um HostKeyCallback
-		}
-	}
-
-	sshConn, sshConnErr := ssh.Dial("tcp", sshHost, sshConfig)
-	if sshConnErr != nil {
-		return fmt.Errorf("falha ao conectar ao servidor SSH: %v", sshConnErr)
-	}
-	defer sshConn.Close()
-
-	var localListeners []*net.Listener
-	var localListener net.Listener
-	var localListenerErr error
-	for _, tunnel := range tunnels {
-		localListener, localListenerErr = net.Listen("tcp", tunnel)
-		if localListenerErr != nil {
-			return fmt.Errorf("falha ao iniciar o listener local: %v", localListenerErr)
-		}
-		localListeners = append(localListeners, &localListener)
-		defer localListener.Close()
-		log.Printf("Túnel local iniciado em %s", tunnel)
-	}
-
-	for {
-		localConn, localConnErr := localListener.Accept()
-		if localConnErr != nil {
-			log.Printf("Erro ao aceitar a conexão local: %v", localConnErr)
-			continue
-		}
-
-		remoteConn, remoteConnErr := sshConn.Dial("tcp", localConn.RemoteAddr().String())
-		if remoteConnErr != nil {
-			log.Printf("Erro ao conectar ao servidor remoto: %v", remoteConnErr)
-			continue
-		}
-
-		go forwardData(localConn, remoteConn)
-		go forwardData(remoteConn, localConn)
-	}
+type SSHCred struct {
+	User       string // ex.: "ubuntu"
+	Password   string // opcional se usar chave
+	PrivateKey []byte // opcional; PEM
+	// HostKey: se vazio, tenta known_hosts; se falhar, recusa (sem Insecure)
 }
 
-// forwardData encaminha dados entre as conexões.
-// src: a conexão de origem.
-// dest: a conexão de destino.
-func forwardData(src, dest net.Conn) {
-	defer src.Close()
-	defer dest.Close()
-
-	_, err := io.Copy(src, dest)
-	if err != nil {
-		log.Printf("Erro ao transferir dados: %v", err)
-	}
+type Tunnel struct {
+	client *ssh.Client
 }
 
-// getKnownHostKey obtém a chave de host conhecida para validação.
-// host: o endereço do host.
-// publicKeyPath: o caminho para a chave pública.
-// Retorna a chave pública do host.
-func getKnownHostKey(host string, publicKeyPath string) ssh.PublicKey {
-	if publicKeyPath != "" {
-		key, err := os.ReadFile(publicKeyPath)
+// SSHConnect abre a conexão SSH segura validando host key via known_hosts.
+func SSHConnect(addr string, cred SSHCred, timeout time.Duration) (*Tunnel, error) {
+	var auths []ssh.AuthMethod
+	if len(cred.PrivateKey) > 0 {
+		signer, err := ssh.ParsePrivateKey(cred.PrivateKey)
 		if err != nil {
-			log.Fatalf("falha ao ler a chave pública: %v", err)
-			return nil
+			return nil, fmt.Errorf("chave privada inválida: %w", err)
 		}
-		pubKey, _, _, _, parseAuthorizedKeyErr := ssh.ParseAuthorizedKey(key)
-		if parseAuthorizedKeyErr != nil {
-			log.Fatalf("falha ao analisar a chave pública: %v", parseAuthorizedKeyErr)
-			return nil
-		}
-		return pubKey
+		auths = append(auths, ssh.PublicKeys(signer))
+	}
+	if cred.Password != "" {
+		auths = append(auths, ssh.Password(cred.Password))
 	}
 
-	// Tenta usar o ssh-copy-id para obter a chave pública, se não der certo, retorna nil
-	copyIDCmd, copyIDCmdErr := exec.Command("bash", "-c", fmt.Sprintf("ssh-copy-id %s", host)).Output()
-	if copyIDCmdErr != nil {
-		log.Printf("falha ao executar o comando ssh-copy-id: %v", copyIDCmdErr)
-		return nil
+	khPath := filepath.Join(os.Getenv("HOME"), ".ssh", "known_hosts")
+	hostKeyCb, err := knownhosts.New(khPath)
+	if err != nil {
+		return nil, fmt.Errorf("falha ao carregar known_hosts: %w", err)
 	}
-	pubKey, _, _, _, parseAuthorizedKeyErr := ssh.ParseAuthorizedKey(copyIDCmd)
-	if parseAuthorizedKeyErr != nil {
-		log.Fatalf("falha ao analisar a chave pública: %v", parseAuthorizedKeyErr)
-		return nil
+
+	cfg := &ssh.ClientConfig{
+		User:            cred.User,
+		Auth:            auths,
+		HostKeyCallback: hostKeyCb,
+		Timeout:         timeout,
 	}
-	return pubKey // Substitua pela chave pública apropriada para o seu caso.
+	cli, err := ssh.Dial("tcp", addr, cfg)
+	if err != nil {
+		return nil, fmt.Errorf("SSH dial falhou: %w", err)
+	}
+	return &Tunnel{client: cli}, nil
+}
+
+func (t *Tunnel) Close() error { return t.client.Close() }
+
+// Start inicia N túneis, cada qual numa goroutine.
+// Aceita tanto L quanto R. Retorna função de teardown.
+func (t *Tunnel) Start(specs ...ForwardSpec) (func(), error) {
+	stopFns := make([]func(), 0, len(specs))
+	for _, sp := range specs {
+		switch sp.Mode {
+		case LocalForward:
+			ln, err := net.Listen("tcp", sp.Listen)
+			if err != nil {
+				return nil, fmt.Errorf("listen local %s: %w", sp.Listen, err)
+			}
+			stop := make(chan struct{})
+			go func(listener net.Listener, target string) {
+				for {
+					conn, err := listener.Accept()
+					if err != nil {
+						select {
+						case <-stop:
+							return
+						default:
+						}
+						continue
+					}
+					go t.handleLocal(conn, target)
+				}
+			}(ln, sp.Target)
+			stopFns = append(stopFns, func() { close(stop); _ = ln.Close() })
+
+		case RemoteForward:
+			// Listen REMOTO via SSH (RFC 4254)
+			rln, err := t.client.Listen("tcp", sp.Listen)
+			if err != nil {
+				return nil, fmt.Errorf("listen remoto %s: %w", sp.Listen, err)
+			}
+			stop := make(chan struct{})
+			go func(rlistener net.Listener, target string) {
+				for {
+					rconn, err := rlistener.Accept()
+					if err != nil {
+						select {
+						case <-stop:
+							return
+						default:
+						}
+						continue
+					}
+					// para cada conexão remota, disca LOCAL no target
+					go t.handleRemote(rconn, target)
+				}
+			}(rln, sp.Target)
+			stopFns = append(stopFns, func() { close(stop); _ = rln.Close() })
+
+		default:
+			return nil, fmt.Errorf("modo desconhecido em %v", sp)
+		}
+	}
+	return func() {
+		for i := len(stopFns) - 1; i >= 0; i-- {
+			stopFns[i]()
+		}
+	}, nil
+}
+
+func (t *Tunnel) handleLocal(localConn net.Conn, remoteTarget string) {
+	defer localConn.Close()
+	remoteConn, err := t.client.Dial("tcp", remoteTarget)
+	if err != nil {
+		_ = localConn.Close()
+		return
+	}
+	pipeBoth(localConn, remoteConn)
+}
+
+func (t *Tunnel) handleRemote(remoteConn net.Conn, localTarget string) {
+	defer remoteConn.Close()
+	localConn, err := net.Dial("tcp", localTarget)
+	if err != nil {
+		_ = remoteConn.Close()
+		return
+	}
+	pipeBoth(remoteConn, localConn)
+}
+
+func pipeBoth(a, b net.Conn) {
+	// a<->b com half-close em cada direção
+	go copyClose(a, b)
+	go copyClose(b, a)
+}
+
+func copyClose(dst, src net.Conn) {
+	defer func() {
+		// half-close no sentido de escrita, se suportado
+		type closeWriter interface{ CloseWrite() error }
+		if cw, ok := dst.(closeWriter); ok {
+			_ = cw.CloseWrite()
+		} else {
+			_ = dst.Close()
+		}
+	}()
+	_, _ = io.Copy(dst, src)
 }

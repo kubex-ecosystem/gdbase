@@ -10,7 +10,7 @@ import (
 
 	jobqueue "github.com/rafa-mori/gdbase/internal/models/job_queue"
 
-	gl "github.com/rafa-mori/gdbase/logger"
+	gl "github.com/rafa-mori/gdbase/internal/module/logger"
 )
 
 type ICronJobModel interface {

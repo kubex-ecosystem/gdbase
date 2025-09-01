@@ -6,7 +6,7 @@ import (
 
 	"github.com/docker/go-connections/nat"
 	glb "github.com/rafa-mori/gdbase/internal/globals"
-	gl "github.com/rafa-mori/gdbase/logger"
+	gl "github.com/rafa-mori/gdbase/internal/module/logger"
 	t "github.com/rafa-mori/gdbase/types"
 )
 
