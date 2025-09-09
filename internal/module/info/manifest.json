@@ -1,7 +1,7 @@
 {
   "name": "Kubex GDBase",
   "application": "gdbase",
-  "version": "1.2.5",
+  "version": "1.2.6",
   "private": false,
   "published": true,
   "aliases": [
