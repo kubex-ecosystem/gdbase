@@ -7,9 +7,9 @@ import (
 	"time"
 
 	"github.com/docker/docker/client"
-	dkrs "github.com/rafa-mori/gdbase/internal/services"
-	t "github.com/rafa-mori/gdbase/types"
-	l "github.com/rafa-mori/logz"
+	dkrs "github.com/kubex-ecosystem/gdbase/internal/services"
+	t "github.com/kubex-ecosystem/gdbase/types"
+	l "github.com/kubex-ecosystem/logz"
 )
 
 type DockerSrv interface {

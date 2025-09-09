@@ -6,9 +6,9 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	ci "github.com/rafa-mori/gdbase/internal/interfaces"
-	gl "github.com/rafa-mori/gdbase/internal/module/logger"
-	t "github.com/rafa-mori/gdbase/internal/types"
+	ci "github.com/kubex-ecosystem/gdbase/internal/interfaces"
+	gl "github.com/kubex-ecosystem/gdbase/internal/module/logger"
+	t "github.com/kubex-ecosystem/gdbase/internal/types"
 )
 
 type IWebhook interface {

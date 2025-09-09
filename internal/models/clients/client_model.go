@@ -3,7 +3,7 @@ package clients
 import (
 	"time"
 
-	t "github.com/rafa-mori/gdbase/internal/types"
+	t "github.com/kubex-ecosystem/gdbase/internal/types"
 )
 
 // ClientStatus represents the status of a client

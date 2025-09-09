@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 
-	m "github.com/rafa-mori/gdbase/internal/models/cron"
+	m "github.com/kubex-ecosystem/gdbase/internal/models/cron"
 	"gorm.io/gorm"
 )
 

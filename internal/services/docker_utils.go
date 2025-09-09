@@ -15,7 +15,7 @@ import (
 	"github.com/docker/docker/client"
 	nl "github.com/docker/docker/libnetwork/netlabel"
 	"github.com/docker/go-connections/nat"
-	t "github.com/rafa-mori/gdbase/types"
+	t "github.com/kubex-ecosystem/gdbase/types"
 )
 
 // initDBSQL is an embedded SQL file that initializes the database

@@ -7,7 +7,7 @@ import (
 
 	"github.com/goccy/go-json"
 	"github.com/google/uuid"
-	typ "github.com/rafa-mori/gdbase/internal/types"
+	typ "github.com/kubex-ecosystem/gdbase/internal/types"
 	"github.com/stretchr/testify/assert"
 )
 

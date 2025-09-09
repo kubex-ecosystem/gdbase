@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"os"
 
-	gl "github.com/rafa-mori/gdbase/internal/module/logger"
-	crp "github.com/rafa-mori/gdbase/internal/security/crypto"
-	krs "github.com/rafa-mori/gdbase/internal/security/external"
+	gl "github.com/kubex-ecosystem/gdbase/internal/module/logger"
+	crp "github.com/kubex-ecosystem/gdbase/internal/security/crypto"
+	krs "github.com/kubex-ecosystem/gdbase/internal/security/external"
 )
 
 var (

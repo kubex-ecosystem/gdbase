@@ -5,7 +5,7 @@ import (
 	"reflect"
 
 	"github.com/goccy/go-json"
-	ci "github.com/rafa-mori/gdbase/internal/interfaces"
+	ci "github.com/kubex-ecosystem/gdbase/internal/interfaces"
 )
 
 type Model interface {

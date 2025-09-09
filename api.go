@@ -2,10 +2,10 @@
 package gdbase
 
 import (
-	. "github.com/rafa-mori/gdbase/internal/interfaces"
-	t "github.com/rafa-mori/gdbase/internal/types"
+	. "github.com/kubex-ecosystem/gdbase/internal/interfaces"
+	t "github.com/kubex-ecosystem/gdbase/internal/types"
 
-	l "github.com/rafa-mori/logz"
+	l "github.com/kubex-ecosystem/logz"
 )
 
 type PropertyValBase[T any] interface{ IPropertyValBase[T] }

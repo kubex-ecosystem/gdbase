@@ -3,10 +3,10 @@
 ![GDBASE Banner](docs/assets/top_banner.png)
 
 [![Go](https://img.shields.io/badge/Go-1.19+-00ADD8?logo=go&logoColor=white)](https://go.dev/)
-[![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](https://github.com/rafa-mori/gdbase/blob/main/LICENSE)
+[![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](https://github.com/kubex-ecosystem/gdbase/blob/main/LICENSE)
 [![Automation](https://img.shields.io/badge/automation-zero%20config-blue)](#features)
-[![Releases](https://img.shields.io/github/v/release/rafa-mori/goforge?include_prereleases)](https://github.com/rafa-mori/goforge/releases)
-[![Build](https://github.com/rafa-mori/gdbase/actions/workflows/kubex_go_release.yml/badge.svg)](https://github.com/rafa-mori/gdbase/actions/workflows/kubex_go_release.yml)
+[![Releases](https://img.shields.io/github/v/release/kubex-ecosystem/goforge?include_prereleases)](https://github.com/kubex-ecosystem/goforge/releases)
+[![Build](https://github.com/kubex-ecosystem/gdbase/actions/workflows/kubex_go_release.yml/badge.svg)](https://github.com/kubex-ecosystem/gdbase/actions/workflows/kubex_go_release.yml)
 
 ---
 
@@ -76,7 +76,7 @@ Clone the repository and build:
 
 ```sh
 # Clone the repository
-git clone https://github.com/rafa-mori/gdbase.git
+git clone https://github.com/kubex-ecosystem/gdbase.git
 cd gdbase
 go build -o gdbase .
 ```
@@ -174,9 +174,9 @@ Contributions are welcome! Feel free to open issues or submit pull requests. See
 
 ## **Contact**
 
-💌 **Developer**:  
-[Rafael Mori](mailto:faelmori@gmail.com)  
-💼 [Follow me on GitHub](https://github.com/rafa-mori)  
+💌 **Developer**:
+[Rafael Mori](mailto:faelmori@gmail.com)
+💼 [Follow me on GitHub](https://github.com/kubex-ecosystem)
 I'm open to collaborations and new ideas. If you found the project interesting, get in touch!
 
 ---

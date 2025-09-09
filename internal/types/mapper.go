@@ -11,8 +11,8 @@ import (
 	"strings"
 
 	"github.com/pelletier/go-toml/v2"
-	ci "github.com/rafa-mori/gdbase/internal/interfaces"
-	gl "github.com/rafa-mori/gdbase/internal/module/logger"
+	ci "github.com/kubex-ecosystem/gdbase/internal/interfaces"
+	gl "github.com/kubex-ecosystem/gdbase/internal/module/logger"
 	"github.com/subosito/gotenv"
 	"gopkg.in/yaml.v3"
 )

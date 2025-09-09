@@ -10,9 +10,9 @@ import (
 
 	"github.com/google/uuid"
 
-	gl "github.com/rafa-mori/gdbase/internal/module/logger"
-	t "github.com/rafa-mori/gdbase/internal/types"
-	l "github.com/rafa-mori/logz"
+	gl "github.com/kubex-ecosystem/gdbase/internal/module/logger"
+	t "github.com/kubex-ecosystem/gdbase/internal/types"
+	l "github.com/kubex-ecosystem/logz"
 )
 
 type ICronJobValidation interface {

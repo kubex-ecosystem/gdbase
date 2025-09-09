@@ -5,12 +5,12 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	t "github.com/rafa-mori/gdbase/types"
-	l "github.com/rafa-mori/logz"
+	t "github.com/kubex-ecosystem/gdbase/types"
+	l "github.com/kubex-ecosystem/logz"
 
-	jobqueue "github.com/rafa-mori/gdbase/internal/models/job_queue"
+	jobqueue "github.com/kubex-ecosystem/gdbase/internal/models/job_queue"
 
-	gl "github.com/rafa-mori/gdbase/internal/module/logger"
+	gl "github.com/kubex-ecosystem/gdbase/internal/module/logger"
 )
 
 type ICronJobModel interface {

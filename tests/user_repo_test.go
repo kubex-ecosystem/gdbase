@@ -3,7 +3,7 @@ package tests
 /* import (
 	"testing"
 
-	um "github.com/rafa-mori/gdbase/internal/models/users"
+	um "github.com/kubex-ecosystem/gdbase/internal/models/users"
 	"github.com/stretchr/testify/assert"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"

@@ -8,7 +8,7 @@ import (
 
 	"github.com/goccy/go-json"
 	"github.com/pebbe/zmq4"
-	gl "github.com/rafa-mori/gdbase/internal/module/logger"
+	gl "github.com/kubex-ecosystem/gdbase/internal/module/logger"
 )
 
 const (

@@ -8,8 +8,8 @@
     "gdbase",
     "kbxdb"
   ],
-  "repository": "https://github.com/rafa-mori/gdbase",
-  "homepage": "https://github.com/rafa-mori/gdbase",
+  "repository": "https://github.com/kubex-ecosystem/gdbase",
+  "homepage": "https://github.com/kubex-ecosystem/gdbase",
   "description": "Kubex GDBase: A complete tool for managing databases, data models, and more.",
   "main": "cmd/main.go",
   "bin": "gdbase",

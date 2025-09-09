@@ -4,8 +4,8 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	jobqueue "github.com/rafa-mori/gdbase/internal/models/job_queue"
-	"github.com/rafa-mori/gdbase/internal/services"
+	jobqueue "github.com/kubex-ecosystem/gdbase/internal/models/job_queue"
+	"github.com/kubex-ecosystem/gdbase/internal/services"
 )
 
 // ExecutionLogController handles HTTP requests for execution logs.

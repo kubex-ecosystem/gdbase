@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 
-	t "github.com/rafa-mori/gdbase/types"
+	t "github.com/kubex-ecosystem/gdbase/types"
 )
 
 type IPreferencesService interface {

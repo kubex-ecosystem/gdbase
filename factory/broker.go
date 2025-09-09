@@ -8,7 +8,7 @@ import (
 	"log"
 	"runtime"
 
-	"github.com/rafa-mori/gdbase/internal/services"
+	"github.com/kubex-ecosystem/gdbase/internal/services"
 	"github.com/streadway/amqp"
 )
 

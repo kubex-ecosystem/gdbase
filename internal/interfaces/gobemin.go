@@ -3,7 +3,7 @@ package interfaces
 import (
 	"net/http"
 
-	l "github.com/rafa-mori/logz"
+	l "github.com/kubex-ecosystem/logz"
 )
 
 type IGoBE interface {

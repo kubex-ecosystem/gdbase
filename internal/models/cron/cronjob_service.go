@@ -10,9 +10,9 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	jobqueue "github.com/rafa-mori/gdbase/internal/models/job_queue"
-	gl "github.com/rafa-mori/gdbase/internal/module/logger"
-	t "github.com/rafa-mori/gdbase/types"
+	jobqueue "github.com/kubex-ecosystem/gdbase/internal/models/job_queue"
+	gl "github.com/kubex-ecosystem/gdbase/internal/module/logger"
+	t "github.com/kubex-ecosystem/gdbase/types"
 	"github.com/streadway/amqp"
 )
 

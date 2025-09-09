@@ -1,7 +1,7 @@
 package interfaces
 
 import (
-	l "github.com/rafa-mori/logz"
+	l "github.com/kubex-ecosystem/logz"
 	"github.com/google/uuid"
 )
 

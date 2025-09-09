@@ -1,9 +1,9 @@
 package factory
 
 import (
-	l "github.com/rafa-mori/logz"
-	dbAbs "github.com/rafa-mori/gdbase/internal/services"
-	t "github.com/rafa-mori/gdbase/types"
+	l "github.com/kubex-ecosystem/logz"
+	dbAbs "github.com/kubex-ecosystem/gdbase/internal/services"
+	t "github.com/kubex-ecosystem/gdbase/types"
 )
 
 type DBConfig = t.DBConfig

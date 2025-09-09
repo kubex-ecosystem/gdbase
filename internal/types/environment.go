@@ -5,11 +5,11 @@ import (
 	"encoding/base64"
 	"reflect"
 
-	ci "github.com/rafa-mori/gdbase/internal/interfaces"
-	gl "github.com/rafa-mori/gdbase/internal/module/logger"
-	crp "github.com/rafa-mori/gdbase/internal/security/crypto"
-	sci "github.com/rafa-mori/gdbase/internal/security/interfaces"
-	l "github.com/rafa-mori/logz"
+	ci "github.com/kubex-ecosystem/gdbase/internal/interfaces"
+	gl "github.com/kubex-ecosystem/gdbase/internal/module/logger"
+	crp "github.com/kubex-ecosystem/gdbase/internal/security/crypto"
+	sci "github.com/kubex-ecosystem/gdbase/internal/security/interfaces"
+	l "github.com/kubex-ecosystem/logz"
 
 	"context"
 	"fmt"

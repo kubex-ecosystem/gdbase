@@ -5,8 +5,8 @@ import (
 	"crypto/rsa"
 	"time"
 
-	ci "github.com/rafa-mori/gdbase/internal/interfaces"
-	sci "github.com/rafa-mori/gdbase/internal/security/interfaces"
+	ci "github.com/kubex-ecosystem/gdbase/internal/interfaces"
+	sci "github.com/kubex-ecosystem/gdbase/internal/security/interfaces"
 )
 
 type TSConfig struct {
