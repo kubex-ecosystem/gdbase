@@ -1,9 +1,9 @@
-/* 
+/*
   Versão 1.0
   Author: Rafael Mori
   Description: Script de inicialização do banco de dados para o serviços diversos (comercial, MCP, etc.)
  */
- 
+
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";  -- Para gerar UUIDs
 CREATE EXTENSION IF NOT EXISTS "pg_trgm";  -- Para buscas de texto eficientes
@@ -93,7 +93,7 @@ CREATE TABLE IF NOT EXISTS users (
     phone varchar(30),
     document varchar(50),
     role_id uuid REFERENCES roles(id),
-    active boolean NOT NULL DEFAULT true,   
+    active boolean NOT NULL DEFAULT true,
     created_at timestamp without time zone NOT NULL DEFAULT now(),
     updated_at timestamp without time zone NOT NULL DEFAULT now(),
     last_login timestamp without time zone
@@ -151,27 +151,27 @@ CREATE TABLE IF NOT EXISTS execution_logs (
     output       TEXT DEFAULT NULL,
     error_message TEXT DEFAULT NULL,
     retry_count  INTEGER DEFAULT 0,
-    created_at   TIMESTAMP DEFAULT NOW(), 
-    updated_at   TIMESTAMP DEFAULT NOW(), 
+    created_at   TIMESTAMP DEFAULT NOW(),
+    updated_at   TIMESTAMP DEFAULT NOW(),
     user_id     uuid REFERENCES users(id),
     created_by   uuid REFERENCES users(id),
     updated_by   uuid REFERENCES users(id),
-    metadata     JSONB 
+    metadata     JSONB
 );
 
 CREATE TABLE IF NOT EXISTS job_queue (
     id            UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     cronjob_id    UUID REFERENCES cron_jobs(id),
-    status        job_status DEFAULT 'PENDING', 
+    status        job_status DEFAULT 'PENDING',
     scheduled_time TIMESTAMP DEFAULT NOW(),
     execution_time TIMESTAMP DEFAULT NULL,
     error_message TEXT DEFAULT NULL,
     retry_count   INTEGER DEFAULT 0,
-    next_run_time TIMESTAMP DEFAULT NULL, 
+    next_run_time TIMESTAMP DEFAULT NULL,
     created_at    TIMESTAMP DEFAULT NOW(),
     updated_at    TIMESTAMP DEFAULT NOW(),
     metadata      JSONB DEFAULT NULL,
-    user_id      uuid REFERENCES users(id), 
+    user_id      uuid REFERENCES users(id),
     created_by    uuid REFERENCES users(id),
     updated_by    uuid REFERENCES users(id),
     last_executed_by uuid REFERENCES users(id),
@@ -457,7 +457,7 @@ CREATE TABLE IF NOT EXISTS stock_predictions (
 --     updated_at timestamp without time zone NOT NULL DEFAULT now(),
 --     last_sync_at timestamp without time zone,
 --     --prediction_id uuid REFERENCES stock_predictions(id),
---     priority integer, 
+--     priority integer,
 --     expected_margin numeric(18,2)
 -- );
 -- COMMIT;
@@ -672,9 +672,9 @@ CREATE TABLE IF NOT EXISTS mcp_sync_jobs (
     updated_by uuid REFERENCES users(id),
     last_executed_by uuid REFERENCES users(id),
     last_executed_at TIMESTAMP,
-    UNIQUE(task_id, target, job_type, next_run, status),
-    UNIQUE(task_id, target, job_type, last_run, status),
-    UNIQUE(task_id, target, job_type, last_run_status, last_run_message, next_run, status)
+    UNIQUE(task_id, target_task, job_type, next_run, status),
+    UNIQUE(task_id, target_task, job_type, last_run, status),
+    UNIQUE(task_id, target_task, job_type, last_run_status, last_run_message, next_run, status)
 );
 
 -- Tabela de logs de sincronização
@@ -797,7 +797,7 @@ INSERT INTO role_permissions (id, role_id, permission_id, created_at, updated_at
 (uuid_generate_v4(), (SELECT id FROM roles WHERE name = 'viewer'), (SELECT id FROM permissions WHERE name = 'post_delete'), now(), now());
 
 -- Criando um usuário de exemplo
-INSERT INTO "users" ("id","name","username","password","email","phone","role_id","document","active","created_at","updated_at","last_login") 
+INSERT INTO "users" ("id","name","username","password","email","phone","role_id","document","active","created_at","updated_at","last_login")
 VALUES (
     uuid_generate_v4(),
     'Test User',
@@ -806,7 +806,7 @@ VALUES (
     'abcdef',
     '9898989898',
     CASE WHEN (SELECT id FROM roles WHERE name = 'admin') IS NOT NULL THEN
-        (SELECT id FROM roles WHERE name = 'admin') 
+        (SELECT id FROM roles WHERE name = 'admin')
     ELSE
         (SELECT id FROM roles WHERE name = 'editor')
     END,
