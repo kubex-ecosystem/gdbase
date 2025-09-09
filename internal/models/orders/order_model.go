@@ -3,7 +3,7 @@ package orders
 import (
 	"time"
 
-	t "github.com/rafa-mori/gdbase/internal/types"
+	t "github.com/kubex-ecosystem/gdbase/internal/types"
 )
 
 // PaymentMethod represents the payment methods available for an order

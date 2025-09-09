@@ -1,7 +1,7 @@
 package models
 
 import (
-	m "github.com/rafa-mori/gdbase/internal/models/discord"
+	m "github.com/kubex-ecosystem/gdbase/internal/models/discord"
 	"gorm.io/gorm"
 )
 

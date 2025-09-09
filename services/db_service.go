@@ -2,7 +2,7 @@
 package services
 
 import (
-	t "github.com/rafa-mori/gdbase/types"
+	t "github.com/kubex-ecosystem/gdbase/types"
 	"gorm.io/gorm"
 )
 

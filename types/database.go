@@ -8,13 +8,13 @@ import (
 	"os"
 	"path/filepath"
 
-	glb "github.com/rafa-mori/gdbase/internal/globals"
-	ci "github.com/rafa-mori/gdbase/internal/interfaces"
-	gl "github.com/rafa-mori/gdbase/internal/module/logger"
-	crp "github.com/rafa-mori/gdbase/internal/security/crypto"
-	krs "github.com/rafa-mori/gdbase/internal/security/external"
-	t "github.com/rafa-mori/gdbase/internal/types"
-	l "github.com/rafa-mori/logz"
+	glb "github.com/kubex-ecosystem/gdbase/internal/globals"
+	ci "github.com/kubex-ecosystem/gdbase/internal/interfaces"
+	gl "github.com/kubex-ecosystem/gdbase/internal/module/logger"
+	crp "github.com/kubex-ecosystem/gdbase/internal/security/crypto"
+	krs "github.com/kubex-ecosystem/gdbase/internal/security/external"
+	t "github.com/kubex-ecosystem/gdbase/internal/types"
+	l "github.com/kubex-ecosystem/logz"
 	"gorm.io/gorm"
 )
 

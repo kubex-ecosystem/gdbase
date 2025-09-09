@@ -12,10 +12,10 @@ import (
 	"time"
 
 	"github.com/docker/go-connections/nat"
-	glb "github.com/rafa-mori/gdbase/internal/globals"
-	gl "github.com/rafa-mori/gdbase/internal/module/logger"
-	t "github.com/rafa-mori/gdbase/types"
-	u "github.com/rafa-mori/gdbase/utils"
+	glb "github.com/kubex-ecosystem/gdbase/internal/globals"
+	gl "github.com/kubex-ecosystem/gdbase/internal/module/logger"
+	t "github.com/kubex-ecosystem/gdbase/types"
+	u "github.com/kubex-ecosystem/gdbase/utils"
 )
 
 func SlitMessage(recPayload []string) (id, msg []string) {

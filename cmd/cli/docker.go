@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/rafa-mori/gdbase/factory"
-	s "github.com/rafa-mori/gdbase/internal/services"
-	l "github.com/rafa-mori/logz"
+	"github.com/kubex-ecosystem/gdbase/factory"
+	s "github.com/kubex-ecosystem/gdbase/internal/services"
+	l "github.com/kubex-ecosystem/logz"
 	"github.com/spf13/cobra"
 )
 

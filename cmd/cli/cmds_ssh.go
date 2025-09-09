@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/rafa-mori/gdbase/utils"
+	"github.com/kubex-ecosystem/gdbase/utils"
 	"github.com/spf13/cobra"
 )
 

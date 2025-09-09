@@ -1,8 +1,8 @@
 package main
 
 import (
-	"github.com/rafa-mori/gdbase/internal/module"
-	gl "github.com/rafa-mori/gdbase/internal/module/logger"
+	"github.com/kubex-ecosystem/gdbase/internal/module"
+	gl "github.com/kubex-ecosystem/gdbase/internal/module/logger"
 )
 
 // main initializes the logger and creates a new GDBase instance.

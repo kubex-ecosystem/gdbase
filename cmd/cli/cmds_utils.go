@@ -3,7 +3,7 @@ package cli
 import (
 	"os"
 
-	"github.com/rafa-mori/gdbase/utils/helpers"
+	"github.com/kubex-ecosystem/gdbase/utils/helpers"
 	"github.com/spf13/cobra"
 )
 

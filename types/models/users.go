@@ -1,7 +1,7 @@
 package models
 
 import (
-	m "github.com/rafa-mori/gdbase/internal/interfaces"
+	m "github.com/kubex-ecosystem/gdbase/internal/interfaces"
 )
 
 type User = m.User

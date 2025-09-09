@@ -6,7 +6,7 @@ import (
 	"runtime"
 
 	"github.com/google/uuid"
-	gl "github.com/rafa-mori/gdbase/internal/module/logger"
+	gl "github.com/kubex-ecosystem/gdbase/internal/module/logger"
 )
 
 type IReference interface {

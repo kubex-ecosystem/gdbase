@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/google/uuid"
-	t "github.com/rafa-mori/gdbase/internal/types"
+	t "github.com/kubex-ecosystem/gdbase/internal/types"
 )
 
 type IWebhookService interface {

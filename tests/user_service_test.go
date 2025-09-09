@@ -4,9 +4,9 @@ package tests
 // 	"errors"
 // 	"testing"
 
-// 	um "github.com/rafa-mori/gdbase/internal/models/users"
-// 	"github.com/rafa-mori/gdbase/types"
-// 	"github.com/rafa-mori/xtui/types"
+// 	um "github.com/kubex-ecosystem/gdbase/internal/models/users"
+// 	"github.com/kubex-ecosystem/gdbase/types"
+// 	"github.com/kubex-ecosystem/xtui/types"
 // 	"github.com/stretchr/testify/assert"
 // 	"github.com/stretchr/testify/mock"
 // )

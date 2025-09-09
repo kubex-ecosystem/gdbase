@@ -1,10 +1,12 @@
-# Golang Craftsmanship Standards
+# AI Coding Instructions for GoBE Backend
+
+## Golang Craftsmanship Standards
 
 Use Go Modules for dependency management. Keep `go.mod` and `go.sum` clean and minimal. Avoid indirect dependencies when possible.
 
-Organize projects using idiomatic structure: `cmd/`, `cmd/cli/`, `internal/`, `internal/types`, `internal/interfaces`, `api/`, `support/`, `support/instructions`, `tests/`.  
+Organize projects using idiomatic structure: `cmd/`, `cmd/cli/`, `internal/`, `internal/types`, `internal/interfaces`, `api/`, `support/`, `support/instructions`, `tests/`.
 
-Place the main CLI entrypoint in `cmd/main.go` and the library entrypoint in the root withe package at the same name of project.
+Place the main CLI entrypoint in `cmd/main.go` and the library entrypoint in the root with the package at the same name of project.
 
 Every package must contain a comment describing its purpose before the package declaration in one line. Use `// Package <name> ...` format.
 

@@ -1,7 +1,7 @@
 package services
 
 import (
-	jobqueue "github.com/rafa-mori/gdbase/internal/models/job_queue"
+	jobqueue "github.com/kubex-ecosystem/gdbase/internal/models/job_queue"
 )
 
 // ExecutionLogService implements the IExecutionLogService interface.

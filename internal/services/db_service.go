@@ -3,15 +3,15 @@ package services
 import (
 	"fmt"
 
-	gbm "github.com/rafa-mori/gdbase"
+	gbm "github.com/kubex-ecosystem/gdbase"
 
-	// gl "github.com/rafa-mori/gdbase/logger"
+	// gl "github.com/kubex-ecosystem/gdbase/logger"
 	"sync"
 
-	glb "github.com/rafa-mori/gdbase/internal/globals"
-	gl "github.com/rafa-mori/gdbase/internal/module/logger"
-	t "github.com/rafa-mori/gdbase/types"
-	l "github.com/rafa-mori/logz"
+	glb "github.com/kubex-ecosystem/gdbase/internal/globals"
+	gl "github.com/kubex-ecosystem/gdbase/internal/module/logger"
+	t "github.com/kubex-ecosystem/gdbase/types"
+	l "github.com/kubex-ecosystem/logz"
 	"gorm.io/driver/mysql"
 	"gorm.io/driver/postgres"
 	"gorm.io/driver/sqlite"

@@ -4,9 +4,9 @@ import (
 	"os"
 	"reflect"
 
-	ci "github.com/rafa-mori/gdbase/internal/interfaces"
-	gl "github.com/rafa-mori/gdbase/internal/module/logger"
-	l "github.com/rafa-mori/logz"
+	ci "github.com/kubex-ecosystem/gdbase/internal/interfaces"
+	gl "github.com/kubex-ecosystem/gdbase/internal/module/logger"
+	l "github.com/kubex-ecosystem/logz"
 
 	"github.com/google/uuid"
 )

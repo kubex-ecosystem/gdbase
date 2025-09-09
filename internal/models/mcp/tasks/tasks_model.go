@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	tp "github.com/rafa-mori/gdbase/types"
+	tp "github.com/kubex-ecosystem/gdbase/types"
 )
 
 // TaskStatus represents the possible states of a task

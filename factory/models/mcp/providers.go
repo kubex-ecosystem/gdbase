@@ -4,8 +4,8 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	m "github.com/rafa-mori/gdbase/internal/models/mcp/providers"
-	t "github.com/rafa-mori/gdbase/types"
+	m "github.com/kubex-ecosystem/gdbase/internal/models/mcp/providers"
+	t "github.com/kubex-ecosystem/gdbase/types"
 	"gorm.io/gorm"
 )
 

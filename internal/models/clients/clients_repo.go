@@ -4,7 +4,7 @@ package clients
 import (
 	"fmt"
 
-	gl "github.com/rafa-mori/gdbase/internal/module/logger"
+	gl "github.com/kubex-ecosystem/gdbase/internal/module/logger"
 	"gorm.io/gorm"
 )
 

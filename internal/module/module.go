@@ -2,9 +2,9 @@
 package module
 
 import (
-	"github.com/rafa-mori/gdbase/cmd/cli"
-	gl "github.com/rafa-mori/gdbase/internal/module/logger"
-	"github.com/rafa-mori/gdbase/internal/module/version"
+	"github.com/kubex-ecosystem/gdbase/cmd/cli"
+	gl "github.com/kubex-ecosystem/gdbase/internal/module/logger"
+	"github.com/kubex-ecosystem/gdbase/internal/module/version"
 	"github.com/spf13/cobra"
 
 	"os"

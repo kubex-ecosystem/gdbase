@@ -4,11 +4,11 @@ import (
 	"fmt"
 
 	"github.com/google/uuid"
-	gl "github.com/rafa-mori/gdbase/internal/module/logger"
-	is "github.com/rafa-mori/gdbase/internal/services"
-	t "github.com/rafa-mori/gdbase/types"
-	l "github.com/rafa-mori/logz"
-	xtt "github.com/rafa-mori/xtui/types"
+	gl "github.com/kubex-ecosystem/gdbase/internal/module/logger"
+	is "github.com/kubex-ecosystem/gdbase/internal/services"
+	t "github.com/kubex-ecosystem/gdbase/types"
+	l "github.com/kubex-ecosystem/logz"
+	xtt "github.com/kubex-ecosystem/xtui/types"
 	"gorm.io/gorm"
 )
 

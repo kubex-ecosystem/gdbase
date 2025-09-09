@@ -8,8 +8,8 @@ import (
 	"math/big"
 	"regexp"
 
-	gl "github.com/rafa-mori/gdbase/internal/module/logger"
-	sci "github.com/rafa-mori/gdbase/internal/security/interfaces"
+	gl "github.com/kubex-ecosystem/gdbase/internal/module/logger"
+	sci "github.com/kubex-ecosystem/gdbase/internal/security/interfaces"
 	"golang.org/x/crypto/chacha20poly1305"
 )
 

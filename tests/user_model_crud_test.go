@@ -7,7 +7,7 @@ import (
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 
-	um "github.com/rafa-mori/gdbase/internal/models/users"
+	um "github.com/kubex-ecosystem/gdbase/internal/models/users"
 )
 
 func setupUserTestDB(t *testing.T) *gorm.DB {

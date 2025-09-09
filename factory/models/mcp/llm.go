@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	m "github.com/rafa-mori/gdbase/internal/models/mcp/llm"
+	m "github.com/kubex-ecosystem/gdbase/internal/models/mcp/llm"
 	"gorm.io/gorm"
 )
 

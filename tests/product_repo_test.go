@@ -8,7 +8,7 @@ import (
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 
-	products "github.com/rafa-mori/gdbase/internal/models/products"
+	products "github.com/kubex-ecosystem/gdbase/internal/models/products"
 )
 
 func setupProductRepoTestDB(t *testing.T) *gorm.DB {

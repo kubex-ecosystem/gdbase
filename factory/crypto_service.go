@@ -1,9 +1,9 @@
 package factory
 
 import (
-	crp "github.com/rafa-mori/gdbase/internal/security/crypto"
-	krs "github.com/rafa-mori/gdbase/internal/security/external"
-	sci "github.com/rafa-mori/gdbase/internal/security/interfaces"
+	crp "github.com/kubex-ecosystem/gdbase/internal/security/crypto"
+	krs "github.com/kubex-ecosystem/gdbase/internal/security/external"
+	sci "github.com/kubex-ecosystem/gdbase/internal/security/interfaces"
 )
 
 type CryptoService = sci.ICryptoService

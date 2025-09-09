@@ -4,7 +4,7 @@ import (
 	"reflect"
 
 	"github.com/google/uuid"
-	ci "github.com/rafa-mori/gdbase/internal/interfaces"
+	ci "github.com/kubex-ecosystem/gdbase/internal/interfaces"
 
 	"fmt"
 	"sort"

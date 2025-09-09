@@ -1,7 +1,7 @@
 package models
 
 import (
-	m "github.com/rafa-mori/gdbase/internal/models/users"
+	m "github.com/kubex-ecosystem/gdbase/internal/models/users"
 	"gorm.io/gorm"
 )
 

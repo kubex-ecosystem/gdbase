@@ -3,7 +3,7 @@ package products
 import (
 	"time"
 
-	t "github.com/rafa-mori/gdbase/internal/types"
+	t "github.com/kubex-ecosystem/gdbase/internal/types"
 )
 
 // PriceTable represents a product's price table

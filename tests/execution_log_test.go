@@ -5,8 +5,8 @@ package tests
 // 	"net/http/httptest"
 // 	"testing"
 
-// 	"github.com/rafa-mori/gdbase/internal/controllers"
-// 	jobqueue "github.com/rafa-mori/gdbase/internal/models/job_queue"
+// 	"github.com/kubex-ecosystem/gdbase/internal/controllers"
+// 	jobqueue "github.com/kubex-ecosystem/gdbase/internal/models/job_queue"
 // 	"github.com/gin-gonic/gin"
 // 	"github.com/stretchr/testify/assert"
 // )
