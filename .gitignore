@@ -63,3 +63,8 @@ tests/**/*
 */prompt/*.py
 */prompt/**/*.py
 dist/*
+.codex/
+.notes/
+.kubex/
+.claude/
+CLAUDE.md
