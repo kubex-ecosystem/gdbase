@@ -248,20 +248,19 @@ func SetupDatabaseServices(d IDockerService, config *t.DBConfig) error {
 				rabbitUser := rabbitCfg.Username
 				rabbitPass := rabbitCfg.Password
 				if rabbitUser == "" {
-					rabbitUser = "guest"
+					rabbitUser = "gobe"
 				}
-				if rabbitPass == "" {
-					rabbitPass = "guest"
+				if rabbitCfg.Password == "" {
+					rabbitPassKey, rabbitPassErr := glb.GetOrGenPasswordKeyringPass("rabbitmq")
+					if rabbitPassErr != nil {
+						gl.Log("error", "Skipping RabbitMQ setup due to error generating password")
+						gl.Log("debug", fmt.Sprintf("Error generating key: %v", rabbitPassErr))
+						goto postRabbit
+					}
+					rabbitPass = string(rabbitPassKey)
+				} else {
+					gl.Log("debug", fmt.Sprintf("Password found in config: %s...", rabbitCfg.Password[0:2]))
 				}
-
-				// secondPortMap := mapPorts(fmt.Sprintf("%s", dbConfig.Port), "5672/tcp")
-				// var rabbitCfgVolume string
-				// if rabbitCfgVolume == "" {
-				// 	rabbitCfgVolume = os.ExpandEnv(glb.DefaultRabbitMQVolume)
-				// } else {
-				// 	rabbitCfgVolume = os.ExpandEnv(rabbitCfg.Volume)
-				// }
-				// Insert the PostgreSQL service into the services slice
 				if rabbitCfg.Reference.Name == "" {
 					rabbitCfg.Reference.Name = "gdbase-rabbitmq"
 				}
@@ -274,25 +273,63 @@ func SetupDatabaseServices(d IDockerService, config *t.DBConfig) error {
 				if rabbitCfg.Port == nil || rabbitCfg.Port == "" {
 					rabbitCfg.Port = "5672"
 				}
-				if rabbitCfg.ErlangCookie == "" {
-					rabbitCfg.ErlangCookie = "defaultcookie"
+				if rabbitCfg.ManagementPort == "" {
+					rabbitCfg.ManagementPort = "15672"
 				}
 				// Check if the port is already in use and find an available one if necessary
-				firstPortMap := d.MapPorts(fmt.Sprintf("%s", rabbitCfg.Port), "15672/tcp")
+				port, err := FindAvailablePort(5672, 10)
+				if err != nil {
+					gl.Log("error", fmt.Sprintf("❌ Erro ao encontrar porta disponível: %v", err))
+					goto postRabbit
+				}
+				rabbitCfg.Port = port
+				managementPort, err := FindAvailablePort(15672, 10)
+				if err != nil {
+					gl.Log("error", fmt.Sprintf("❌ Erro ao encontrar porta disponível: %v", err))
+					goto postRabbit
+				}
+				rabbitCfg.ManagementPort = managementPort
+				// Create the volume for RabbitMQ, if exists definitions on the config
+				if err := d.CreateVolume(rabbitCfg.Reference.Name, rabbitCfg.Volume); err != nil {
+					gl.Log("error", fmt.Sprintf("❌ Erro ao criar volume do RabbitMQ: %v", err))
+					goto postRabbit
+				}
+				// Check if ErlangCookie is empty, if so, generate a new one
+				// RabbitMQ nodes use the Erlang cookie to authenticate with each other.
+				// If you are running a single node, it is not strictly necessary to set this value,
+				// but it is a good practice to do so.
+				// The cookie must be the same for all nodes in the cluster.
+				// The default value is "defaultcookie", but it is recommended to change it to a random value.
+				// You can generate a random value using the command: openssl rand -base64 32
+				// Then, set the value in the RABBITMQ_ERLANG_COOKIE environment variable.
+				// More info: https://www.rabbitmq.com/clustering.html#erlang-cookie
+				if rabbitCfg.ErlangCookie == "" {
+					rabbitCookieKey, rabbitCookieErr := glb.GetOrGenPasswordKeyringPass("rabbitmq-cookie")
+					if rabbitCookieErr != nil {
+						gl.Log("error", "Skipping RabbitMQ setup due to error generating password")
+						gl.Log("debug", fmt.Sprintf("Error generating key: %v", rabbitCookieErr))
+						goto postRabbit
+					}
+					rabbitCfg.ErlangCookie = string(rabbitCookieKey)
+				}
+				portBindings := []nat.PortMap{
+					{
+						"5672/tcp":  []nat.PortBinding{{HostIP: "127.0.0.1", HostPort: "5672"}},  // publica AMQP
+						"15672/tcp": []nat.PortBinding{{HostIP: "127.0.0.1", HostPort: "15672"}}, // publica console
+					},
+				}
 
-				// Vhost não existe no struct original, mas se quiser adicionar:
-				// if rabbitCfg.Vhost == "" {
-				//     rabbitCfg.Vhost = "/"
-				// }
+				if rabbitCfg.Vhost == "" {
+					rabbitCfg.Vhost = "gobe"
+				}
 
 				dbConnObj := NewServices(
 					"gdbase-rabbitmq",
-					"rabbitmq:3-management",
+					"rabbitmq:latest",
 					[]string{
 						"RABBITMQ_DEFAULT_USER=" + rabbitUser,
 						"RABBITMQ_DEFAULT_PASS=" + rabbitPass,
-						"RABBITMQ_DEFAULT_VHOST=/",
-						// "RABBITMQ_DEFAULT_VHOST=" + rabbitCfg.Vhost, // Se adicionar o campo Vhost
+						"RABBITMQ_DEFAULT_VHOST=" + rabbitCfg.Vhost, // Se adicionar o campo Vhost
 						"RABBITMQ_PORT=" + rabbitCfg.Port.(string),
 						"RABBITMQ_DB_NAME=" + rabbitCfg.Reference.Name,
 						"RABBITMQ_DB_VOLUME=" + rabbitCfg.Volume,
@@ -301,15 +338,15 @@ func SetupDatabaseServices(d IDockerService, config *t.DBConfig) error {
 						"RABBITMQ_PORT_5672_TCP_PORT=" + rabbitCfg.Port.(string),
 						"RABBITMQ_PORT_15672_TCP_ADDR=" + rabbitCfg.Host,
 						"RABBITMQ_PORT_15672_TCP_PORT=" + rabbitCfg.Port.(string),
-					}, []nat.PortMap{firstPortMap},
+					}, portBindings,
 					map[string]struct{}{
 						fmt.Sprintf("%s:/var/lib/rabbitmq", rabbitCfg.Volume): {},
 					},
 				)
-
 				services = append(services, dbConnObj)
 			}
 		}
+	postRabbit:
 		if config.Messagery.Redis != nil && config.Messagery.Redis.Enabled {
 			if IsServiceRunning("gdbase-redis") {
 				fmt.Printf("✅ %s já está rodando!\n", "gdbase-redis")

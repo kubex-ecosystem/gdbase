@@ -20,7 +20,7 @@ import (
 
 type JSONB map[string]any
 
-// Serializer manual para o GORM
+// Value is a Serializer manual para o GORM
 func (m JSONB) Value() (driver.Value, error) {
 	return json.Marshal(m)
 }
@@ -81,6 +81,7 @@ type RabbitMQ struct {
 	Enabled        bool         `gorm:"default:true" json:"enabled" yaml:"enabled" xml:"enabled" toml:"enabled" mapstructure:"enabled"`
 	Username       string       `gorm:"omitempty" json:"username" yaml:"username" xml:"username" toml:"username" mapstructure:"username"`
 	Password       string       `gorm:"omitempty" json:"password" yaml:"password" xml:"password" toml:"password" mapstructure:"password"`
+	Vhost          string       `gorm:"omitempty" json:"vhost" yaml:"vhost" xml:"vhost" toml:"vhost" mapstructure:"vhost"`
 	Port           interface{}  `gorm:"omitempty" json:"port" yaml:"port" xml:"port" toml:"port" mapstructure:"port"`
 	Host           string       `gorm:"omitempty" json:"host" yaml:"host" xml:"host" toml:"host" mapstructure:"host"`
 	Volume         string       `gorm:"omitempty" json:"volume" yaml:"volume" xml:"volume" toml:"volume" mapstructure:"volume"`
@@ -173,11 +174,11 @@ func newDBConfig(name, filePath string, enabled bool, logger l.Logger, debug boo
 				gl.Log("error", fmt.Sprintf("Error getting password from keyring: %v", redisPassErr))
 				return nil
 			}
-			rabbitPass, rabbitPassErr := getPasswordFromKeyring(name + "_RabbitMQ")
-			if rabbitPassErr != nil {
-				gl.Log("error", fmt.Sprintf("Error getting password from keyring: %v", rabbitPassErr))
-				return nil
-			}
+			// rabbitPass, rabbitPassErr := getPasswordFromKeyring(name + "_RabbitMQ")
+			// if rabbitPassErr != nil {
+			// 	gl.Log("error", fmt.Sprintf("Error getting password from keyring: %v", rabbitPassErr))
+			// 	return nil
+			// }
 
 			dbConfigDefault := &DBConfig{
 				Databases: map[string]*Database{
@@ -212,10 +213,11 @@ func newDBConfig(name, filePath string, enabled bool, logger l.Logger, debug boo
 						Reference:      t.NewReference(name + "_RabbitMQ").GetReference(),
 						FilePath:       filePath,
 						Enabled:        true,
-						Username:       "guest",
-						Password:       rabbitPass,
+						Username:       "gobe",
+						Password:       "s3cret",
 						Port:           "5672",
 						ManagementPort: "15672",
+						Vhost:          "gobe",
 					},
 				},
 			}

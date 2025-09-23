@@ -22,12 +22,21 @@ func SetupRabbitMQ(config *t.RabbitMQ, dockerService IDockerService) error {
 		return nil
 	}
 
-	// Configura valores padrão, caso estejam ausentes
 	if config.Username == "" {
-		config.Username = "guest"
+		config.Username = "gobe"
 	}
 	if config.Password == "" {
-		config.Password = "guest"
+		rabbitPassKey, rabbitPassErr := glb.GetOrGenPasswordKeyringPass("rabbitmq")
+		if rabbitPassErr != nil {
+			gl.Log("error", "Skipping RabbitMQ setup due to error generating password")
+			gl.Log("debug", fmt.Sprintf("Error generating key: %v", rabbitPassErr))
+			return rabbitPassErr
+		} else {
+			config.Password = string(rabbitPassKey)
+		}
+	}
+	if config.Vhost == "" {
+		config.Vhost = "gobe"
 	}
 	if config.Port == nil || config.Port == "" {
 		config.Port = "5672"
@@ -36,7 +45,14 @@ func SetupRabbitMQ(config *t.RabbitMQ, dockerService IDockerService) error {
 		config.ManagementPort = "15672"
 	}
 	if config.ErlangCookie == "" {
-		config.ErlangCookie = "defaultcookie"
+		rabbitCookieKey, rabbitCookieErr := glb.GetOrGenPasswordKeyringPass("rabbitmq-cookie")
+		if rabbitCookieErr != nil {
+			gl.Log("error", "Skipping RabbitMQ setup due to error generating password")
+			gl.Log("debug", fmt.Sprintf("Error generating key: %v", rabbitCookieErr))
+			return rabbitCookieErr
+		} else {
+			config.ErlangCookie = string(rabbitCookieKey)
+		}
 	}
 	if config.Volume == "" {
 		config.Volume = os.ExpandEnv(glb.DefaultRabbitMQVolume)
@@ -49,24 +65,28 @@ func SetupRabbitMQ(config *t.RabbitMQ, dockerService IDockerService) error {
 	}
 
 	// Mapeia as portas
-	portMap := []nat.PortMap{
-		dockerService.MapPorts(config.ManagementPort, "15672/tcp"),
-		dockerService.MapPorts(fmt.Sprintf("%s", config.Port), "5672/tcp"),
+
+	portBindings := []nat.PortMap{
+		{
+			"5672/tcp":  []nat.PortBinding{{HostIP: "127.0.0.1", HostPort: "5672"}},  // publica AMQP
+			"15672/tcp": []nat.PortBinding{{HostIP: "127.0.0.1", HostPort: "15672"}}, // publica console
+		},
 	}
 
 	// Configura as variáveis de ambiente
 	envVars := []string{
 		"RABBITMQ_DEFAULT_USER=" + config.Username,
 		"RABBITMQ_DEFAULT_PASS=" + config.Password,
+		"RABBITMQ_DEFAULT_VHOST=" + config.Vhost,
 		"RABBITMQ_ERLANG_COOKIE=" + config.ErlangCookie,
 	}
 
 	// Inicializa o container do RabbitMQ
 	service := dockerService.AddService(
 		config.Reference.Name,
-		"rabbitmq:3-management",
+		"rabbitmq:latest",
 		envVars,
-		portMap,
+		portBindings,
 		map[string]struct{}{
 			fmt.Sprintf("%s:/var/lib/rabbitmq", config.Volume): {},
 		},
