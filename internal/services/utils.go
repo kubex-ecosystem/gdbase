@@ -251,7 +251,7 @@ func SetupDatabaseServices(d IDockerService, config *t.DBConfig) error {
 					rabbitUser = "gobe"
 				}
 				if rabbitCfg.Password == "" {
-					rabbitPassKey, rabbitPassErr := glb.GetOrGenPasswordKeyringPass("rabbitmq")
+					rabbitPassKey, rabbitPassErr := glb.GetOrGenPasswordKeyringPass(rabbitCfg.Reference.Name)
 					if rabbitPassErr != nil {
 						gl.Log("error", "Skipping RabbitMQ setup due to error generating password")
 						gl.Log("debug", fmt.Sprintf("Error generating key: %v", rabbitPassErr))
@@ -314,8 +314,8 @@ func SetupDatabaseServices(d IDockerService, config *t.DBConfig) error {
 				}
 				portBindings := []nat.PortMap{
 					{
-						"5672/tcp":  []nat.PortBinding{{HostIP: "127.0.0.1", HostPort: "5672"}},  // publica AMQP
-						"15672/tcp": []nat.PortBinding{{HostIP: "127.0.0.1", HostPort: "15672"}}, // publica console
+						nat.Port(fmt.Sprintf("%s/tcp", rabbitCfg.Port)):           []nat.PortBinding{{HostIP: "127.0.0.1", HostPort: fmt.Sprintf("%v", rabbitCfg.Port)}},           // publica AMQP
+						nat.Port(fmt.Sprintf("%s/tcp", rabbitCfg.ManagementPort)): []nat.PortBinding{{HostIP: "127.0.0.1", HostPort: fmt.Sprintf("%v", rabbitCfg.ManagementPort)}}, // publica console
 					},
 				}
 
@@ -329,7 +329,7 @@ func SetupDatabaseServices(d IDockerService, config *t.DBConfig) error {
 					[]string{
 						"RABBITMQ_DEFAULT_USER=" + rabbitUser,
 						"RABBITMQ_DEFAULT_PASS=" + rabbitPass,
-						"RABBITMQ_DEFAULT_VHOST=" + rabbitCfg.Vhost, // Se adicionar o campo Vhost
+						"RABBITMQ_DEFAULT_VHOST=" + rabbitCfg.Vhost,
 						"RABBITMQ_PORT=" + rabbitCfg.Port.(string),
 						"RABBITMQ_DB_NAME=" + rabbitCfg.Reference.Name,
 						"RABBITMQ_DB_VOLUME=" + rabbitCfg.Volume,

@@ -68,8 +68,8 @@ func SetupRabbitMQ(config *t.RabbitMQ, dockerService IDockerService) error {
 
 	portBindings := []nat.PortMap{
 		{
-			"5672/tcp":  []nat.PortBinding{{HostIP: "127.0.0.1", HostPort: "5672"}},  // publica AMQP
-			"15672/tcp": []nat.PortBinding{{HostIP: "127.0.0.1", HostPort: "15672"}}, // publica console
+			nat.Port(fmt.Sprintf("%s/tcp", config.Port)):           []nat.PortBinding{{HostIP: "127.0.0.1", HostPort: fmt.Sprintf("%v", config.Port)}},           // publica AMQP
+			nat.Port(fmt.Sprintf("%s/tcp", config.ManagementPort)): []nat.PortBinding{{HostIP: "127.0.0.1", HostPort: fmt.Sprintf("%v", config.ManagementPort)}}, // publica console
 		},
 	}
 
