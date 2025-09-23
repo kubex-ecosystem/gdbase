@@ -124,6 +124,7 @@ CREATE TABLE IF NOT EXISTS cron_jobs (
     retry_interval   INTEGER DEFAULT 10, -- Intervalo entre tentativas (em segundos)
     max_execution_time INTEGER DEFAULT 300, -- Tempo máximo de execução (em segundos)
 
+    status          job_status DEFAULT 'PENDING', -- Status do job
     last_run_status   last_run_status DEFAULT 'pending', -- Status da última execução
     last_run_message TEXT DEFAULT NULL, -- Mensagem da última execução
     last_run_time    TIMESTAMP DEFAULT NULL, -- Hora da última execução
@@ -666,15 +667,16 @@ CREATE TABLE IF NOT EXISTS mcp_sync_jobs (
     headers JSONB,
     tags TEXT[],
     notes TEXT,
+    status TEXT NOT NULL CHECK (status IN ('SUCCESS', 'FAILED', 'PENDING', 'RUNNING', 'COMPLETED')) DEFAULT 'PENDING',
     created_at TIMESTAMP NOT NULL DEFAULT now(),
     updated_at TIMESTAMP NOT NULL DEFAULT now(),
     created_by uuid REFERENCES users(id),
     updated_by uuid REFERENCES users(id),
     last_executed_by uuid REFERENCES users(id),
     last_executed_at TIMESTAMP,
-    UNIQUE(task_id, target_task, job_type, next_run, status),
-    UNIQUE(task_id, target_task, job_type, last_run, status),
-    UNIQUE(task_id, target_task, job_type, last_run_status, last_run_message, next_run, status)
+    UNIQUE(task_id, job_target, job_type, next_run, status),
+    UNIQUE(task_id, job_target, job_type, last_run, status),
+    UNIQUE(task_id, job_target, job_type, last_run_status, last_run_message, next_run, status)
 );
 
 -- Tabela de logs de sincronização
@@ -820,7 +822,7 @@ ON CONFLICT ("username") DO UPDATE
 SET "name" = 'TestUser',
     "email" = 'abcdef@test.com',
     "phone" = '9898989898',
-    "role_id" = CAST('06ccc24a-4385-4f66-b528-5f8098c8e22d' as uuid),
+    "role_id" = CAST('06ccc24a-4385-4f66-b528-5f8098c8e22d' AS uuid),
     "document" = '22CBCA1346796431',
     "active" = true,
     "updated_at" = now()
