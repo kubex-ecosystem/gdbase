@@ -1,3 +1,4 @@
+// Package types - token service types
 package types
 
 import (
