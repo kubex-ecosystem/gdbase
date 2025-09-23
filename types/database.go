@@ -174,11 +174,11 @@ func newDBConfig(name, filePath string, enabled bool, logger l.Logger, debug boo
 				gl.Log("error", fmt.Sprintf("Error getting password from keyring: %v", redisPassErr))
 				return nil
 			}
-			// rabbitPass, rabbitPassErr := getPasswordFromKeyring(name + "_RabbitMQ")
-			// if rabbitPassErr != nil {
-			// 	gl.Log("error", fmt.Sprintf("Error getting password from keyring: %v", rabbitPassErr))
-			// 	return nil
-			// }
+			rabbitPass, rabbitPassErr := getPasswordFromKeyring(name + "_RabbitMQ")
+			if rabbitPassErr != nil {
+				gl.Log("error", fmt.Sprintf("Error getting password from keyring: %v", rabbitPassErr))
+				return nil
+			}
 
 			dbConfigDefault := &DBConfig{
 				Databases: map[string]*Database{
@@ -214,7 +214,7 @@ func newDBConfig(name, filePath string, enabled bool, logger l.Logger, debug boo
 						FilePath:       filePath,
 						Enabled:        true,
 						Username:       "gobe",
-						Password:       "s3cret",
+						Password:       rabbitPass,
 						Port:           "5672",
 						ManagementPort: "15672",
 						Vhost:          "gobe",
