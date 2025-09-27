@@ -158,7 +158,7 @@ func discordBotExample(ctx context.Context, services *BotServices) {
 	discord.IntegrationType = models.DiscordIntegrationTypeBot
 	discord.GuildID = "987654321098765432"
 
-	created, err := services.DiscordService.CreateIntegration(ctx, discord)
+	created, err := services.DiscordService.CreateDiscordIntegration(discord)
 	if err != nil {
 		log.Printf("❌ Failed to create Discord bot: %v", err)
 		return
@@ -249,7 +249,7 @@ func queryExamples(ctx context.Context, services *BotServices) {
 		fmt.Printf("   📊 Active WhatsApp integrations: %d\n", len(whatsappActive))
 	}
 
-	discordActive, err := services.DiscordService.GetActiveIntegrations(ctx)
+	discordActive, err := services.DiscordService.GetActiveDiscordIntegrations()
 	if err == nil {
 		fmt.Printf("   📊 Active Discord bots: %d\n", len(discordActive))
 	}

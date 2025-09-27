@@ -36,7 +36,7 @@ func NewDiscordService(discordRepo DiscordRepo) DiscordService {
 }
 
 func NewDiscordRepo(db *gorm.DB) DiscordRepo {
-	return d.NewDiscordRepository(db)
+	return d.NewDiscordRepo(db)
 }
 
 func NewDiscordModel() DiscordModelInterface {

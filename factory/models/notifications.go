@@ -7,7 +7,6 @@ import (
 	"github.com/google/uuid"
 	n "github.com/kubex-ecosystem/gdbase/internal/models/mcp/notifications"
 	t "github.com/kubex-ecosystem/gdbase/types"
-	"gorm.io/gorm"
 )
 
 // Notification Rules
@@ -264,8 +263,8 @@ type NotificationManagementService interface {
 	IsEnabled(ctx context.Context) bool
 }
 
-// Helper function to create default notification rules for a user
-func CreateDefaultNotificationRules(userID uuid.UUID, platforms []NotificationRulePlatform) []NotificationRuleModel {
+// CreateDefaultNotificationRules Helper function to create default notification rules for a user
+func CreateDefaultNotificationRules(userID uuid.UUID, platforms map[string]NotificationRulePlatform) []NotificationRuleModel {
 	rules := make([]NotificationRuleModel, 0)
 
 	// Rule 1: Job Completion Notifications
@@ -307,7 +306,7 @@ func CreateDefaultNotificationRules(userID uuid.UUID, platforms []NotificationRu
 	// Set trigger config for score threshold
 	scoreRule.TriggerConfig = map[string]interface{}{
 		"score_threshold": 0.7,
-		"operator":       "lt", // less than
+		"operator":        "lt", // less than
 	}
 	rules = append(rules, scoreRule)
 

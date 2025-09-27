@@ -98,14 +98,14 @@ func (a *AnalysisJob) GetInputData() t.JSONB                { return a.InputData
 func (a *AnalysisJob) SetInputData(inputData t.JSONB)       { a.InputData = inputData }
 func (a *AnalysisJob) GetOutputData() t.JSONB               { return a.OutputData }
 func (a *AnalysisJob) SetOutputData(outputData t.JSONB)     { a.OutputData = outputData }
-func (a *AnalysisJob) GetErrorMessage() string              { return a.ErrorMessage }
-func (a *AnalysisJob) SetErrorMessage(errorMessage string)  { a.ErrorMessage = errorMessage }
+func (a *AnalysisJob) GetErrorMessage() string              { return *a.ErrorMessage }
+func (a *AnalysisJob) SetErrorMessage(errorMessage string)  { a.ErrorMessage = &errorMessage }
 func (a *AnalysisJob) GetProgress() float64                 { return a.Progress }
 func (a *AnalysisJob) SetProgress(progress float64)         { a.Progress = progress }
 func (a *AnalysisJob) GetStartedAt() time.Time              { return a.StartedAt }
 func (a *AnalysisJob) SetStartedAt(startedAt time.Time)     { a.StartedAt = startedAt }
-func (a *AnalysisJob) GetCompletedAt() time.Time            { return a.CompletedAt }
-func (a *AnalysisJob) SetCompletedAt(completedAt time.Time) { a.CompletedAt = completedAt }
+func (a *AnalysisJob) GetCompletedAt() time.Time            { return *a.CompletedAt }
+func (a *AnalysisJob) SetCompletedAt(completedAt time.Time) { a.CompletedAt = &completedAt }
 func (a *AnalysisJob) GetRetryCount() int                   { return a.RetryCount }
 func (a *AnalysisJob) SetRetryCount(retryCount int)         { a.RetryCount = retryCount }
 func (a *AnalysisJob) GetMaxRetries() int                   { return a.MaxRetries }
@@ -116,8 +116,8 @@ func (a *AnalysisJob) GetUserID() uuid.UUID                 { return a.UserID }
 func (a *AnalysisJob) SetUserID(userID uuid.UUID)           { a.UserID = userID }
 func (a *AnalysisJob) GetCreatedBy() uuid.UUID              { return a.CreatedBy }
 func (a *AnalysisJob) SetCreatedBy(createdBy uuid.UUID)     { a.CreatedBy = createdBy }
-func (a *AnalysisJob) GetUpdatedBy() uuid.UUID              { return a.UpdatedBy }
-func (a *AnalysisJob) SetUpdatedBy(updatedBy uuid.UUID)     { a.UpdatedBy = updatedBy }
+func (a *AnalysisJob) GetUpdatedBy() uuid.UUID              { return *a.UpdatedBy }
+func (a *AnalysisJob) SetUpdatedBy(updatedBy uuid.UUID)     { a.UpdatedBy = &updatedBy }
 func (a *AnalysisJob) GetCreatedAt() time.Time              { return a.CreatedAt }
 func (a *AnalysisJob) SetCreatedAt(createdAt time.Time)     { a.CreatedAt = createdAt }
 func (a *AnalysisJob) GetUpdatedAt() time.Time              { return a.UpdatedAt }

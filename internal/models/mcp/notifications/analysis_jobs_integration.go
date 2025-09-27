@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	gl "github.com/kubex-ecosystem/gdbase/internal/module/logger"
 	analysisJobs "github.com/kubex-ecosystem/gdbase/internal/models/mcp/analysis_jobs"
+	gl "github.com/kubex-ecosystem/gdbase/internal/module/logger"
 )
 
 // AnalysisJobNotificationIntegration integra o sistema de notificações com analysis_jobs
@@ -58,10 +58,11 @@ func (a *AnalysisJobNotificationIntegration) OnJobStatusChanged(ctx context.Cont
 
 	// Create and process event based on status change
 	var event *NotificationEvent
+	projectID := job.GetProjectID()
 
 	switch newStatus {
 	case "COMPLETED":
-		event = NewJobCompletedEvent(job.GetID(), job.GetUserID(), &job.GetProjectID(), jobData)
+		event = NewJobCompletedEvent(job.GetID(), job.GetUserID(), &projectID, jobData)
 
 		// Check for score alerts if job completed successfully
 		if err := a.checkScoreAlert(ctx, job, jobData); err != nil {
@@ -73,7 +74,7 @@ func (a *AnalysisJobNotificationIntegration) OnJobStatusChanged(ctx context.Cont
 		if errorMessage == "" {
 			errorMessage = "Job failed without specific error message"
 		}
-		event = NewJobFailedEvent(job.GetID(), job.GetUserID(), &job.GetProjectID(), errorMessage, jobData)
+		event = NewJobFailedEvent(job.GetID(), job.GetUserID(), &projectID, errorMessage, jobData)
 
 	case "RUNNING":
 		if oldStatus == "PENDING" {
@@ -150,7 +151,7 @@ func (a *AnalysisJobNotificationIntegration) OnJobTimeout(ctx context.Context, j
 	jobData := a.extractJobData(job)
 	jobData["timeout_duration"] = duration
 	jobData["timeout_occurred"] = true
-
+	projectID := job.GetProjectID()
 	// Create time alert event
 	event := &NotificationEvent{
 		ID:         uuid.New(),
@@ -158,10 +159,10 @@ func (a *AnalysisJobNotificationIntegration) OnJobTimeout(ctx context.Context, j
 		SourceType: "analysis_job",
 		SourceID:   job.GetID(),
 		UserID:     job.GetUserID(),
-		ProjectID:  &job.GetProjectID(),
+		ProjectID:  &projectID,
 		Data:       jobData,
 		Metadata: map[string]interface{}{
-			"alert_reason": "job_timeout",
+			"alert_reason":                "job_timeout",
 			"duration_threshold_exceeded": true,
 		},
 		Timestamp: time.Now(),
@@ -186,11 +187,12 @@ func (a *AnalysisJobNotificationIntegration) checkScoreAlert(ctx context.Context
 
 	var score float64
 	var scoreFound bool
-
-	// Try to extract score from output data
-	if outputMap, ok := outputData.(map[string]interface{}); ok {
-		if scoreVal, exists := outputMap["overall_score"]; exists {
-			if scoreFloat, ok := scoreVal.(float64); ok {
+	if outputData == nil {
+		return nil
+	}
+	for key, value := range outputData {
+		if key == "overall_score" {
+			if scoreFloat, ok := value.(float64); ok {
 				score = scoreFloat
 				scoreFound = true
 			}
@@ -213,9 +215,12 @@ func (a *AnalysisJobNotificationIntegration) checkScoreAlert(ctx context.Context
 				"job_id", job.GetID(),
 				"score", score,
 				"threshold", threshold)
-
+			var projectID uuid.UUID
+			if job.GetProjectID() != uuid.Nil {
+				projectID = job.GetProjectID()
+			}
 			// Create score alert event
-			event := NewScoreAlertEvent(job.GetID(), job.GetUserID(), &job.GetProjectID(), score, threshold, jobData)
+			event := NewScoreAlertEvent(job.GetID(), job.GetUserID(), &projectID, score, threshold, jobData)
 
 			if err := a.eventProcessor.ProcessEvent(ctx, event); err != nil {
 				return fmt.Errorf("failed to process score alert event: %w", err)
@@ -231,13 +236,17 @@ func (a *AnalysisJobNotificationIntegration) checkScoreAlert(ctx context.Context
 
 // createJobStartedEvent cria evento de job iniciado
 func (a *AnalysisJobNotificationIntegration) createJobStartedEvent(job analysisJobs.IAnalysisJob, jobData map[string]interface{}) *NotificationEvent {
+	var projectID uuid.UUID
+	if job.GetProjectID() != uuid.Nil {
+		projectID = job.GetProjectID()
+	}
 	return &NotificationEvent{
 		ID:         uuid.New(),
 		EventType:  NotificationEventTypeJobStarted,
 		SourceType: "analysis_job",
 		SourceID:   job.GetID(),
 		UserID:     job.GetUserID(),
-		ProjectID:  &job.GetProjectID(),
+		ProjectID:  &projectID,
 		Data:       jobData,
 		Metadata: map[string]interface{}{
 			"started_at": job.GetStartedAt(),
@@ -248,13 +257,17 @@ func (a *AnalysisJobNotificationIntegration) createJobStartedEvent(job analysisJ
 
 // createJobRetriedEvent cria evento de job tentado novamente
 func (a *AnalysisJobNotificationIntegration) createJobRetriedEvent(job analysisJobs.IAnalysisJob, jobData map[string]interface{}) *NotificationEvent {
+	var projectID uuid.UUID
+	if job.GetProjectID() != uuid.Nil {
+		projectID = job.GetProjectID()
+	}
 	return &NotificationEvent{
 		ID:         uuid.New(),
 		EventType:  NotificationEventTypeJobRetried,
 		SourceType: "analysis_job",
 		SourceID:   job.GetID(),
 		UserID:     job.GetUserID(),
-		ProjectID:  &job.GetProjectID(),
+		ProjectID:  &projectID,
 		Data:       jobData,
 		Metadata: map[string]interface{}{
 			"retry_count": job.GetRetryCount(),
@@ -267,18 +280,18 @@ func (a *AnalysisJobNotificationIntegration) createJobRetriedEvent(job analysisJ
 // extractJobData extrai dados relevantes do job para os eventos
 func (a *AnalysisJobNotificationIntegration) extractJobData(job analysisJobs.IAnalysisJob) map[string]interface{} {
 	data := map[string]interface{}{
-		"job_id":       job.GetID(),
-		"job_type":     job.GetJobType(),
-		"job_status":   job.GetStatus(),
-		"progress":     job.GetProgress(),
-		"project_id":   job.GetProjectID(),
-		"user_id":      job.GetUserID(),
-		"source_url":   job.GetSourceURL(),
-		"source_type":  job.GetSourceType(),
-		"retry_count":  job.GetRetryCount(),
-		"max_retries":  job.GetMaxRetries(),
-		"created_at":   job.GetCreatedAt(),
-		"updated_at":   job.GetUpdatedAt(),
+		"job_id":      job.GetID(),
+		"job_type":    job.GetJobType(),
+		"job_status":  job.GetStatus(),
+		"progress":    job.GetProgress(),
+		"project_id":  job.GetProjectID(),
+		"user_id":     job.GetUserID(),
+		"source_url":  job.GetSourceURL(),
+		"source_type": job.GetSourceType(),
+		"retry_count": job.GetRetryCount(),
+		"max_retries": job.GetMaxRetries(),
+		"created_at":  job.GetCreatedAt(),
+		"updated_at":  job.GetUpdatedAt(),
 	}
 
 	// Add started_at if available
@@ -313,7 +326,7 @@ func (a *AnalysisJobNotificationIntegration) extractJobData(job analysisJobs.IAn
 		data["output_data"] = job.GetOutputData()
 
 		// Extract common fields from output data
-		if outputMap, ok := job.GetOutputData().(map[string]interface{}); ok {
+		if outputMap, ok := data["output_data"].(map[string]interface{}); ok {
 			if score, exists := outputMap["overall_score"]; exists {
 				data["score"] = score
 			}

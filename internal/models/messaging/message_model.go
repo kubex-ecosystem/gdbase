@@ -133,7 +133,7 @@ type MessageModel struct {
 
 func NewMessageModel() *MessageModel {
 	return &MessageModel{
-		ID                uuid.New().String(),
+		ID:                uuid.New().String(),
 		ConversationID:    "",
 		Platform:          PlatformUnified,
 		PlatformMessageID: "",
@@ -163,38 +163,42 @@ func NewMessageModel() *MessageModel {
 func (m *MessageModel) TableName() string { return "mcp_messages" }
 
 // Basic getters and setters
-func (m *MessageModel) GetID() string                                        { return m.ID }
-func (m *MessageModel) SetID(id string)                                      { m.ID = id }
-func (m *MessageModel) GetConversationID() string                            { return m.ConversationID }
-func (m *MessageModel) SetConversationID(conversationID string)              { m.ConversationID = conversationID }
-func (m *MessageModel) GetPlatform() Platform                                { return m.Platform }
-func (m *MessageModel) SetPlatform(platform Platform)                        { m.Platform = platform }
-func (m *MessageModel) GetPlatformMessageID() string                         { return m.PlatformMessageID }
-func (m *MessageModel) SetPlatformMessageID(platformMessageID string)        { m.PlatformMessageID = platformMessageID }
-func (m *MessageModel) GetMessageType() MessageType                          { return m.MessageType }
-func (m *MessageModel) SetMessageType(messageType MessageType)               { m.MessageType = messageType }
-func (m *MessageModel) GetDirection() MessageDirection                       { return m.Direction }
-func (m *MessageModel) SetDirection(direction MessageDirection)              { m.Direction = direction }
-func (m *MessageModel) GetStatus() MessageStatus                             { return m.Status }
-func (m *MessageModel) SetStatus(status MessageStatus)                       { m.Status = status }
-func (m *MessageModel) GetSenderID() string                                  { return m.SenderID }
-func (m *MessageModel) SetSenderID(senderID string)                          { m.SenderID = senderID }
-func (m *MessageModel) GetSenderName() string                                { return m.SenderName }
-func (m *MessageModel) SetSenderName(senderName string)                      { m.SenderName = senderName }
-func (m *MessageModel) GetRecipientID() string                               { return m.RecipientID }
-func (m *MessageModel) SetRecipientID(recipientID string)                    { m.RecipientID = recipientID }
-func (m *MessageModel) GetRecipientName() string                             { return m.RecipientName }
-func (m *MessageModel) SetRecipientName(recipientName string)                { m.RecipientName = recipientName }
-func (m *MessageModel) GetContent() string                                   { return m.Content }
-func (m *MessageModel) SetContent(content string)                            { m.Content = content }
-func (m *MessageModel) GetAttachments() t.JSONB                              { return m.Attachments }
-func (m *MessageModel) SetAttachments(attachments t.JSONB)                   { m.Attachments = attachments }
-func (m *MessageModel) GetMetadata() t.JSONB                                 { return m.Metadata }
-func (m *MessageModel) SetMetadata(metadata t.JSONB)                         { m.Metadata = metadata }
-func (m *MessageModel) GetReplyToMessageID() string                          { return m.ReplyToMessageID }
-func (m *MessageModel) SetReplyToMessageID(replyToMessageID string)          { m.ReplyToMessageID = replyToMessageID }
-func (m *MessageModel) GetThreadID() string                                  { return m.ThreadID }
-func (m *MessageModel) SetThreadID(threadID string)                          { m.ThreadID = threadID }
+func (m *MessageModel) GetID() string                           { return m.ID }
+func (m *MessageModel) SetID(id string)                         { m.ID = id }
+func (m *MessageModel) GetConversationID() string               { return m.ConversationID }
+func (m *MessageModel) SetConversationID(conversationID string) { m.ConversationID = conversationID }
+func (m *MessageModel) GetPlatform() Platform                   { return m.Platform }
+func (m *MessageModel) SetPlatform(platform Platform)           { m.Platform = platform }
+func (m *MessageModel) GetPlatformMessageID() string            { return m.PlatformMessageID }
+func (m *MessageModel) SetPlatformMessageID(platformMessageID string) {
+	m.PlatformMessageID = platformMessageID
+}
+func (m *MessageModel) GetMessageType() MessageType             { return m.MessageType }
+func (m *MessageModel) SetMessageType(messageType MessageType)  { m.MessageType = messageType }
+func (m *MessageModel) GetDirection() MessageDirection          { return m.Direction }
+func (m *MessageModel) SetDirection(direction MessageDirection) { m.Direction = direction }
+func (m *MessageModel) GetStatus() MessageStatus                { return m.Status }
+func (m *MessageModel) SetStatus(status MessageStatus)          { m.Status = status }
+func (m *MessageModel) GetSenderID() string                     { return m.SenderID }
+func (m *MessageModel) SetSenderID(senderID string)             { m.SenderID = senderID }
+func (m *MessageModel) GetSenderName() string                   { return m.SenderName }
+func (m *MessageModel) SetSenderName(senderName string)         { m.SenderName = senderName }
+func (m *MessageModel) GetRecipientID() string                  { return m.RecipientID }
+func (m *MessageModel) SetRecipientID(recipientID string)       { m.RecipientID = recipientID }
+func (m *MessageModel) GetRecipientName() string                { return m.RecipientName }
+func (m *MessageModel) SetRecipientName(recipientName string)   { m.RecipientName = recipientName }
+func (m *MessageModel) GetContent() string                      { return m.Content }
+func (m *MessageModel) SetContent(content string)               { m.Content = content }
+func (m *MessageModel) GetAttachments() t.JSONB                 { return m.Attachments }
+func (m *MessageModel) SetAttachments(attachments t.JSONB)      { m.Attachments = attachments }
+func (m *MessageModel) GetMetadata() t.JSONB                    { return m.Metadata }
+func (m *MessageModel) SetMetadata(metadata t.JSONB)            { m.Metadata = metadata }
+func (m *MessageModel) GetReplyToMessageID() string             { return m.ReplyToMessageID }
+func (m *MessageModel) SetReplyToMessageID(replyToMessageID string) {
+	m.ReplyToMessageID = replyToMessageID
+}
+func (m *MessageModel) GetThreadID() string         { return m.ThreadID }
+func (m *MessageModel) SetThreadID(threadID string) { m.ThreadID = threadID }
 
 func (m *MessageModel) GetTimestamp() time.Time {
 	timestamp, _ := time.Parse(time.RFC3339, m.Timestamp)
@@ -226,8 +230,8 @@ func (m *MessageModel) SetReadAt(readAt time.Time) {
 	m.ReadAt = readAt.Format(time.RFC3339)
 }
 
-func (m *MessageModel) GetUserID() string                           { return m.UserID }
-func (m *MessageModel) SetUserID(userID string)                     { m.UserID = userID }
+func (m *MessageModel) GetUserID() string       { return m.UserID }
+func (m *MessageModel) SetUserID(userID string) { m.UserID = userID }
 
 // Timestamp getters and setters
 func (m *MessageModel) GetCreatedAt() time.Time {
@@ -244,10 +248,10 @@ func (m *MessageModel) GetUpdatedAt() time.Time {
 func (m *MessageModel) SetUpdatedAt(updatedAt time.Time) {
 	m.UpdatedAt = updatedAt.Format(time.RFC3339)
 }
-func (m *MessageModel) GetCreatedBy() string              { return m.CreatedBy }
-func (m *MessageModel) SetCreatedBy(createdBy string)     { m.CreatedBy = createdBy }
-func (m *MessageModel) GetUpdatedBy() string              { return m.UpdatedBy }
-func (m *MessageModel) SetUpdatedBy(updatedBy string)     { m.UpdatedBy = updatedBy }
+func (m *MessageModel) GetCreatedBy() string          { return m.CreatedBy }
+func (m *MessageModel) SetCreatedBy(createdBy string) { m.CreatedBy = createdBy }
+func (m *MessageModel) GetUpdatedBy() string          { return m.UpdatedBy }
+func (m *MessageModel) SetUpdatedBy(updatedBy string) { m.UpdatedBy = updatedBy }
 
 // Validation method
 func (m *MessageModel) Validate() error {

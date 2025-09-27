@@ -26,17 +26,17 @@ const (
 
 // NotificationEvent representa um evento que pode disparar notificações
 type NotificationEvent struct {
-	ID           uuid.UUID             `json:"id"`
-	EventType    NotificationEventType `json:"event_type"`
-	SourceType   string                `json:"source_type"` // "analysis_job", "system", "custom"
-	SourceID     uuid.UUID             `json:"source_id"`
-	UserID       uuid.UUID             `json:"user_id"`
-	ProjectID    *uuid.UUID            `json:"project_id,omitempty"`
+	ID           uuid.UUID              `json:"id"`
+	EventType    NotificationEventType  `json:"event_type"`
+	SourceType   string                 `json:"source_type"` // "analysis_job", "system", "custom"
+	SourceID     uuid.UUID              `json:"source_id"`
+	UserID       uuid.UUID              `json:"user_id"`
+	ProjectID    *uuid.UUID             `json:"project_id,omitempty"`
 	Data         map[string]interface{} `json:"data"`
 	Metadata     map[string]interface{} `json:"metadata"`
-	Timestamp    time.Time             `json:"timestamp"`
-	ProcessedAt  *time.Time            `json:"processed_at,omitempty"`
-	ErrorMessage string                `json:"error_message,omitempty"`
+	Timestamp    time.Time              `json:"timestamp"`
+	ProcessedAt  *time.Time             `json:"processed_at,omitempty"`
+	ErrorMessage string                 `json:"error_message,omitempty"`
 }
 
 // NotificationEventProcessor interface para processar eventos de notificação
@@ -54,11 +54,11 @@ type EventHandler func(ctx context.Context, event *NotificationEvent) error
 
 // NotificationEventProcessor implementação do processador de eventos
 type NotificationEventProcessor struct {
-	ruleRepo        INotificationRuleRepo
-	templateRepo    INotificationTemplateRepo
-	historyRepo     INotificationHistoryRepo
-	messageQueue    MessageQueuePublisher
-	eventHandlers   map[NotificationEventType]EventHandler
+	ruleRepo      INotificationRuleRepo
+	templateRepo  INotificationTemplateRepo
+	historyRepo   INotificationHistoryRepo
+	messageQueue  MessageQueuePublisher
+	eventHandlers map[NotificationEventType]EventHandler
 }
 
 // MessageQueuePublisher interface para publicar mensagens na fila
@@ -347,9 +347,9 @@ func (p *NotificationEventProcessor) getTargetsForPlatform(rule INotificationRul
 		return nil, fmt.Errorf("no target configuration found for rule")
 	}
 
-	configMap, ok := targetConfig.(map[string]interface{})
-	if !ok {
-		return nil, fmt.Errorf("invalid target configuration format")
+	var configMap = make(map[string]interface{})
+	for k, v := range targetConfig {
+		configMap[k] = v
 	}
 
 	platformConfig, ok := configMap[platform]
@@ -410,7 +410,8 @@ func (p *NotificationEventProcessor) createSingleNotification(
 	// Create notification history record
 	history := NewNotificationHistoryModel().(*NotificationHistory)
 	history.RuleID = rule.GetID()
-	history.TemplateID = &template.GetID()
+	templateID := template.GetID()
+	history.TemplateID = &templateID
 	if event.SourceType == "analysis_job" {
 		history.AnalysisJobID = &event.SourceID
 	}
