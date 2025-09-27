@@ -1024,6 +1024,191 @@ CREATE INDEX IF NOT EXISTS idx_messages_timestamp ON mcp_messages(timestamp);
 CREATE INDEX IF NOT EXISTS idx_analysis_jobs_status ON mcp_analysis_jobs(status);
 CREATE INDEX IF NOT EXISTS idx_analysis_jobs_user ON mcp_analysis_jobs(user_id);
 
+-- =============================
+-- NOTIFICATION SYSTEM TABLES
+-- =============================
+
+-- Notification Enums
+CREATE TYPE notification_rule_status AS ENUM ('ACTIVE', 'INACTIVE', 'PAUSED');
+CREATE TYPE notification_rule_condition AS ENUM ('JOB_COMPLETED', 'JOB_FAILED', 'JOB_STARTED', 'JOB_RETRIED', 'SCORE_ALERT', 'TIME_ALERT');
+CREATE TYPE notification_rule_platform AS ENUM ('TELEGRAM', 'DISCORD', 'WHATSAPP', 'EMAIL', 'SLACK');
+CREATE TYPE notification_rule_priority AS ENUM ('LOW', 'MEDIUM', 'HIGH', 'CRITICAL');
+
+CREATE TYPE notification_template_type AS ENUM ('JOB_COMPLETED', 'JOB_FAILED', 'JOB_STARTED', 'JOB_RETRIED', 'SCORE_ALERT', 'TIME_ALERT', 'CUSTOM');
+CREATE TYPE notification_template_format AS ENUM ('TEXT', 'MARKDOWN', 'HTML', 'JSON');
+CREATE TYPE notification_template_status AS ENUM ('ACTIVE', 'INACTIVE', 'DRAFT');
+
+CREATE TYPE notification_history_status AS ENUM ('PENDING', 'SENT', 'DELIVERED', 'FAILED', 'RETRYING', 'CANCELLED', 'READ');
+CREATE TYPE notification_history_platform AS ENUM ('TELEGRAM', 'DISCORD', 'WHATSAPP', 'EMAIL', 'SLACK', 'WEBHOOK');
+
+-- Tabela de regras de notificação
+CREATE TABLE IF NOT EXISTS mcp_notification_rules (
+    id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+    name varchar(255) NOT NULL,
+    description text,
+    condition notification_rule_condition NOT NULL,
+    platforms jsonb NOT NULL DEFAULT '[]',
+    job_types jsonb DEFAULT '[]',
+    user_ids jsonb DEFAULT '[]',
+    project_ids jsonb DEFAULT '[]',
+    priority notification_rule_priority DEFAULT 'MEDIUM',
+    status notification_rule_status DEFAULT 'ACTIVE',
+    trigger_config jsonb DEFAULT '{}',
+    target_config jsonb DEFAULT '{}',
+    schedule_config jsonb DEFAULT '{}',
+    template_id uuid,
+    cooldown_minutes integer DEFAULT 0,
+    max_notifications_per_hour integer DEFAULT 10,
+    is_global boolean DEFAULT false,
+    created_by uuid NOT NULL REFERENCES users(id),
+    updated_by uuid REFERENCES users(id),
+    created_at timestamp DEFAULT now(),
+    updated_at timestamp DEFAULT now(),
+    last_triggered_at timestamp,
+    trigger_count bigint DEFAULT 0
+);
+
+-- Tabela de templates de notificação
+CREATE TABLE IF NOT EXISTS mcp_notification_templates (
+    id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+    name varchar(255) NOT NULL,
+    description text,
+    template_type notification_template_type NOT NULL,
+    format notification_template_format DEFAULT 'TEXT',
+    status notification_template_status DEFAULT 'ACTIVE',
+    subject_template text,
+    body_template text NOT NULL,
+    platform_configs jsonb DEFAULT '{}',
+    variables jsonb DEFAULT '{}',
+    is_default boolean DEFAULT false,
+    language varchar(10) DEFAULT 'pt-BR',
+    tags jsonb DEFAULT '{}',
+    created_by uuid NOT NULL REFERENCES users(id),
+    updated_by uuid REFERENCES users(id),
+    created_at timestamp DEFAULT now(),
+    updated_at timestamp DEFAULT now()
+);
+
+-- Tabela de histórico de notificações
+CREATE TABLE IF NOT EXISTS mcp_notification_history (
+    id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+    rule_id uuid NOT NULL REFERENCES mcp_notification_rules(id),
+    template_id uuid REFERENCES mcp_notification_templates(id),
+    analysis_job_id uuid REFERENCES mcp_analysis_jobs(id),
+    platform notification_history_platform NOT NULL,
+    status notification_history_status NOT NULL DEFAULT 'PENDING',
+    subject varchar(500),
+    message text NOT NULL,
+    target_id varchar(255) NOT NULL,
+    target_name varchar(255),
+    platform_config jsonb DEFAULT '{}',
+    response jsonb DEFAULT '{}',
+    error_message text,
+    retry_count integer DEFAULT 0,
+    max_retries integer DEFAULT 3,
+    priority notification_rule_priority DEFAULT 'MEDIUM',
+    scheduled_for timestamp,
+    sent_at timestamp,
+    delivered_at timestamp,
+    read_at timestamp,
+    expires_at timestamp,
+    metadata jsonb DEFAULT '{}',
+    created_at timestamp DEFAULT now(),
+    updated_at timestamp DEFAULT now()
+);
+
+-- Índices para performance das notificações
+CREATE INDEX IF NOT EXISTS idx_notification_rules_status ON mcp_notification_rules(status);
+CREATE INDEX IF NOT EXISTS idx_notification_rules_condition ON mcp_notification_rules(condition);
+CREATE INDEX IF NOT EXISTS idx_notification_rules_created_by ON mcp_notification_rules(created_by);
+CREATE INDEX IF NOT EXISTS idx_notification_rules_last_triggered ON mcp_notification_rules(last_triggered_at);
+
+CREATE INDEX IF NOT EXISTS idx_notification_templates_type ON mcp_notification_templates(template_type);
+CREATE INDEX IF NOT EXISTS idx_notification_templates_status ON mcp_notification_templates(status);
+CREATE INDEX IF NOT EXISTS idx_notification_templates_is_default ON mcp_notification_templates(is_default);
+CREATE INDEX IF NOT EXISTS idx_notification_templates_language ON mcp_notification_templates(language);
+
+CREATE INDEX IF NOT EXISTS idx_notification_history_rule_id ON mcp_notification_history(rule_id);
+CREATE INDEX IF NOT EXISTS idx_notification_history_status ON mcp_notification_history(status);
+CREATE INDEX IF NOT EXISTS idx_notification_history_platform ON mcp_notification_history(platform);
+CREATE INDEX IF NOT EXISTS idx_notification_history_priority ON mcp_notification_history(priority);
+CREATE INDEX IF NOT EXISTS idx_notification_history_created_at ON mcp_notification_history(created_at);
+CREATE INDEX IF NOT EXISTS idx_notification_history_scheduled_for ON mcp_notification_history(scheduled_for);
+CREATE INDEX IF NOT EXISTS idx_notification_history_expires_at ON mcp_notification_history(expires_at);
+CREATE INDEX IF NOT EXISTS idx_notification_history_analysis_job_id ON mcp_notification_history(analysis_job_id);
+
+-- Inserir templates padrão de notificação
+INSERT INTO mcp_notification_templates (id, name, template_type, subject_template, body_template, is_default, language, created_by) VALUES
+(uuid_generate_v4(), 'Default Job Completed PT-BR', 'JOB_COMPLETED', '✅ Job {{ job_type }} Concluído',
+'🎉 *Job concluído com sucesso!*
+
+📋 **Detalhes:**
+• ID: {{ job_id }}
+• Tipo: {{ job_type }}
+• Status: {{ job_status }}
+• Progresso: {{ job_progress }}%
+• Duração: {{ duration }}
+
+🎯 **Score:** {{ score }}
+📊 **Projeto:** {{ project_id }}
+🔗 **Fonte:** {{ source_url }}
+
+⏰ {{ timestamp }}', true, 'pt-BR', (SELECT id FROM users WHERE username = 'testUser' LIMIT 1)),
+
+(uuid_generate_v4(), 'Default Job Failed PT-BR', 'JOB_FAILED', '❌ Job {{ job_type }} Falhou',
+'⚠️ *Job falhou durante execução!*
+
+📋 **Detalhes:**
+• ID: {{ job_id }}
+• Tipo: {{ job_type }}
+• Status: {{ job_status }}
+• Progresso: {{ job_progress }}%
+• Tentativas: {{ retry_count }}/{{ max_retries }}
+
+🚨 **Erro:** {{ error_message }}
+
+📊 **Projeto:** {{ project_id }}
+🔗 **Fonte:** {{ source_url }}
+
+⏰ {{ timestamp }}
+
+🔄 O sistema tentará novamente automaticamente.', true, 'pt-BR', (SELECT id FROM users WHERE username = 'testUser' LIMIT 1)),
+
+(uuid_generate_v4(), 'Default Score Alert PT-BR', 'SCORE_ALERT', '⚠️ Alerta de Score - {{ job_type }}',
+'📊 *Alerta de Score Detectado!*
+
+🎯 **Score:** {{ score }} (abaixo do limite)
+📋 **Job:** {{ job_type }}
+📋 **ID:** {{ job_id }}
+
+📊 **Projeto:** {{ project_id }}
+🔗 **Fonte:** {{ source_url }}
+
+⏰ {{ timestamp }}
+
+🔍 Recomendamos verificar a qualidade do código e dependências.', true, 'pt-BR', (SELECT id FROM users WHERE username = 'testUser' LIMIT 1));
+
+-- Inserir regras padrão de notificação
+INSERT INTO mcp_notification_rules (id, name, description, condition, platforms, priority, status, is_global, created_by, max_notifications_per_hour) VALUES
+(uuid_generate_v4(), 'Global Job Completion Notifications', 'Notify when any analysis job completes successfully', 'JOB_COMPLETED', '["TELEGRAM", "DISCORD"]', 'MEDIUM', 'ACTIVE', true, (SELECT id FROM users WHERE username = 'testUser' LIMIT 1), 20),
+
+(uuid_generate_v4(), 'Global Job Failure Notifications', 'Immediate notifications for job failures', 'JOB_FAILED', '["TELEGRAM", "DISCORD"]', 'HIGH', 'ACTIVE', true, (SELECT id FROM users WHERE username = 'testUser' LIMIT 1), 10),
+
+(uuid_generate_v4(), 'Low Score Alerts', 'Alert when analysis scores are below threshold', 'SCORE_ALERT', '["TELEGRAM"]', 'MEDIUM', 'ACTIVE', true, (SELECT id FROM users WHERE username = 'testUser' LIMIT 1), 5);
+
+-- Update template_id references in notification rules
+UPDATE mcp_notification_rules
+SET template_id = (SELECT id FROM mcp_notification_templates WHERE template_type = 'JOB_COMPLETED' AND is_default = true LIMIT 1)
+WHERE condition = 'JOB_COMPLETED';
+
+UPDATE mcp_notification_rules
+SET template_id = (SELECT id FROM mcp_notification_templates WHERE template_type = 'JOB_FAILED' AND is_default = true LIMIT 1)
+WHERE condition = 'JOB_FAILED';
+
+UPDATE mcp_notification_rules
+SET template_id = (SELECT id FROM mcp_notification_templates WHERE template_type = 'SCORE_ALERT' AND is_default = true LIMIT 1)
+WHERE condition = 'SCORE_ALERT';
+
 -- Criando um usuário de exemplo
 INSERT INTO "users" ("id","name","username","password","email","phone","role_id","document","active","created_at","updated_at","last_login")
 VALUES (
