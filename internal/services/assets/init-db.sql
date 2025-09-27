@@ -53,6 +53,20 @@ CREATE TYPE last_run_message AS ENUM('success', 'failure', 'pending', 'running',
 CREATE TYPE job_status AS ENUM('SUCCESS', 'FAILED', 'PENDING', 'RUNNING', 'COMPLETED');
 CREATE TYPE job_type AS ENUM('cron', 'interval');
 CREATE TYPE job_command_type AS ENUM('shell', 'api', 'script');
+CREATE TYPE analysis_job_status AS ENUM ('PENDING', 'RUNNING', 'COMPLETED', 'FAILED', 'CANCELLED');
+
+-- Bot Integration Enums
+CREATE TYPE bot_platform AS ENUM ('DISCORD', 'TELEGRAM', 'WHATSAPP', 'META', 'UNIFIED');
+CREATE TYPE bot_user_type AS ENUM ('BOT', 'USER', 'CHANNEL', 'GROUP', 'SYSTEM', 'BUSINESS');
+CREATE TYPE bot_status AS ENUM ('ACTIVE', 'INACTIVE', 'DISCONNECTED', 'ERROR', 'BLOCKED', 'PENDING');
+CREATE TYPE discord_integration_type AS ENUM ('BOT', 'WEBHOOK', 'OAUTH2');
+CREATE TYPE telegram_integration_type AS ENUM ('BOT', 'WEBHOOK', 'API');
+CREATE TYPE whatsapp_integration_type AS ENUM ('BUSINESS_API', 'CLOUD_API', 'WEBHOOK', 'GRAPH_API');
+CREATE TYPE conversation_status AS ENUM ('ACTIVE', 'INACTIVE', 'ARCHIVED', 'BLOCKED', 'PENDING');
+CREATE TYPE conversation_type AS ENUM ('PRIVATE', 'GROUP', 'CHANNEL', 'BOT', 'SUPPORT');
+CREATE TYPE message_status AS ENUM ('SENT', 'DELIVERED', 'READ', 'FAILED', 'PENDING', 'DELETED');
+CREATE TYPE message_type AS ENUM ('TEXT', 'IMAGE', 'VIDEO', 'AUDIO', 'DOCUMENT', 'LOCATION', 'CONTACT', 'STICKER', 'EMOJI', 'FILE', 'BUTTON', 'LIST', 'TEMPLATE', 'SYSTEM');
+CREATE TYPE message_direction AS ENUM ('INBOUND', 'OUTBOUND');
 -- COMMIT;
 
 -- Tabela de roles
@@ -185,6 +199,30 @@ CREATE TABLE IF NOT EXISTS job_queue (
     job_headers   JSONB,
     job_retries   INTEGER DEFAULT 0,
     job_timeout   INTEGER DEFAULT 0
+);
+
+-- Tabela MCP Analysis Jobs
+CREATE TABLE IF NOT EXISTS mcp_analysis_jobs (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    project_id UUID,
+    job_type VARCHAR(50) NOT NULL,
+    status analysis_job_status NOT NULL DEFAULT 'PENDING',
+    source_url TEXT,
+    source_type VARCHAR(50),
+    input_data JSONB,
+    output_data JSONB,
+    error_message TEXT,
+    progress DECIMAL(5,2) DEFAULT 0.0,
+    started_at TIMESTAMP,
+    completed_at TIMESTAMP,
+    retry_count INTEGER DEFAULT 0,
+    max_retries INTEGER DEFAULT 3,
+    metadata JSONB,
+    user_id UUID,
+    created_by UUID,
+    updated_by UUID,
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
 );
 
 
@@ -434,34 +472,34 @@ CREATE TABLE IF NOT EXISTS stock_predictions (
 );
 -- COMMIT;
 
--- Tabela de pedidos
--- CREATE TABLE IF NOT EXISTS orders (
---     id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
---     external_id varchar(255),
---     order_number varchar(100),
---     partner_id uuid NOT NULL REFERENCES partners(id),
---     status varchar(30) NOT NULL,
---     order_date timestamp without time zone NOT NULL,
---     estimated_delivery_date timestamp without time zone,
---     actual_delivery_date timestamp without time zone,
---     shipping_address_id uuid REFERENCES addresses(id),
---     payment_method varchar(30),
---     payment_status varchar(20),
---     notes text,
---     total_amount numeric(18,2) NOT NULL,
---     discount_amount numeric(18,2) NOT NULL DEFAULT 0,
---     tax_amount numeric(18,2),
---     shipping_amount numeric(18,2),
---     final_amount numeric(18,2) NOT NULL,
---     is_automatically_generated boolean DEFAULT false,
---     created_at timestamp without time zone NOT NULL DEFAULT now(),
---     updated_at timestamp without time zone NOT NULL DEFAULT now(),
---     last_sync_at timestamp without time zone,
---     --prediction_id uuid REFERENCES stock_predictions(id),
---     priority integer,
---     expected_margin numeric(18,2)
--- );
--- COMMIT;
+Tabela de pedidos
+CREATE TABLE IF NOT EXISTS orders (
+    id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+    external_id varchar(255),
+    order_number varchar(100),
+    partner_id uuid NOT NULL REFERENCES partners(id),
+    status varchar(30) NOT NULL,
+    order_date timestamp without time zone NOT NULL,
+    estimated_delivery_date timestamp without time zone,
+    actual_delivery_date timestamp without time zone,
+    shipping_address_id uuid REFERENCES addresses(id),
+    payment_method varchar(30),
+    payment_status varchar(20),
+    notes text,
+    total_amount numeric(18,2) NOT NULL,
+    discount_amount numeric(18,2) NOT NULL DEFAULT 0,
+    tax_amount numeric(18,2),
+    shipping_amount numeric(18,2),
+    final_amount numeric(18,2) NOT NULL,
+    is_automatically_generated boolean DEFAULT false,
+    created_at timestamp without time zone NOT NULL DEFAULT now(),
+    updated_at timestamp without time zone NOT NULL DEFAULT now(),
+    last_sync_at timestamp without time zone,
+    --prediction_id uuid REFERENCES stock_predictions(id),
+    priority integer,
+    expected_margin numeric(18,2)
+);
+COMMIT;
 
 -- Tabela de configurações de sincronização
 CREATE TABLE IF NOT EXISTS sync_config (
@@ -542,12 +580,12 @@ CREATE TABLE IF NOT EXISTS refresh_tokens (
 
 -- Índices para tabelas auxiliares
 CREATE INDEX IF NOT EXISTS idx_sync_logs_entity_name ON sync_logs(entity_name);
--- CREATE INDEX IF NOT EXISTS idx_stock_predictions_product_id ON stock_predictions(product_id);
--- CREATE INDEX IF NOT EXISTS idx_stock_predictions_warehouse_id ON stock_predictions(warehouse_id);
--- CREATE INDEX IF NOT EXISTS idx_stock_predictions_days_until_stockout ON stock_predictions(days_until_stockout);
--- CREATE INDEX IF NOT EXISTS idx_stock_predictions_confidence_level ON stock_predictions(confidence_level);
--- CREATE INDEX IF NOT EXISTS idx_prediction_daily_data_prediction_id ON prediction_daily_data(prediction_id);
--- CREATE INDEX IF NOT EXISTS idx_prediction_daily_data_day_date ON prediction_daily_data(day_date);
+CREATE INDEX IF NOT EXISTS idx_stock_predictions_product_id ON stock_predictions(product_id);
+CREATE INDEX IF NOT EXISTS idx_stock_predictions_warehouse_id ON stock_predictions(warehouse_id);
+CREATE INDEX IF NOT EXISTS idx_stock_predictions_days_until_stockout ON stock_predictions(days_until_stockout);
+CREATE INDEX IF NOT EXISTS idx_stock_predictions_confidence_level ON stock_predictions(confidence_level);
+CREATE INDEX IF NOT EXISTS idx_prediction_daily_data_prediction_id ON prediction_daily_data(prediction_id);
+CREATE INDEX IF NOT EXISTS idx_prediction_daily_data_day_date ON prediction_daily_data(day_date);
 CREATE INDEX IF NOT EXISTS idx_user_preferences_user_id ON user_preferences(user_id);
 CREATE INDEX IF NOT EXISTS idx_audit_events_entity_type_id ON audit_events(entity_type, entity_id);
 CREATE INDEX IF NOT EXISTS idx_audit_events_created_at ON audit_events(created_at);
@@ -797,6 +835,194 @@ INSERT INTO role_permissions (id, role_id, permission_id, created_at, updated_at
 (uuid_generate_v4(), (SELECT id FROM roles WHERE name = 'viewer'), (SELECT id FROM permissions WHERE name = 'post_create'), now(), now()),
 (uuid_generate_v4(), (SELECT id FROM roles WHERE name = 'viewer'), (SELECT id FROM permissions WHERE name = 'post_edit'), now(), now()),
 (uuid_generate_v4(), (SELECT id FROM roles WHERE name = 'viewer'), (SELECT id FROM permissions WHERE name = 'post_delete'), now(), now());
+
+-- =============================
+-- BOT INTEGRATION TABLES
+-- =============================
+
+-- Tabela de integrações Discord
+CREATE TABLE IF NOT EXISTS mcp_discord_integrations (
+    id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+    discord_user_id text NOT NULL UNIQUE,
+    username text NOT NULL,
+    display_name text,
+    discriminator text,
+    avatar text,
+    email text,
+    locale text,
+    user_type bot_user_type NOT NULL DEFAULT 'USER',
+    status bot_status NOT NULL DEFAULT 'ACTIVE',
+    integration_type discord_integration_type NOT NULL DEFAULT 'BOT',
+    guild_id text,
+    channel_id text,
+    access_token text,
+    refresh_token text,
+    token_expires_at timestamp,
+    webhook_url text,
+    scopes text[],
+    bot_permissions bigint DEFAULT 0,
+    config jsonb DEFAULT '{}',
+    last_activity timestamp DEFAULT now(),
+    user_id uuid REFERENCES users(id),
+    target_task_id uuid,
+    created_at timestamp DEFAULT now(),
+    updated_at timestamp DEFAULT now(),
+    created_by uuid REFERENCES users(id),
+    updated_by uuid REFERENCES users(id)
+);
+
+-- Tabela de integrações Telegram
+CREATE TABLE IF NOT EXISTS mcp_telegram_integrations (
+    id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+    telegram_user_id text NOT NULL UNIQUE,
+    username text,
+    first_name text NOT NULL,
+    last_name text,
+    display_name text,
+    phone_number text,
+    language_code text,
+    user_type bot_user_type NOT NULL DEFAULT 'USER',
+    status bot_status NOT NULL DEFAULT 'ACTIVE',
+    integration_type telegram_integration_type NOT NULL DEFAULT 'BOT',
+    chat_id text,
+    channel_id text,
+    group_id text,
+    bot_token text,
+    webhook_url text,
+    api_key text,
+    bot_permissions jsonb DEFAULT '{}',
+    config jsonb DEFAULT '{}',
+    last_activity timestamp DEFAULT now(),
+    user_id uuid REFERENCES users(id),
+    target_task_id uuid,
+    created_at timestamp DEFAULT now(),
+    updated_at timestamp DEFAULT now(),
+    created_by uuid REFERENCES users(id),
+    updated_by uuid REFERENCES users(id)
+);
+
+-- Tabela de integrações WhatsApp
+CREATE TABLE IF NOT EXISTS mcp_whatsapp_integrations (
+    id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+    whatsapp_business_id text,
+    whatsapp_user_id text,
+    phone_number text NOT NULL UNIQUE,
+    phone_number_id text,
+    display_name text,
+    business_name text,
+    user_type bot_user_type NOT NULL DEFAULT 'USER',
+    status bot_status NOT NULL DEFAULT 'ACTIVE',
+    integration_type whatsapp_integration_type NOT NULL DEFAULT 'BUSINESS_API',
+    access_token text,
+    refresh_token text,
+    token_expires_at timestamp,
+    webhook_url text,
+    webhook_verify_token text,
+    app_id text,
+    app_secret text,
+    business_config jsonb DEFAULT '{}',
+    supported_message_types text[] DEFAULT ARRAY['text', 'image', 'document'],
+    config jsonb DEFAULT '{}',
+    last_activity timestamp DEFAULT now(),
+    user_id uuid REFERENCES users(id),
+    target_task_id uuid,
+    created_at timestamp DEFAULT now(),
+    updated_at timestamp DEFAULT now(),
+    created_by uuid REFERENCES users(id),
+    updated_by uuid REFERENCES users(id)
+);
+
+-- Tabela de conversas unificadas
+CREATE TABLE IF NOT EXISTS mcp_conversations (
+    id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+    platform bot_platform NOT NULL,
+    platform_conversation_id text NOT NULL,
+    integration_id uuid NOT NULL,
+    title text,
+    description text,
+    conversation_type conversation_type NOT NULL DEFAULT 'PRIVATE',
+    status conversation_status NOT NULL DEFAULT 'ACTIVE',
+    participants jsonb DEFAULT '{}',
+    metadata jsonb DEFAULT '{}',
+    last_message_id uuid,
+    last_message_at timestamp DEFAULT now(),
+    message_count bigint DEFAULT 0,
+    user_id uuid REFERENCES users(id),
+    target_task_id uuid,
+    created_at timestamp DEFAULT now(),
+    updated_at timestamp DEFAULT now(),
+    created_by uuid REFERENCES users(id),
+    updated_by uuid REFERENCES users(id),
+    UNIQUE(platform, platform_conversation_id)
+);
+
+-- Tabela de mensagens unificadas
+CREATE TABLE IF NOT EXISTS mcp_messages (
+    id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+    conversation_id uuid NOT NULL REFERENCES mcp_conversations(id) ON DELETE CASCADE,
+    platform bot_platform NOT NULL,
+    platform_message_id text NOT NULL,
+    message_type message_type NOT NULL DEFAULT 'TEXT',
+    direction message_direction NOT NULL,
+    status message_status NOT NULL DEFAULT 'SENT',
+    sender_id text NOT NULL,
+    sender_name text,
+    recipient_id text,
+    recipient_name text,
+    content text,
+    attachments jsonb DEFAULT '{}',
+    metadata jsonb DEFAULT '{}',
+    reply_to_message_id uuid,
+    thread_id text,
+    timestamp timestamp NOT NULL DEFAULT now(),
+    delivered_at timestamp,
+    read_at timestamp,
+    user_id uuid REFERENCES users(id),
+    created_at timestamp DEFAULT now(),
+    updated_at timestamp DEFAULT now(),
+    created_by uuid REFERENCES users(id),
+    updated_by uuid REFERENCES users(id)
+);
+
+-- Tabela de análises de jobs do MCP
+CREATE TABLE IF NOT EXISTS mcp_analysis_jobs (
+    id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+    project_id uuid,
+    job_type varchar(50) NOT NULL,
+    status analysis_job_status NOT NULL DEFAULT 'PENDING',
+    source_url text,
+    source_type varchar(50),
+    input_data jsonb DEFAULT '{}',
+    output_data jsonb DEFAULT '{}',
+    error_message text,
+    progress decimal(5,2) DEFAULT 0.0,
+    started_at timestamp,
+    completed_at timestamp,
+    retry_count integer DEFAULT 0,
+    max_retries integer DEFAULT 3,
+    metadata jsonb DEFAULT '{}',
+    user_id uuid NOT NULL,
+    created_by uuid NOT NULL,
+    updated_by uuid,
+    created_at timestamp DEFAULT now(),
+    updated_at timestamp DEFAULT now()
+);
+
+-- Índices para performance
+CREATE INDEX IF NOT EXISTS idx_discord_integrations_user_id ON mcp_discord_integrations(discord_user_id);
+CREATE INDEX IF NOT EXISTS idx_discord_integrations_status ON mcp_discord_integrations(status);
+CREATE INDEX IF NOT EXISTS idx_telegram_integrations_user_id ON mcp_telegram_integrations(telegram_user_id);
+CREATE INDEX IF NOT EXISTS idx_telegram_integrations_status ON mcp_telegram_integrations(status);
+CREATE INDEX IF NOT EXISTS idx_whatsapp_integrations_phone ON mcp_whatsapp_integrations(phone_number);
+CREATE INDEX IF NOT EXISTS idx_whatsapp_integrations_status ON mcp_whatsapp_integrations(status);
+CREATE INDEX IF NOT EXISTS idx_conversations_platform ON mcp_conversations(platform);
+CREATE INDEX IF NOT EXISTS idx_conversations_status ON mcp_conversations(status);
+CREATE INDEX IF NOT EXISTS idx_conversations_integration ON mcp_conversations(integration_id);
+CREATE INDEX IF NOT EXISTS idx_messages_conversation ON mcp_messages(conversation_id);
+CREATE INDEX IF NOT EXISTS idx_messages_platform ON mcp_messages(platform);
+CREATE INDEX IF NOT EXISTS idx_messages_timestamp ON mcp_messages(timestamp);
+CREATE INDEX IF NOT EXISTS idx_analysis_jobs_status ON mcp_analysis_jobs(status);
+CREATE INDEX IF NOT EXISTS idx_analysis_jobs_user ON mcp_analysis_jobs(user_id);
 
 -- Criando um usuário de exemplo
 INSERT INTO "users" ("id","name","username","password","email","phone","role_id","document","active","created_at","updated_at","last_login")
