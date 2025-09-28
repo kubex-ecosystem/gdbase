@@ -1,9 +1,16 @@
--- Active: 1757456653128@@localhost@5432@kubex_db@public
+-- Active: 1757456653128@@localhost@5432@postgres
 /*
 Versão 1.0
 Author: Rafael Mori
 Description: Script de inicialização do banco de dados para o serviços diversos (comercial, MCP, etc.)
 */
+
+-- CREATE DATABASE kubex_db
+-- WITH
+--     ENCODING 'UTF-8' LC_COLLATE = 'pt_BR.UTF-8' LC_CTYPE = 'pt_BR.UTF-8' OWNER kubex_adm CONNECTION
+-- LIMIT -1 TEMPLATE template0 TABLESPACE pg_default IS_TEMPLATE false;
+
+CREATE SCHEMA IF NOT EXISTS public;
 
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
@@ -174,7 +181,7 @@ CREATE TABLE IF NOT EXISTS cron_jobs (
     max_retries INTEGER DEFAULT 3, -- Número máximo de tentativas
     retry_interval INTEGER DEFAULT 10, -- Intervalo entre tentativas (em segundos)
     max_execution_time INTEGER DEFAULT 300, -- Tempo máximo de execução (em segundos)
-    status job_status DEFAULT 'PENDING', -- Status do job
+    job_status job_status DEFAULT 'PENDING', -- Status do job
     last_run_status last_run_status DEFAULT 'pending', -- Status da última execução
     last_run_message TEXT DEFAULT NULL, -- Mensagem da última execução
     last_run_time TIMESTAMP DEFAULT NULL, -- Hora da última execução
@@ -194,7 +201,7 @@ CREATE TABLE IF NOT EXISTS execution_logs (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4 (),
     cronjob_id UUID REFERENCES cron_jobs (id),
     execution_time TIMESTAMP DEFAULT NOW(),
-    status job_status DEFAULT 'PENDING',
+    job_status job_status DEFAULT 'PENDING',
     output TEXT DEFAULT NULL,
     error_message TEXT DEFAULT NULL,
     retry_count INTEGER DEFAULT 0,
@@ -209,7 +216,7 @@ CREATE TABLE IF NOT EXISTS execution_logs (
 CREATE TABLE IF NOT EXISTS job_queue (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4 (),
     cronjob_id UUID REFERENCES cron_jobs (id),
-    status job_status DEFAULT 'PENDING',
+    job_status job_status DEFAULT 'PENDING',
     scheduled_time TIMESTAMP DEFAULT NOW(),
     execution_time TIMESTAMP DEFAULT NULL,
     error_message TEXT DEFAULT NULL,
@@ -418,8 +425,8 @@ CREATE TABLE IF NOT EXISTS partners (
             'ATACAREJO'
         )
     ),
-    status varchar(20) NOT NULL CHECK (
-        status IN (
+    partner_status varchar(20) NOT NULL CHECK (
+        partner_status IN (
             'ACTIVE',
             'INACTIVE',
             'BLOCKED',
@@ -476,7 +483,7 @@ CREATE TABLE IF NOT EXISTS warehouses (
     external_code varchar(255),
     notes text,
     tags text [],
-    status varchar(50),
+    warehouse_status varchar(50),
     created_by uuid REFERENCES users (id),
     created_at timestamp without time zone NOT NULL DEFAULT now(),
     updated_by uuid REFERENCES users (id),
@@ -495,7 +502,7 @@ CREATE TABLE IF NOT EXISTS inventory (
     maximum_level numeric(18, 3),
     reorder_point numeric(18, 3),
     last_count_date timestamp without time zone,
-    status varchar(50),
+    inventory_status varchar(50),
     vol_type varchar(50),
     lot_control varchar(100),
     expiration_date timestamp without time zone,
@@ -538,7 +545,7 @@ CREATE TABLE IF NOT EXISTS orders (
     external_id varchar(255),
     order_number varchar(100),
     partner_id uuid NOT NULL REFERENCES partners (id),
-    status varchar(30) NOT NULL,
+    order_status varchar(30) NOT NULL,
     order_date timestamp without time zone NOT NULL,
     estimated_delivery_date timestamp without time zone,
     actual_delivery_date timestamp without time zone,
@@ -579,7 +586,7 @@ CREATE TABLE IF NOT EXISTS sync_logs (
     entity_name VARCHAR(100) NOT NULL,
     start_time TIMESTAMP NOT NULL,
     end_time TIMESTAMP,
-    status VARCHAR(50) NOT NULL,
+    sync_log_status VARCHAR(50) NOT NULL,
     records_processed INTEGER,
     records_created INTEGER,
     records_updated INTEGER,
@@ -808,8 +815,8 @@ CREATE TABLE IF NOT EXISTS mcp_sync_jobs (
     headers JSONB,
     tags TEXT [],
     notes TEXT,
-    status TEXT NOT NULL CHECK (
-        status IN (
+    sync_job_status TEXT NOT NULL CHECK (
+        sync_job_status IN (
             'SUCCESS',
             'FAILED',
             'PENDING',
@@ -828,14 +835,14 @@ CREATE TABLE IF NOT EXISTS mcp_sync_jobs (
         job_target,
         job_type,
         next_run,
-        status
+        job_status
     ),
     UNIQUE (
         task_id,
         job_target,
         job_type,
         last_run,
-        status
+        job_status
     ),
     UNIQUE (
         task_id,
@@ -844,7 +851,7 @@ CREATE TABLE IF NOT EXISTS mcp_sync_jobs (
         last_run_status,
         last_run_message,
         next_run,
-        status
+        sync_job_status
     )
 );
 
@@ -852,8 +859,8 @@ CREATE TABLE IF NOT EXISTS mcp_sync_jobs (
 CREATE TABLE IF NOT EXISTS mcp_sync_logs (
     id uuid PRIMARY KEY DEFAULT uuid_generate_v4 (),
     job_id uuid NOT NULL REFERENCES mcp_sync_jobs (id) ON DELETE CASCADE,
-    status TEXT NOT NULL CHECK (
-        status IN (
+    sync_job_status TEXT NOT NULL CHECK (
+        sync_job_status IN (
             'success',
             'failure',
             'pending'
@@ -884,7 +891,7 @@ CREATE TABLE IF NOT EXISTS mcp_discord_integrations (
         user_type IN ('BOT', 'USER', 'SYSTEM')
     ),
     integration_status TEXT NOT NULL DEFAULT 'ACTIVE' CHECK (
-        status IN (
+        integration_status IN (
             'ACTIVE',
             'INACTIVE',
             'DISCONNECTED',
@@ -993,7 +1000,7 @@ INSERT INTO
         name,
         document,
         type,
-        status,
+        partner_status,
         address_ids,
         is_active,
         created_at,
@@ -1489,7 +1496,7 @@ CREATE TABLE IF NOT EXISTS mcp_discord_integrations (
     email text,
     locale text,
     user_type bot_user_type NOT NULL DEFAULT 'USER',
-    status bot_status NOT NULL DEFAULT 'ACTIVE',
+    bot_status bot_status NOT NULL DEFAULT 'ACTIVE',
     integration_type discord_integration_type NOT NULL DEFAULT 'BOT',
     guild_id text,
     channel_id text,
@@ -1520,7 +1527,7 @@ CREATE TABLE IF NOT EXISTS mcp_telegram_integrations (
     phone_number text,
     language_code text,
     user_type bot_user_type NOT NULL DEFAULT 'USER',
-    status bot_status NOT NULL DEFAULT 'ACTIVE',
+    bot_status bot_status NOT NULL DEFAULT 'ACTIVE',
     integration_type telegram_integration_type NOT NULL DEFAULT 'BOT',
     chat_id text,
     channel_id text,
@@ -1549,7 +1556,7 @@ CREATE TABLE IF NOT EXISTS mcp_whatsapp_integrations (
     display_name text,
     business_name text,
     user_type bot_user_type NOT NULL DEFAULT 'USER',
-    status bot_status NOT NULL DEFAULT 'ACTIVE',
+    bot_status bot_status NOT NULL DEFAULT 'ACTIVE',
     integration_type whatsapp_integration_type NOT NULL DEFAULT 'BUSINESS_API',
     access_token text,
     refresh_token text,
@@ -1579,7 +1586,7 @@ CREATE TABLE IF NOT EXISTS mcp_conversations (
     title text,
     description text,
     conversation_type conversation_type NOT NULL DEFAULT 'PRIVATE',
-    status conversation_status NOT NULL DEFAULT 'ACTIVE',
+    conversation_status conversation_status NOT NULL DEFAULT 'ACTIVE',
     participants jsonb DEFAULT '{}',
     metadata jsonb DEFAULT '{}',
     last_message_id uuid,
@@ -1605,7 +1612,7 @@ CREATE TABLE IF NOT EXISTS mcp_messages (
     platform_message_id text NOT NULL,
     message_type message_type NOT NULL DEFAULT 'TEXT',
     direction message_direction NOT NULL,
-    status message_status NOT NULL DEFAULT 'SENT',
+    message_status message_status NOT NULL DEFAULT 'SENT',
     sender_id text NOT NULL,
     sender_name text,
     recipient_id text,
@@ -1712,7 +1719,7 @@ CREATE TABLE IF NOT EXISTS mcp_notification_rules (
     user_ids jsonb DEFAULT '[]',
     project_ids jsonb DEFAULT '[]',
     priority notification_rule_priority DEFAULT 'MEDIUM',
-    status notification_rule_status DEFAULT 'ACTIVE',
+    notification_rule_status notification_rule_status DEFAULT 'ACTIVE',
     trigger_config jsonb DEFAULT '{}',
     target_config jsonb DEFAULT '{}',
     schedule_config jsonb DEFAULT '{}',
@@ -1735,7 +1742,7 @@ CREATE TABLE IF NOT EXISTS mcp_notification_templates (
     description text,
     template_type notification_template_type NOT NULL,
     format notification_template_format DEFAULT 'TEXT',
-    status notification_template_status DEFAULT 'ACTIVE',
+    notification_template_status notification_template_status DEFAULT 'ACTIVE',
     subject_template text,
     body_template text NOT NULL,
     platform_configs jsonb DEFAULT '{}',
@@ -1756,7 +1763,7 @@ CREATE TABLE IF NOT EXISTS mcp_notification_history (
     template_id uuid REFERENCES mcp_notification_templates (id),
     analysis_job_id uuid REFERENCES mcp_analysis_jobs (id),
     platform notification_history_platform NOT NULL,
-    status notification_history_status NOT NULL DEFAULT 'PENDING',
+    notification_history_status notification_history_status NOT NULL DEFAULT 'PENDING',
     subject varchar(500),
     message text NOT NULL,
     target_id varchar(255) NOT NULL,
@@ -1778,7 +1785,7 @@ CREATE TABLE IF NOT EXISTS mcp_notification_history (
 );
 
 -- Índices para performance das notificações
-CREATE INDEX IF NOT EXISTS idx_notification_rules_status ON mcp_notification_rules (status);
+CREATE INDEX IF NOT EXISTS idx_notification_rules_status ON mcp_notification_rules (notification_rule_status);
 
 CREATE INDEX IF NOT EXISTS idx_notification_rules_condition ON mcp_notification_rules (condition);
 
@@ -1788,7 +1795,7 @@ CREATE INDEX IF NOT EXISTS idx_notification_rules_last_triggered ON mcp_notifica
 
 CREATE INDEX IF NOT EXISTS idx_notification_templates_type ON mcp_notification_templates (template_type);
 
-CREATE INDEX IF NOT EXISTS idx_notification_templates_status ON mcp_notification_templates (status);
+CREATE INDEX IF NOT EXISTS idx_notification_templates_status ON mcp_notification_templates (notification_template_status);
 
 CREATE INDEX IF NOT EXISTS idx_notification_templates_is_default ON mcp_notification_templates (is_default);
 
@@ -1796,7 +1803,7 @@ CREATE INDEX IF NOT EXISTS idx_notification_templates_language ON mcp_notificati
 
 CREATE INDEX IF NOT EXISTS idx_notification_history_rule_id ON mcp_notification_history (rule_id);
 
-CREATE INDEX IF NOT EXISTS idx_notification_history_status ON mcp_notification_history (status);
+CREATE INDEX IF NOT EXISTS idx_notification_history_status ON mcp_notification_history (notification_history_status);
 
 CREATE INDEX IF NOT EXISTS idx_notification_history_platform ON mcp_notification_history (platform);
 
@@ -1920,7 +1927,7 @@ INSERT INTO
         condition,
         platforms,
         priority,
-        status,
+        notification_rule_status,
         is_global,
         created_by,
         max_notifications_per_hour
