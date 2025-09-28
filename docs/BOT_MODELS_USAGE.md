@@ -5,24 +5,28 @@ Guia completo para usar os novos modelos de bots no GDBASE.
 ## 📋 Modelos Disponíveis
 
 ### 🔷 Discord Integration
+
 - **Modelo**: `DiscordModel`
 - **Factory**: `factory/models/discord.go`
 - **Suporte**: Bot, Webhook, OAuth2
 - **Tabela**: `mcp_discord_integrations`
 
 ### 🔷 Telegram Integration
+
 - **Modelo**: `TelegramModel`
 - **Factory**: `factory/models/telegram.go`
 - **Suporte**: Bot API, Webhook, API direta
 - **Tabela**: `mcp_telegram_integrations`
 
 ### 🔷 WhatsApp Integration
+
 - **Modelo**: `WhatsAppModel`
 - **Factory**: `factory/models/whatsapp.go`
 - **Suporte**: Business API, Cloud API, Graph API, Webhook
 - **Tabela**: `mcp_whatsapp_integrations`
 
 ### 🔷 Unified Messaging
+
 - **Conversas**: `ConversationModel`
 - **Mensagens**: `MessageModel`
 - **Factory**: `factory/models/messaging.go`
@@ -285,6 +289,7 @@ func TestConnections(
 ## 📊 Enum Values
 
 ### Platforms
+
 ```go
 models.PlatformDiscord
 models.PlatformTelegram
@@ -294,6 +299,7 @@ models.PlatformUnified
 ```
 
 ### Status Types
+
 ```go
 // Geral
 models.TelegramStatusActive
@@ -311,6 +317,7 @@ models.MessageStatusRead
 ```
 
 ### Integration Types
+
 ```go
 // Telegram
 models.TelegramIntegrationTypeBot
@@ -333,7 +340,7 @@ models.DiscordIntegrationTypeOAuth2
 Para criar as tabelas, execute:
 
 ```sql
--- Ver arquivo: internal/services/assets/init-db.sql
+-- Ver arquivo: internal/services/assets/001_init.sql
 -- Seção: BOT INTEGRATION TABLES
 ```
 

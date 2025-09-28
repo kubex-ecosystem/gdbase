@@ -11,7 +11,7 @@ type IWebSrvServer interface {
 type WebSrvServer struct {
 	Pid         int    `json:"pid"`
 	Port        string `json:"port"`
-	IpVersion   string `json:"ipVersion"`
+	IPVersion   string `json:"ipVersion"`
 	BindAddress string `json:"bindAddress"`
 	SourcePath  string `json:"sourcePath"`
 	Uptime      string `json:"uptime"`
@@ -23,7 +23,7 @@ func NewWebSrvServer(pid int, port, ipVersion, bindAddress, sourcePath, uptime s
 	return &WebSrvServer{
 		Pid:         pid,
 		Port:        port,
-		IpVersion:   ipVersion,
+		IPVersion:   ipVersion,
 		BindAddress: bindAddress,
 		SourcePath:  sourcePath,
 		Uptime:      uptime,
