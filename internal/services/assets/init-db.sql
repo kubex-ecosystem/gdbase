@@ -1,3 +1,4 @@
+-- Active: 1757456653128@@localhost@5432@kubex_db@public
 /*
 Versão 1.0
 Author: Rafael Mori
@@ -558,7 +559,7 @@ CREATE TABLE IF NOT EXISTS orders (
     expected_margin numeric(18, 2)
 );
 --prediction_id uuid REFERENCES stock_predictions(id),
-COMMIT;
+-- COMMIT;
 
 -- Tabela de configurações de sincronização
 CREATE TABLE IF NOT EXISTS sync_config (
@@ -1471,7 +1472,7 @@ SET
 RETURNING
     id;
 
-COMMIT;
+-- COMMIT;
 
 -- =============================
 -- BOT INTEGRATION TABLES
