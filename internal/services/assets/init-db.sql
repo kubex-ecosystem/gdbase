@@ -495,10 +495,10 @@ CREATE TABLE IF NOT EXISTS orders (
     created_at timestamp without time zone NOT NULL DEFAULT now(),
     updated_at timestamp without time zone NOT NULL DEFAULT now(),
     last_sync_at timestamp without time zone,
-    --prediction_id uuid REFERENCES stock_predictions(id),
     priority integer,
     expected_margin numeric(18,2)
 );
+--prediction_id uuid REFERENCES stock_predictions(id),
 COMMIT;
 
 -- Tabela de configurações de sincronização
@@ -532,15 +532,16 @@ CREATE TABLE IF NOT EXISTS sync_logs (
 -- Tabela de dados de previsão diária (para armazenar séries temporais)
 CREATE TABLE IF NOT EXISTS prediction_daily_data (
     id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
-    --prediction_id uuid NOT NULL REFERENCES stock_predictions(id) ON DELETE CASCADE,
     day_date DATE NOT NULL,
     predicted_demand NUMERIC(18,3) NOT NULL,
     predicted_stock NUMERIC(18,3) NOT NULL,
     lower_bound NUMERIC(18,3),
     upper_bound NUMERIC(18,3),
     created_at TIMESTAMP NOT NULL DEFAULT NOW()
-    -- CONSTRAINT unique_prediction_day UNIQUE (prediction_id, day_date)
 );
+--prediction_id uuid NOT NULL REFERENCES stock_predictions(id) ON DELETE CASCADE,
+-- CONSTRAINT unique_prediction_day UNIQUE (prediction_id, day_date)
+-- COMMIT;
 
 -- Tabela de configurações de usuários
 CREATE TABLE IF NOT EXISTS user_preferences (
@@ -584,12 +585,12 @@ CREATE INDEX IF NOT EXISTS idx_stock_predictions_product_id ON stock_predictions
 CREATE INDEX IF NOT EXISTS idx_stock_predictions_warehouse_id ON stock_predictions(warehouse_id);
 CREATE INDEX IF NOT EXISTS idx_stock_predictions_days_until_stockout ON stock_predictions(days_until_stockout);
 CREATE INDEX IF NOT EXISTS idx_stock_predictions_confidence_level ON stock_predictions(confidence_level);
-CREATE INDEX IF NOT EXISTS idx_prediction_daily_data_prediction_id ON prediction_daily_data(prediction_id);
 CREATE INDEX IF NOT EXISTS idx_prediction_daily_data_day_date ON prediction_daily_data(day_date);
 CREATE INDEX IF NOT EXISTS idx_user_preferences_user_id ON user_preferences(user_id);
 CREATE INDEX IF NOT EXISTS idx_audit_events_entity_type_id ON audit_events(entity_type, entity_id);
 CREATE INDEX IF NOT EXISTS idx_audit_events_created_at ON audit_events(created_at);
 CREATE INDEX IF NOT EXISTS idx_audit_events_user_id ON audit_events(user_id);
+-- CREATE INDEX IF NOT EXISTS idx_prediction_daily_data_prediction_id ON prediction_daily_data(prediction_id);
 -- COMMIT;
 
 -----------------------------------------------------------------------------------
@@ -835,6 +836,37 @@ INSERT INTO role_permissions (id, role_id, permission_id, created_at, updated_at
 (uuid_generate_v4(), (SELECT id FROM roles WHERE name = 'viewer'), (SELECT id FROM permissions WHERE name = 'post_create'), now(), now()),
 (uuid_generate_v4(), (SELECT id FROM roles WHERE name = 'viewer'), (SELECT id FROM permissions WHERE name = 'post_edit'), now(), now()),
 (uuid_generate_v4(), (SELECT id FROM roles WHERE name = 'viewer'), (SELECT id FROM permissions WHERE name = 'post_delete'), now(), now());
+
+-- Criando um usuário de exemplo
+INSERT INTO "users" ("id","name","username","password","email","phone","role_id","document","active","created_at","updated_at","last_login")
+VALUES (
+    uuid_generate_v4(),
+    'Test User',
+    'testUser',
+    '$2a$10$24gpz0aVeuDarfmgwZlZoeJufrxAVKUsw5MjpfHlFN576I.gz.oSW',
+    'abcdef',
+    '9898989898',
+    CASE WHEN (SELECT id FROM roles WHERE name = 'admin') IS NOT NULL THEN
+        (SELECT id FROM roles WHERE name = 'admin')
+    ELSE
+        (SELECT id FROM roles WHERE name = 'editor')
+    END,
+    '22CBCA1346796431',
+    true,
+    now(),
+    now(),
+    now()
+)
+ON CONFLICT ("username") DO UPDATE
+SET "name" = 'TestUser',
+    "email" = 'abcdef@test.com',
+    "phone" = '9898989898',
+    "role_id" = CAST('06ccc24a-4385-4f66-b528-5f8098c8e22d' AS uuid),
+    "document" = '22CBCA1346796431',
+    "active" = true,
+    "updated_at" = now()
+RETURNING id;
+-- COMMIT;
 
 -- =============================
 -- BOT INTEGRATION TABLES
@@ -1208,36 +1240,5 @@ WHERE condition = 'JOB_FAILED';
 UPDATE mcp_notification_rules
 SET template_id = (SELECT id FROM mcp_notification_templates WHERE template_type = 'SCORE_ALERT' AND is_default = true LIMIT 1)
 WHERE condition = 'SCORE_ALERT';
-
--- Criando um usuário de exemplo
-INSERT INTO "users" ("id","name","username","password","email","phone","role_id","document","active","created_at","updated_at","last_login")
-VALUES (
-    uuid_generate_v4(),
-    'Test User',
-    'testUser',
-    '$2a$10$24gpz0aVeuDarfmgwZlZoeJufrxAVKUsw5MjpfHlFN576I.gz.oSW',
-    'abcdef',
-    '9898989898',
-    CASE WHEN (SELECT id FROM roles WHERE name = 'admin') IS NOT NULL THEN
-        (SELECT id FROM roles WHERE name = 'admin')
-    ELSE
-        (SELECT id FROM roles WHERE name = 'editor')
-    END,
-    '22CBCA1346796431',
-    true,
-    now(),
-    now(),
-    now()
-)
-ON CONFLICT ("username") DO UPDATE
-SET "name" = 'TestUser',
-    "email" = 'abcdef@test.com',
-    "phone" = '9898989898',
-    "role_id" = CAST('06ccc24a-4385-4f66-b528-5f8098c8e22d' AS uuid),
-    "document" = '22CBCA1346796431',
-    "active" = true,
-    "updated_at" = now()
-RETURNING id;
--- COMMIT;
 
 COMMIT;
