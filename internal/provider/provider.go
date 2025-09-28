@@ -1,10 +1,10 @@
-
-go
+// Package provider defines interfaces and types for managing service providers like Postgres, MongoDB, Redis, and RabbitMQ.
 package provider
 
 import "context"
 
 type Engine string
+
 const (
 	EnginePostgres Engine = "postgres"
 	EngineMongo    Engine = "mongo"
@@ -13,7 +13,7 @@ const (
 )
 
 type ServiceRef struct {
-	Name   string  // "pg", "mongo", "redis", "rabbit"
+	Name   string // "pg", "mongo", "redis", "rabbit"
 	Engine Engine
 }
 
@@ -25,9 +25,9 @@ type Endpoint struct {
 }
 
 type Capabilities struct {
-	Managed   bool
-	Notes     []string
-	Features  map[string]bool // ex: "extensions.pgcrypto": true
+	Managed  bool
+	Notes    []string
+	Features map[string]bool // ex: "extensions.pgcrypto": true
 }
 
 type StartSpec struct {

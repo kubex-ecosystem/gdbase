@@ -1,5 +1,4 @@
-
-go
+// Package bootstrap initializes and manages service providers based on configuration and environment variables.
 package bootstrap
 
 import (
@@ -10,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/yourorg/gdbase/internal/gdbase/provider"
+	"github.com/kubex-ecosystem/gdbase/internal/provider"
 )
 
 type Config struct {
@@ -23,9 +22,13 @@ type Config struct {
 
 func FromEnv() Config {
 	raw := os.Getenv("GDBASE_BACKENDS")
-	if raw == "" { raw = "dockerstack" }
+	if raw == "" {
+		raw = "dockerstack"
+	}
 	backends := strings.Split(raw, ",")
-	for i := range backends { backends[i] = strings.TrimSpace(backends[i]) }
+	for i := range backends {
+		backends[i] = strings.TrimSpace(backends[i])
+	}
 	strict := strings.EqualFold(os.Getenv("GDBASE_STRICT"), "true")
 	return Config{
 		Backends: backends, Strict: strict,
@@ -41,7 +44,9 @@ func Start(ctx context.Context, cfg Config) (Result, error) {
 	// ordenar por prioridade “fixa” caso queira; hoje respeita ordem vinda
 	cands := make([]string, 0, len(cfg.Backends))
 	for _, b := range cfg.Backends {
-		if _, ok := provider.Get(b); ok { cands = append(cands, b) }
+		if _, ok := provider.Get(b); ok {
+			cands = append(cands, b)
+		}
 	}
 	if len(cands) == 0 {
 		return Result{}, errors.New("no providers registered")
@@ -61,18 +66,24 @@ func Start(ctx context.Context, cfg Config) (Result, error) {
 		eps, err := p.Start(ctx, spec)
 		if err != nil {
 			lastErr = err
-			if cfg.Strict { return Result{}, err }
+			if cfg.Strict {
+				return Result{}, err
+			}
 			continue
 		}
 		// health com backoff curto
 		deadline := time.Now().Add(15 * time.Second)
 		for {
-			if err = p.Health(ctx, eps); err == nil || time.Now().After(deadline) { break }
+			if err = p.Health(ctx, eps); err == nil || time.Now().After(deadline) {
+				break
+			}
 			time.Sleep(500 * time.Millisecond)
 		}
 		if err != nil {
 			lastErr = err
-			if cfg.Strict { return Result{}, err }
+			if cfg.Strict {
+				return Result{}, err
+			}
 			continue
 		}
 		return Result{Backend: name, Endpoints: eps}, nil

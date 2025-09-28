@@ -1,5 +1,4 @@
-
-go
+// Package dockerstack provides a local Docker-based stack implementation for managing services like Postgres, MongoDB, Redis, and RabbitMQ.
 package dockerstack
 
 import (
@@ -8,7 +7,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/yourorg/gdbase/internal/gdbase/provider"
+	"github.com/kubex-ecosystem/gdbase/internal/provider"
 )
 
 type Provider struct{}
@@ -37,7 +36,9 @@ func (p *Provider) Start(ctx context.Context, spec provider.StartSpec) (map[stri
 		user := "postgres"
 		pass := spec.Secrets["pg_admin"]
 		host := os.Getenv("GDBASE_PG_HOST")
-		if host == "" { host = "127.0.0.1" }
+		if host == "" {
+			host = "127.0.0.1"
+		}
 		port := pick(spec.PreferredPort, "pg", 5432)
 		dsn := fmt.Sprintf("postgres://%s:%s@%s:%d/gdbase?sslmode=disable", user, pass, host, port)
 		endpoints["pg"] = provider.Endpoint{DSN: dsn, Redacted: red(dsn, pass), Host: host, Port: port}
@@ -84,15 +85,25 @@ func (p *Provider) Health(ctx context.Context, eps map[string]provider.Endpoint)
 func (p *Provider) Stop(ctx context.Context, refs []provider.ServiceRef) error { return nil }
 
 func has(services []provider.ServiceRef, name string) bool {
-	for _, s := range services { if s.Name == name { return true } }
+	for _, s := range services {
+		if s.Name == name {
+			return true
+		}
+	}
 	return false
 }
 func pick(m map[string]int, key string, def int) int {
-	if m == nil { return def }
-	if v, ok := m[key]; ok && v > 0 { return v }
+	if m == nil {
+		return def
+	}
+	if v, ok := m[key]; ok && v > 0 {
+		return v
+	}
 	return def
 }
 func red(dsn, secret string) string {
-	if secret == "" { return dsn }
+	if secret == "" {
+		return dsn
+	}
 	return "***redacted***"
 }
