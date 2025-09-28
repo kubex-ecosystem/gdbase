@@ -140,8 +140,15 @@ type NotificationRule struct {
 // NewNotificationRuleModel cria uma nova instância de regra de notificação
 func NewNotificationRuleModel() INotificationRule {
 	return &NotificationRule{
-		CreatedAt: time.Now(),
-		UpdatedAt: time.Now(),
+		Platforms:      make(t.JSONB),
+		JobTypes:       make(t.JSONB),
+		UserIDs:        make(t.JSONB),
+		ProjectIDs:     make(t.JSONB),
+		TriggerConfig:  make(t.JSONB),
+		TargetConfig:   make(t.JSONB),
+		ScheduleConfig: make(t.JSONB),
+		CreatedAt:      time.Now(),
+		UpdatedAt:      time.Now(),
 	}
 }
 
@@ -151,6 +158,7 @@ func (n *NotificationRule) TableName() string {
 }
 
 // Getters e Setters
+
 func (n *NotificationRule) GetID() uuid.UUID                                 { return n.ID }
 func (n *NotificationRule) SetID(id uuid.UUID)                               { n.ID = id }
 func (n *NotificationRule) GetName() string                                  { return n.Name }
@@ -192,14 +200,14 @@ func (n *NotificationRule) SetLastTriggeredAt(lastTriggered *time.Time) {
 func (n *NotificationRule) GetTriggerCount() int64      { return n.TriggerCount }
 func (n *NotificationRule) SetTriggerCount(count int64) { n.TriggerCount = count }
 
-// Getters para slices (implementação específica para JSONB)
+// GetPlatforms para slices (implementação específica para JSONB)
 func (n *NotificationRule) GetPlatforms() map[string]NotificationRulePlatform {
-	if n.Platforms == nil {
+	if n.Platforms.IsNil() || n.Platforms.IsEmpty() {
 		return map[string]NotificationRulePlatform{}
 	}
 
 	var platforms map[string]NotificationRulePlatform
-	if n.Platforms != nil {
+	if !n.Platforms.IsNil() {
 		platforms = make(map[string]NotificationRulePlatform)
 		for _, p := range n.Platforms {
 			if platformStr, ok := p.(string); ok {
@@ -219,12 +227,12 @@ func (n *NotificationRule) SetPlatforms(platforms map[string]NotificationRulePla
 }
 
 func (n *NotificationRule) GetJobTypes() map[string]string {
-	if n.JobTypes == nil {
+	if n.JobTypes.IsNil() || n.JobTypes.IsEmpty() {
 		return map[string]string{}
 	}
 
 	var jobTypes map[string]string
-	if n.JobTypes != nil {
+	if !n.JobTypes.IsNil() {
 		jobTypes = make(map[string]string)
 		for _, jt := range n.JobTypes {
 			if jobTypeStr, ok := jt.(string); ok {
@@ -244,12 +252,12 @@ func (n *NotificationRule) SetJobTypes(jobTypes map[string]string) {
 }
 
 func (n *NotificationRule) GetUserIDs() map[string]uuid.UUID {
-	if n.UserIDs == nil {
+	if n.UserIDs.IsNil() || n.UserIDs.IsEmpty() {
 		return map[string]uuid.UUID{}
 	}
 
 	userIDs := make(map[string]uuid.UUID)
-	if n.UserIDs != nil {
+	if !n.UserIDs.IsNil() {
 		for _, uid := range n.UserIDs {
 			if userIDStr, ok := uid.(string); ok {
 				if userID, err := uuid.Parse(userIDStr); err == nil {
@@ -270,12 +278,12 @@ func (n *NotificationRule) SetUserIDs(userIDs map[string]uuid.UUID) {
 }
 
 func (n *NotificationRule) GetProjectIDs() []uuid.UUID {
-	if n.ProjectIDs == nil {
+	if n.ProjectIDs.IsNil() || n.ProjectIDs.IsEmpty() {
 		return []uuid.UUID{}
 	}
 
 	var projectIDs map[string]uuid.UUID
-	if n.ProjectIDs != nil {
+	if !n.ProjectIDs.IsNil() {
 		projectIDs = make(map[string]uuid.UUID)
 		for _, pid := range n.ProjectIDs {
 			if projectIDStr, ok := pid.(string); ok {
@@ -302,6 +310,7 @@ func (n *NotificationRule) SetProjectIDs(projectIDs []uuid.UUID) {
 }
 
 // Validation methods
+
 func (n *NotificationRule) Validate() error {
 	if n.Name == "" {
 		return fmt.Errorf("notification rule name is required")
@@ -397,19 +406,15 @@ func (n *NotificationRule) ShouldTriggerForScore(score float64) bool {
 		return false
 	}
 
-	if n.TriggerConfig == nil {
+	if n.TriggerConfig.IsNil() || n.TriggerConfig.IsEmpty() {
 		return false
 	}
 
 	var configMap = make(map[string]interface{})
-	if n.TriggerConfig != nil {
+	if !n.TriggerConfig.IsNil() {
 		for k, v := range n.TriggerConfig {
 			configMap[k] = v
 		}
-	}
-
-	if configMap == nil {
-		return false
 	}
 
 	threshold, ok := configMap["score_threshold"].(float64)
@@ -443,12 +448,12 @@ func (n *NotificationRule) ShouldTriggerForDuration(duration time.Duration) bool
 		return false
 	}
 
-	if n.TriggerConfig == nil {
+	if n.TriggerConfig.IsNil() || n.TriggerConfig.IsEmpty() {
 		return false
 	}
 
 	var configMap = make(map[string]interface{})
-	if n.TriggerConfig != nil {
+	if !n.TriggerConfig.IsNil() {
 		for k, v := range n.TriggerConfig {
 			configMap[k] = v
 		}

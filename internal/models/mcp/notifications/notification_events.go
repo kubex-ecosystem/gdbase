@@ -39,7 +39,7 @@ type NotificationEvent struct {
 	ErrorMessage string                 `json:"error_message,omitempty"`
 }
 
-// NotificationEventProcessor interface para processar eventos de notificação
+// INotificationEventProcessor interface para processar eventos de notificação
 type INotificationEventProcessor interface {
 	ProcessEvent(ctx context.Context, event *NotificationEvent) error
 	GetEligibleRules(ctx context.Context, event *NotificationEvent) ([]INotificationRule, error)
@@ -66,7 +66,6 @@ type MessageQueuePublisher interface {
 	Publish(exchange, routingKey string, body []byte) error
 }
 
-// Interfaces dos repositórios (definidas nos arquivos de repo)
 type INotificationRuleRepo interface {
 	FindActiveRulesForEvent(ctx context.Context, eventType NotificationEventType, jobType string, userID, projectID uuid.UUID) ([]INotificationRule, error)
 	FindByID(ctx context.Context, id uuid.UUID) (INotificationRule, error)
@@ -343,7 +342,7 @@ func (p *NotificationEventProcessor) getTemplateForRule(ctx context.Context, rul
 // getTargetsForPlatform obtém os alvos de notificação para uma plataforma
 func (p *NotificationEventProcessor) getTargetsForPlatform(rule INotificationRule, platform string) ([]NotificationTarget, error) {
 	targetConfig := rule.GetTargetConfig()
-	if targetConfig == nil {
+	if targetConfig.IsNil() || targetConfig.IsEmpty() {
 		return nil, fmt.Errorf("no target configuration found for rule")
 	}
 
@@ -473,6 +472,7 @@ func (p *NotificationEventProcessor) UnregisterEventHandler(eventType Notificati
 }
 
 // Helper functions para criar eventos específicos
+
 func NewJobStatusChangedEvent(jobID, userID uuid.UUID, projectID *uuid.UUID, oldStatus, newStatus string, jobData map[string]interface{}) *NotificationEvent {
 	event := &NotificationEvent{
 		ID:         uuid.New(),

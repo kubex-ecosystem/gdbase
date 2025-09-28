@@ -112,8 +112,11 @@ type NotificationTemplate struct {
 // NewNotificationTemplateModel cria uma nova instância de template de notificação
 func NewNotificationTemplateModel() INotificationTemplate {
 	return &NotificationTemplate{
-		CreatedAt: time.Now(),
-		UpdatedAt: time.Now(),
+		PlatformConfigs: make(t.JSONB),
+		Variables:       make(t.JSONB),
+		Tags:            make(t.JSONB),
+		CreatedAt:       time.Now(),
+		UpdatedAt:       time.Now(),
 	}
 }
 
@@ -123,6 +126,7 @@ func (n *NotificationTemplate) TableName() string {
 }
 
 // Getters e Setters
+
 func (n *NotificationTemplate) GetID() uuid.UUID                          { return n.ID }
 func (n *NotificationTemplate) SetID(id uuid.UUID)                        { n.ID = id }
 func (n *NotificationTemplate) GetName() string                           { return n.Name }
@@ -161,6 +165,7 @@ func (n *NotificationTemplate) GetUpdatedAt() time.Time                     { re
 func (n *NotificationTemplate) SetUpdatedAt(updatedAt time.Time)            { n.UpdatedAt = updatedAt }
 
 // Template processing methods
+
 func (n *NotificationTemplate) Validate() error {
 	if n.Name == "" {
 		return fmt.Errorf("template name is required")
@@ -283,10 +288,10 @@ func (n *NotificationTemplate) GetAvailableVariables() []string {
 		"score", "retry_count", "max_retries",
 		"timestamp", "date", "time", "system_name", "environment",
 	}
-	var varsMap map[string]interface{}
+	var varsMap = make(map[string]interface{})
 	if n.Variables != nil {
-		for key := range varsMap {
-			variables = append(variables, key)
+		for key := range n.Variables {
+			varsMap[key] = n.Variables[key]
 		}
 	}
 
@@ -338,6 +343,7 @@ func (n *NotificationTemplate) IsCompatibleWithPlatform(platform string) bool {
 }
 
 // Predefined template builders
+
 func NewJobCompletedTemplate(name, language string, createdBy uuid.UUID) INotificationTemplate {
 	template := NewNotificationTemplateModel().(*NotificationTemplate)
 	template.Name = name

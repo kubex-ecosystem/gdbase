@@ -1,6 +1,6 @@
 package types
 
-import ci "github.com/kubex-ecosystem/gdbase/internal/interfaces"
+import t "github.com/kubex-ecosystem/gdbase/internal/types"
 
 type Messagery struct {
 	RabbitMQ *RabbitMQ `json:"rabbitmq" yaml:"rabbitmq" xml:"rabbitmq" toml:"rabbitmq" mapstructure:"rabbitmq"`
@@ -9,5 +9,5 @@ type Messagery struct {
 	//*Nats     `json:"nats" yaml:"nats" xml:"nats" toml:"nats" mapstructure:"nats"`
 	//*ActiveMQ `json:"activemq" yaml:"activemq" xml:"activemq" toml:"activemq" mapstructure:"activemq"`
 	//*AMQP     `json:"amqp" yaml:"amqp" xml:"amqp" toml:"amqp" mapstructure:"amqp"`
-	Mapper ci.IMapper[Messagery]
+	Mapper *t.Mapper[*Messagery] `json:"-" yaml:"-" xml:"-" toml:"-" mapstructure:"-"`
 }

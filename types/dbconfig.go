@@ -7,7 +7,6 @@ import (
 	"path/filepath"
 
 	glb "github.com/kubex-ecosystem/gdbase/internal/globals"
-	ci "github.com/kubex-ecosystem/gdbase/internal/interfaces"
 	gl "github.com/kubex-ecosystem/gdbase/internal/module/logger"
 	crp "github.com/kubex-ecosystem/gdbase/internal/security/crypto"
 	krs "github.com/kubex-ecosystem/gdbase/internal/security/external"
@@ -47,7 +46,7 @@ type DBConfig struct {
 	// Messagery is used to configure the messagery database
 	Messagery *Messagery
 
-	Mapper ci.IMapper[*DBConfig]
+	Mapper *t.Mapper[*DBConfig] `json:"-" yaml:"-" xml:"-" toml:"-" mapstructure:"-"`
 }
 
 func newDBConfig(name, filePath string, enabled bool, logger l.Logger, debug bool) *DBConfig {
@@ -176,7 +175,7 @@ func NewDBConfig(dbConfig *DBConfig) *DBConfig {
 	}
 	willWrite := false
 	if dbConfig.Mapper == nil {
-		dbConfig.Mapper = t.NewMapper(&dbConfig, dbConfig.FilePath)
+		dbConfig.Mapper = t.NewMapperType(&dbConfig, dbConfig.FilePath)
 		if _, statErr := os.Stat(dbConfig.FilePath); os.IsNotExist(statErr) {
 			if err := os.MkdirAll(dbConfig.FilePath, os.ModePerm); err != nil {
 				gl.Log("error", fmt.Sprintf("Error creating directory: %v", err))

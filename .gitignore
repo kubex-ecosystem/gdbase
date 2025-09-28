@@ -68,3 +68,4 @@ dist/*
 .kubex/
 .claude/
 CLAUDE.md
+supabase/

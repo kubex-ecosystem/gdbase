@@ -1,3 +1,4 @@
+// Package notifications implements a notification system that integrates with analysis jobs.
 package notifications
 
 import (
@@ -187,9 +188,6 @@ func (a *AnalysisJobNotificationIntegration) checkScoreAlert(ctx context.Context
 
 	var score float64
 	var scoreFound bool
-	if outputData == nil {
-		return nil
-	}
 	for key, value := range outputData {
 		if key == "overall_score" {
 			if scoreFloat, ok := value.(float64); ok {
@@ -434,7 +432,7 @@ func (h *AnalysisJobNotificationHooks) handleScoreAlertEvent(ctx context.Context
 	return nil
 }
 
-// Função helper para integrar com o service de analysis_jobs
+// IntegrateWithAnalysisJobService integra o sistema de notificações com o serviço de análise de jobs
 func IntegrateWithAnalysisJobService(jobService analysisJobs.IAnalysisJobService, integration *AnalysisJobNotificationIntegration) {
 	// Esta função seria implementada para integrar com o service de analysis_jobs
 	// Idealmente, o AnalysisJobService teria callbacks/hooks que poderíamos registrar
