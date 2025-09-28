@@ -23,6 +23,7 @@ import (
 	gl "github.com/kubex-ecosystem/gdbase/internal/module/logger"
 	it "github.com/kubex-ecosystem/gdbase/internal/types"
 	t "github.com/kubex-ecosystem/gdbase/types"
+	u "github.com/kubex-ecosystem/gdbase/utils"
 	l "github.com/kubex-ecosystem/logz"
 
 	_ "embed"
@@ -447,21 +448,16 @@ func (d *DockerService) AddService(name string, image string, env []string, port
 }
 
 func ensureDirWithOwner(p string, uid, gid int, mode fs.FileMode) error {
-	if err := os.MkdirAll(p, mode); err != nil {
-		return err
-	}
-	// Chown recursivo (leve): só no topo já resolve para diretórios vazios
-	if err := os.Chown(p, uid, gid); err != nil {
+	if err := u.EnsureDir(p, mode, []string{}); err != nil {
 		return err
 	}
 	return nil
 }
 func ensureFileWithOwner(p string, content []byte, uid, gid int, mode fs.FileMode) error {
-	if err := os.WriteFile(p, content, mode); err != nil {
+	if err := u.EnsureFile(p, mode, []string{}); err != nil {
 		return err
 	}
-	// Chown recursivo (leve): só no topo já resolve para diretórios vazios
-	if err := os.Chown(p, uid, gid); err != nil {
+	if err := os.WriteFile(p, content, mode); err != nil {
 		return err
 	}
 	return nil

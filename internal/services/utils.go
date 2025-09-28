@@ -179,7 +179,17 @@ func SetupDatabaseServices(d IDockerService, config *t.DBConfig) error {
 							if _, err := os.Stat(initScriptPath); err == nil {
 								gl.Log("debug", fmt.Sprintf("Init script %s already exists, skipping creation", initScriptPath))
 							} else {
-								if err := os.WriteFile(initScriptPath, initDBSQL, 0644); err != nil {
+								userGroupArg := []string{}
+								user, err := u.GetPrimaryUser()
+								if err == nil {
+									group, err := u.GetPrimaryGroup()
+									if err != nil {
+										gl.Log("error", fmt.Sprintf("❌ Erro ao obter grupo primário: %v", err))
+										continue
+									}
+									userGroupArg = []string{user, group}
+								}
+								if err := u.EnsureFile(initScriptPath, 0644, userGroupArg); err != nil {
 									gl.Log("error", fmt.Sprintf("❌ Erro ao criar diretório do PostgreSQL: %v", err))
 									continue
 								}
