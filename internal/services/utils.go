@@ -2,6 +2,7 @@ package services
 
 import (
 	"bufio"
+	"embed"
 	"fmt"
 	"math/rand"
 	"os"
@@ -110,26 +111,21 @@ func isDockerRunning() bool {
 	err := cmd.Run()
 	return err == nil
 }
-func WriteInitDBSQL() (string, error) {
-	configDir := filepath.Join(os.ExpandEnv(glb.DefaultPostgresVolume), "init")
-	// if err := u.EnsureDir(configDir, 0755, []string{}); err != nil {
-	// 	gl.Log("error", fmt.Sprintf("Error creating directory: %v", err))
-	// 	return "", err
-	// }
-	if err := os.MkdirAll(configDir, 0755); err != nil {
+func WriteInitDBSQL(initVolumePath, initDBSQL, initDBSQLData string) (string, error) {
+	if err := os.MkdirAll(initVolumePath, 0755); err != nil {
 		gl.Log("error", fmt.Sprintf("Error creating directory: %v", err))
 		return "", err
 	}
-	filePath := filepath.Join(configDir, "001_init.sql")
+	filePath := filepath.Join(initVolumePath, initDBSQL)
 	if _, err := os.Stat(filePath); err == nil {
 		gl.Log("debug", fmt.Sprintf("File %s already exists, skipping creation", filePath))
-	} else {
-		if err := os.WriteFile(filePath, initDBSQL, 0644); err != nil {
-			gl.Log("error", fmt.Sprintf("Error writing file: %v", err))
-			return "", err
-		}
-		fmt.Printf("✅ File %s created successfully!\n", filePath)
+		return filePath, nil
 	}
+	if err := os.WriteFile(filePath, []byte(initDBSQLData), 0644); err != nil {
+		gl.Log("error", fmt.Sprintf("Error writing file: %v", err))
+		return "", err
+	}
+	fmt.Printf("✅ File %s created successfully!\n", filePath)
 	return filePath, nil
 }
 func SetupDatabaseServices(d IDockerService, config *t.DBConfig) error {
@@ -171,15 +167,22 @@ func SetupDatabaseServices(d IDockerService, config *t.DBConfig) error {
 							}
 							pgVolRootDir := os.ExpandEnv(dbConfig.Volume)
 							pgVolInitDir := filepath.Join(pgVolRootDir, "init")
-							// if err := u.EnsureDir(pgVolInitDir, 0755, []string{}); err != nil {
-							// 	gl.Log("error", fmt.Sprintf("❌ Erro ao criar diretório do PostgreSQL: %v", err))
-							// 	continue
-							// }
-							// Write the init script to the init directory
-							// if err := os.WriteFile(filepath.Join(pgVolInitDir, "001_init.sql"), initDBSQL, 0644); err != nil {
-							// 	gl.Log("error", fmt.Sprintf("❌ Erro ao criar 001_init.sql do PostgreSQL: %v", err))
-							// 	continue
-							// }
+							initDBSQLs, initDBSQLErr := embed.FS.ReadDir(initDBSQLFiles, "assets")
+							if initDBSQLErr != nil {
+								gl.Log("error", fmt.Sprintf("❌ Erro ao ler diretório de scripts SQL: %v", initDBSQLErr))
+								continue
+							}
+							for _, initDBSQL := range initDBSQLs {
+								initDBSQLData, initDBSQLErr := embed.FS.ReadFile(initDBSQLFiles, filepath.Join("assets", initDBSQL.Name()))
+								if initDBSQLErr != nil {
+									gl.Log("error", fmt.Sprintf("❌ Erro ao ler script SQL %s: %v", initDBSQL.Name(), initDBSQLErr))
+									continue
+								}
+								if _, err := WriteInitDBSQL(pgVolInitDir, initDBSQL.Name(), string(initDBSQLData)); err != nil {
+									gl.Log("error", fmt.Sprintf("❌ Erro ao criar diretório do PostgreSQL: %v", err))
+									continue
+								}
+							}
 							if err := d.CreateVolume("gdbase-pg-init", pgVolInitDir); err != nil {
 								gl.Log("error", fmt.Sprintf("❌ Erro ao criar volume do PostgreSQL: %v", err))
 								continue

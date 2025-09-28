@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"embed"
 	_ "embed"
 	"encoding/json"
 	"fmt"
@@ -24,7 +25,7 @@ import (
 // database for working with almost any comercial scenario for products selling.
 
 //go:embed all:assets
-var initDBSQL []byte
+var initDBSQLFiles embed.FS
 
 var (
 	containersCache map[string]*Services
