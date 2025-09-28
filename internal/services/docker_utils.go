@@ -3,7 +3,6 @@ package services
 import (
 	"context"
 	"embed"
-	_ "embed"
 	"encoding/json"
 	"fmt"
 	"io"
