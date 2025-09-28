@@ -5,6 +5,9 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"io/fs"
+	"os"
+	"path/filepath"
 	"strings"
 	"sync"
 
@@ -287,7 +290,6 @@ func (d *DockerService) CreateVolume(volumeName, pathsForBind string) error {
 	if err != nil {
 		return fmt.Errorf("error getting structured volume: %w", err)
 	}
-
 	ctx := context.Background()
 
 	volumes, _ := d.Cli.VolumeList(ctx, v.ListOptions{})
@@ -298,21 +300,30 @@ func (d *DockerService) CreateVolume(volumeName, pathsForBind string) error {
 		}
 	}
 
-	vol, err := d.Cli.VolumeCreate(ctx, v.CreateOptions{
-		Name:   structuredVolume.Name,
-		Driver: "local",
-		DriverOpts: map[string]string{
-			"type":   "none",
-			"device": structuredVolume.HostPath,
-			"o":      "bind",
-		},
-	})
+	if filepath.IsAbs(structuredVolume.HostPath) {
+		// Ensure the host path exists
+		if err := ensureDirWithOwner(structuredVolume.HostPath, os.Getuid(), os.Getgid(), 0755); err != nil {
+			return fmt.Errorf("error ensuring host path %s exists: %w", structuredVolume.HostPath, err)
+		}
 
-	if err != nil {
-		return err
+		// Create the volume with the bind mount option
+		vol, err := d.Cli.VolumeCreate(ctx, v.CreateOptions{
+			Name:   structuredVolume.Name,
+			Driver: "local",
+			DriverOpts: map[string]string{
+				"type":   "none",
+				"device": structuredVolume.HostPath,
+				"o":      "bind",
+			},
+		})
+
+		if err != nil {
+			return err
+		}
+
+		gl.Log("info", fmt.Sprintf("Volume %s created at %s", vol.Name, structuredVolume.HostPath))
 	}
 
-	fmt.Printf("✅ Volume created: %s\n", vol.Name)
 	return nil
 }
 func (d *DockerService) GetContainersList() ([]c.Summary, error) {
@@ -433,4 +444,25 @@ func (d *DockerService) AddService(name string, image string, env []string, port
 		containersCache[name].Volumes = volumes
 	}
 	return service
+}
+
+func ensureDirWithOwner(p string, uid, gid int, mode fs.FileMode) error {
+	if err := os.MkdirAll(p, mode); err != nil {
+		return err
+	}
+	// Chown recursivo (leve): só no topo já resolve para diretórios vazios
+	if err := os.Chown(p, uid, gid); err != nil {
+		return err
+	}
+	return nil
+}
+func ensureFileWithOwner(p string, content []byte, uid, gid int, mode fs.FileMode) error {
+	if err := os.WriteFile(p, content, mode); err != nil {
+		return err
+	}
+	// Chown recursivo (leve): só no topo já resolve para diretórios vazios
+	if err := os.Chown(p, uid, gid); err != nil {
+		return err
+	}
+	return nil
 }

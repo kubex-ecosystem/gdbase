@@ -167,15 +167,38 @@ func SetupDatabaseServices(d IDockerService, config *t.DBConfig) error {
 							}
 							pgVolRootDir := os.ExpandEnv(dbConfig.Volume)
 							pgVolInitDir := filepath.Join(pgVolRootDir, "init")
-							if err := u.EnsureDir(pgVolInitDir, 0755, []string{}); err != nil {
+							if err := os.MkdirAll(pgVolInitDir, 0755); err != nil {
 								gl.Log("error", fmt.Sprintf("❌ Erro ao criar diretório do PostgreSQL: %v", err))
 								continue
 							}
+							gl.Log("info", fmt.Sprintf("PostgreSQL init directory: %s", pgVolInitDir))
+
 							// Write the init script to the init directory
-							if err := os.WriteFile(filepath.Join(pgVolInitDir, "init-db.sql"), initDBSQL, 0644); err != nil {
-								gl.Log("error", fmt.Sprintf("❌ Erro ao criar diretório do PostgreSQL: %v", err))
-								continue
+							// Check if the init script already exists
+							initScriptPath := filepath.Join(pgVolInitDir, "init-db.sql")
+							if _, err := os.Stat(initScriptPath); err == nil {
+								gl.Log("debug", fmt.Sprintf("Init script %s already exists, skipping creation", initScriptPath))
+							} else {
+								if err := os.WriteFile(initScriptPath, initDBSQL, 0644); err != nil {
+									gl.Log("error", fmt.Sprintf("❌ Erro ao criar diretório do PostgreSQL: %v", err))
+									continue
+								}
+								gl.Log("info", fmt.Sprintf("Init script written to %s", initScriptPath))
 							}
+							// Ensure the init script is written to the init directory
+							// This is useful for first time setup or if the file was deleted
+							// after the container was created
+							// This will ensure that the init script is always present
+							// in the init directory
+							if _, err := os.Stat(initScriptPath); err != nil {
+								if err := os.WriteFile(initScriptPath, initDBSQL, 0644); err != nil {
+									gl.Log("error", fmt.Sprintf("❌ Erro ao criar diretório do PostgreSQL: %v", err))
+									continue
+								}
+								gl.Log("info", fmt.Sprintf("Init script written to %s", initScriptPath))
+							}
+
+							// Create the volume for PostgreSQL, if exists definitions on the config
 							if err := d.CreateVolume("gdbase-pg-init", pgVolInitDir); err != nil {
 								gl.Log("error", fmt.Sprintf("❌ Erro ao criar volume do PostgreSQL: %v", err))
 								continue
@@ -209,7 +232,7 @@ func SetupDatabaseServices(d IDockerService, config *t.DBConfig) error {
 							// Insert the PostgreSQL service into the services slice
 							dbConnObj := NewServices(
 								"gdbase-pg",
-								"postgres:17-alpine",
+								"postgres:18-alpine",
 								[]string{
 									"POSTGRES_HOST_AUTH_METHOD=trust",
 									"POSTGRES_INITDB_ARGS=--data-checksums",
@@ -225,8 +248,8 @@ func SetupDatabaseServices(d IDockerService, config *t.DBConfig) error {
 									"PGSSLMODE=disable",
 								}, []nat.PortMap{portMap},
 								map[string]struct{}{
-									pgVolInitDir + ":/docker-entrypoint-initdb.d": {},
-									pgVolDataDir + ":/var/lib/postgresql/data":    {},
+									strings.Join([]string{pgVolInitDir, "/docker-entrypoint-initdb.d"}, ":"): {},
+									strings.Join([]string{pgVolDataDir, "/var/lib/postgresql/data"}, ":"):    {},
 								},
 							)
 							services = append(services, dbConnObj)
