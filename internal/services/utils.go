@@ -288,7 +288,7 @@ func SetupDatabaseServices(d IDockerService, config *t.DBConfig) error {
 							// Insert the PostgreSQL service into the services slice
 							dbConnObj := NewServices(
 								"gdbase-pg",
-								"postgres:18-alpine",
+								"postgres:17-alpine",
 								[]string{
 									"POSTGRES_HOST_AUTH_METHOD=trust",
 									"POSTGRES_INITDB_ARGS=--data-checksums",
