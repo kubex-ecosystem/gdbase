@@ -112,7 +112,11 @@ func isDockerRunning() bool {
 }
 func WriteInitDBSQL() (string, error) {
 	configDir := filepath.Join(os.ExpandEnv(glb.DefaultPostgresVolume), "init")
-	if err := u.EnsureDir(configDir, 0755, []string{}); err != nil {
+	// if err := u.EnsureDir(configDir, 0755, []string{}); err != nil {
+	// 	gl.Log("error", fmt.Sprintf("Error creating directory: %v", err))
+	// 	return "", err
+	// }
+	if err := os.MkdirAll(configDir, 0755); err != nil {
 		gl.Log("error", fmt.Sprintf("Error creating directory: %v", err))
 		return "", err
 	}
@@ -167,61 +171,103 @@ func SetupDatabaseServices(d IDockerService, config *t.DBConfig) error {
 							}
 							pgVolRootDir := os.ExpandEnv(dbConfig.Volume)
 							pgVolInitDir := filepath.Join(pgVolRootDir, "init")
-							if err := os.MkdirAll(pgVolInitDir, 0755); err != nil {
-								gl.Log("error", fmt.Sprintf("❌ Erro ao criar diretório do PostgreSQL: %v", err))
-								continue
-							}
-							gl.Log("info", fmt.Sprintf("PostgreSQL init directory: %s", pgVolInitDir))
-
+							// if err := u.EnsureDir(pgVolInitDir, 0755, []string{}); err != nil {
+							// 	gl.Log("error", fmt.Sprintf("❌ Erro ao criar diretório do PostgreSQL: %v", err))
+							// 	continue
+							// }
 							// Write the init script to the init directory
-							// Check if the init script already exists
-							initScriptPath := filepath.Join(pgVolInitDir, "init-db.sql")
-							if _, err := os.Stat(initScriptPath); err == nil {
-								gl.Log("debug", fmt.Sprintf("Init script %s already exists, skipping creation", initScriptPath))
-							} else {
-								userGroupArg := []string{}
-								user, err := u.GetPrimaryUser()
-								if err == nil {
-									group, err := u.GetPrimaryGroup()
-									if err != nil {
-										gl.Log("error", fmt.Sprintf("❌ Erro ao obter grupo primário: %v", err))
-										continue
-									}
-									userGroupArg = []string{user, group}
-								}
-								if err := u.EnsureFile(initScriptPath, 0644, userGroupArg); err != nil {
-									gl.Log("error", fmt.Sprintf("❌ Erro ao criar diretório do PostgreSQL: %v", err))
-									continue
-								}
-								gl.Log("info", fmt.Sprintf("Init script written to %s", initScriptPath))
-							}
-							// Ensure the init script is written to the init directory
-							// This is useful for first time setup or if the file was deleted
-							// after the container was created
-							// This will ensure that the init script is always present
-							// in the init directory
-							if _, err := os.Stat(initScriptPath); err != nil {
-								if err := os.WriteFile(initScriptPath, initDBSQL, 0644); err != nil {
-									gl.Log("error", fmt.Sprintf("❌ Erro ao criar diretório do PostgreSQL: %v", err))
-									continue
-								}
-								gl.Log("info", fmt.Sprintf("Init script written to %s", initScriptPath))
-							}
-
-							// Create the volume for PostgreSQL, if exists definitions on the config
+							// if err := os.WriteFile(filepath.Join(pgVolInitDir, "init-db.sql"), initDBSQL, 0644); err != nil {
+							// 	gl.Log("error", fmt.Sprintf("❌ Erro ao criar init-db.sql do PostgreSQL: %v", err))
+							// 	continue
+							// }
 							if err := d.CreateVolume("gdbase-pg-init", pgVolInitDir); err != nil {
 								gl.Log("error", fmt.Sprintf("❌ Erro ao criar volume do PostgreSQL: %v", err))
 								continue
 							}
 							pgVolDataDir := filepath.Join(pgVolRootDir, "pgdata")
-							if err := u.EnsureDir(pgVolDataDir, 0755, []string{}); err != nil {
-								gl.Log("error", fmt.Sprintf("❌ Erro ao criar diretório do PostgreSQL: %v", err))
-								continue
-							}
+							// if err := u.EnsureDir(pgVolDataDir, 0755, []string{}); err != nil {
+							// 	gl.Log("error", fmt.Sprintf("❌ Erro ao criar diretório pgdata do PostgreSQL: %v", err))
+							// 	continue
+							// }
 							if err := d.CreateVolume("gdbase-pg-data", pgVolDataDir); err != nil {
 								gl.Log("error", fmt.Sprintf("❌ Erro ao criar volume do PostgreSQL: %v", err))
 								continue
 							}
+
+							// // Check if Password is empty, if so, try to retrieve it from keyring
+							// // if not found, generate a new one
+							// if dbConfig.Password == "" {
+							// 	pgPassKey, pgPassErr := glb.GetOrGenPasswordKeyringPass("pgpass")
+							// 	if pgPassErr != nil {
+							// 		gl.Log("error", fmt.Sprintf("Error generating key: %v", pgPassErr))
+							// 		continue
+							// 	}
+							// 	dbConfig.Password = string(pgPassKey)
+							// } else {
+							// 	gl.Log("debug", fmt.Sprintf("Password found in config: %s", dbConfig.Password))
+							// }
+							// if dbConfig.Volume == "" {
+							// 	dbConfig.Volume = os.ExpandEnv(glb.DefaultPostgresVolume)
+							// }
+							// pgVolRootDir := os.ExpandEnv(dbConfig.Volume)
+							// pgVolInitDir := filepath.Join(pgVolRootDir, "init")
+							// if err := os.MkdirAll(pgVolInitDir, 0755); err != nil {
+							// 	gl.Log("error", fmt.Sprintf("❌ Erro ao criar diretório do PostgreSQL: %v", err))
+							// 	continue
+							// }
+							// gl.Log("info", fmt.Sprintf("PostgreSQL init directory: %s", pgVolInitDir))
+
+							// // Write the init script to the init directory
+							// // Check if the init script already exists
+							// initScriptPath := filepath.Join(pgVolInitDir, "init-db.sql")
+							// if _, err := os.Stat(initScriptPath); err == nil {
+							// 	gl.Log("debug", fmt.Sprintf("Init script %s already exists, skipping creation", initScriptPath))
+							// } else {
+							// 	// userGroupArg := []string{}
+							// 	// user, err := u.GetPrimaryUser()
+							// 	// if err == nil {
+							// 	// 	group, err := u.GetPrimaryGroup()
+							// 	// 	if err != nil {
+							// 	// 		gl.Log("error", fmt.Sprintf("❌ Erro ao obter grupo primário: %v", err))
+							// 	// 		continue
+							// 	// 	}
+							// 	// 	userGroupArg = []string{user, group}
+							// 	// }
+							// 	// if err := u.EnsureFile(initScriptPath, 0644, userGroupArg); err != nil {
+							// 	// 	gl.Log("error", fmt.Sprintf("❌ Erro ao criar diretório do PostgreSQL: %v", err))
+							// 	// 	continue
+							// 	// }
+							// 	if err := os.WriteFile(initScriptPath, initDBSQL, 0644); err != nil {
+							// 		gl.Log("error", fmt.Sprintf("❌ Erro ao criar diretório do PostgreSQL: %v", err))
+							// 		continue
+							// 	}
+							// 	gl.Log("info", fmt.Sprintf("Init script written to %s", initScriptPath))
+							// }
+
+							// // Create the volume for PostgreSQL, if exists definitions on the config
+							// if err := d.CreateVolume("gdbase-pg-init", pgVolInitDir); err != nil {
+							// 	gl.Log("error", fmt.Sprintf("❌ Erro ao criar volume do PostgreSQL: %v", err))
+							// 	continue
+							// }
+							// pgVolDataDir := filepath.Join(pgVolRootDir, "pgdata")
+							// if _, err := os.Stat(pgVolDataDir); os.IsNotExist(err) {
+							// 	// if err := u.EnsureDir(pgVolDataDir, 0755, []string{}); err != nil {
+							// 	// 	gl.Log("error", fmt.Sprintf("❌ Erro ao criar diretório do PostgreSQL: %v", err))
+							// 	// 	continue
+							// 	// }
+							// 	if err := os.MkdirAll(pgVolDataDir, 0755); err != nil {
+							// 		gl.Log("error", fmt.Sprintf("❌ Erro ao criar diretório do PostgreSQL: %v", err))
+							// 		continue
+							// 	}
+							// 	if _, err := os.Stat(pgVolDataDir); os.IsNotExist(err) {
+							// 		gl.Log("error", fmt.Sprintf("❌ Erro ao criar diretório do PostgreSQL: %v", err))
+							// 		continue
+							// 	}
+							// }
+							// if err := d.CreateVolume("gdbase-pg-data", pgVolDataDir); err != nil {
+							// 	gl.Log("error", fmt.Sprintf("❌ Erro ao criar volume do PostgreSQL: %v", err))
+							// 	continue
+							// }
 							// Check if the port is already in use and find an available one if necessary
 							if dbConfig.Port == nil || dbConfig.Port == "" {
 								dbConfig.Port = "5432"
@@ -258,6 +304,8 @@ func SetupDatabaseServices(d IDockerService, config *t.DBConfig) error {
 									"PGSSLMODE=disable",
 								}, []nat.PortMap{portMap},
 								map[string]struct{}{
+									// pgVolInitDir + ":/docker-entrypoint-initdb.d":                            {},
+									// pgVolDataDir + ":/var/lib/postgresql/data":                               {},
 									strings.Join([]string{pgVolInitDir, "/docker-entrypoint-initdb.d"}, ":"): {},
 									strings.Join([]string{pgVolDataDir, "/var/lib/postgresql/data"}, ":"):    {},
 								},
@@ -393,12 +441,12 @@ func SetupDatabaseServices(d IDockerService, config *t.DBConfig) error {
 						redisPass = "guest"
 					}
 					// Create the volume for Redis, if exists definitions on the config
-					if rdsCfg.Volume == "" {
-						rdsCfg.Volume = os.ExpandEnv(glb.DefaultRedisVolume)
-						if err := d.CreateVolume("gdbase-redis-data", "/data"); err != nil {
-							return fmt.Errorf("❌ Erro ao criar volume do Redis: %v", err)
-						}
-					}
+					// if rdsCfg.Volume == "" {
+					// 	rdsCfg.Volume = os.ExpandEnv(glb.DefaultRedisVolume)
+					// 	if err := d.CreateVolume("gdbase-redis-data", rdsCfg.Volume); err != nil {
+					// 		return fmt.Errorf("❌ Erro ao criar volume do Redis: %v", err)
+					// 	}
+					// }
 					// Create the Redis service
 					servicesR := []*Services{
 						NewServices("gdbase-redis", "redis:latest", []string{"REDIS_PASSWORD=" + redisPass}, []nat.PortMap{d.MapPorts("6379", "6379/tcp")}, nil),

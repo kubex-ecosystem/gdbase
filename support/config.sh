@@ -7,7 +7,7 @@ set -o errexit  # Exit immediately if a command exits with a non-zero status
 set -o pipefail # Prevent errors in a pipeline from being masked
 set -o errtrace # If a command fails, the shell will exit immediately
 set -o functrace # If a function fails, the shell will exit immediately
-shopt -s inherit_errexit # Inherit the errexit option in functions
+# shopt -s inherit_errexit # Inherit the errexit option in functions
 IFS=$'\n\t'
 
 # Define the relative path to the manifest file
@@ -62,7 +62,7 @@ _BINARY="${_BUILD_PATH:-}/${_APP_NAME:-}"
 _LOCAL_BIN="${HOME:-"~"}/.local/bin"
 _GLOBAL_BIN="/usr/local/bin"
 
-_SCRIPT_DIR="$(cd "$(dirname "${0:-${BASH_SOURCE[0]}}")" && pwd)"
+_SCRIPT_DIR="$(cd "$(dirname "${0:-${BASH_SOURCE[0]}}")" && echo "$(pwd -L)")"
 __source_script_if_needed "apply_manifest" "${_SCRIPT_DIR:-}/apply_manifest.sh" || exit 1
 __source_script_if_needed "get_current_shell" "${_SCRIPT_DIR:-}/utils.sh" || exit 1
 

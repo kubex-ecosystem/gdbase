@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/fs"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -72,36 +73,36 @@ func EnsureDir(path string, perm os.FileMode, userGroup []string) error {
 	}
 
 	// Cria o diretório
-	cmdPathUser := exec.Command("mkdir", "-p", pathSSanitized)
-	cmdPathUserErr := cmdPathUser.Run()
-	if cmdPathUserErr != nil {
-		cmdPathRoot := exec.Command("sudo", "mkdir", "-p", pathSSanitized)
-		cmdPathRootErr := cmdPathRoot.Run()
-		if cmdPathRootErr != nil {
-			return fmt.Errorf("erro ao criar o diretório: %w", cmdPathRootErr)
-		}
+	// cmdPathUser := exec.Command("mkdir", "-p", pathSSanitized)
+	// cmdPathUserErr := cmdPathUser.Run()
+	// if cmdPathUserErr != nil {
+	// 	cmdPathRoot := exec.Command("sudo", "mkdir", "-p", pathSSanitized)
+	// 	cmdPathRootErr := cmdPathRoot.Run()
+	// 	if cmdPathRootErr != nil {
+	// 		return fmt.Errorf("erro ao criar o diretório: %w", cmdPathRootErr)
+	// 	}
 
-		// Define o proprietário e as permissões do diretório
-		if len(userGroup) > 0 {
-			cmdChown := exec.Command("sudo", "chown", strings.Join(userGroup, ":"), pathSSanitized)
-			cmdChownErr := cmdChown.Run()
-			if cmdChownErr != nil {
-				return fmt.Errorf("erro ao definir o proprietário do diretório: %v", cmdChownErr)
-			}
-		}
+	// 	// Define o proprietário e as permissões do diretório
+	// 	if len(userGroup) > 0 {
+	// 		cmdChown := exec.Command("sudo", "chown", strings.Join(userGroup, ":"), pathSSanitized)
+	// 		cmdChownErr := cmdChown.Run()
+	// 		if cmdChownErr != nil {
+	// 			return fmt.Errorf("erro ao definir o proprietário do diretório: %v", cmdChownErr)
+	// 		}
+	// 	}
 
-		permOp := perm
-		if permOp == 0 {
-			permOp = os.ModePerm
-		}
+	// 	permOp := perm
+	// 	if permOp == 0 {
+	// 		permOp = os.ModePerm
+	// 	}
 
-		// Define as permissões do diretório
-		cmdChmod := exec.Command("sudo", "chmod", strconv.Itoa(int(permOp)), pathSSanitized)
-		cmdChmodErr := cmdChmod.Run()
-		if cmdChmodErr != nil {
-			return fmt.Errorf("erro ao definir permissões do diretório: %w", cmdChmodErr)
-		}
-	}
+	// 	// Define as permissões do diretório
+	// 	cmdChmod := exec.Command("sudo", "chmod", strconv.Itoa(int(permOp)), pathSSanitized)
+	// 	cmdChmodErr := cmdChmod.Run()
+	// 	if cmdChmodErr != nil {
+	// 		return fmt.Errorf("erro ao definir permissões do diretório: %w", cmdChmodErr)
+	// 	}
+	// }
 	return nil
 }
 
@@ -164,6 +165,28 @@ func EnsureFile(path string, perm os.FileMode, userGroup []string) error {
 		if cmdChmodErr != nil {
 			return fmt.Errorf("erro ao definir permissões do arquivo: %v", cmdChmodErr)
 		}
+	}
+	return nil
+}
+
+func EnsureDirWithOwner(p string, uid, gid int, mode fs.FileMode) error {
+	if err := os.MkdirAll(p, mode); err != nil {
+		return err
+	}
+	// Chown recursivo (leve): só no topo já resolve para diretórios vazios
+	if err := os.Chown(p, uid, gid); err != nil {
+		return err
+	}
+	return nil
+}
+
+func EnsureFileWithOwner(p string, content []byte, uid, gid int, mode fs.FileMode) error {
+	if err := os.WriteFile(p, content, mode); err != nil {
+		return err
+	}
+	// Chown recursivo (leve): só no topo já resolve para diretórios vazios
+	if err := os.Chown(p, uid, gid); err != nil {
+		return err
 	}
 	return nil
 }
