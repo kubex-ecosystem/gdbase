@@ -5,11 +5,6 @@ Author: Rafael Mori
 Description: Script de inicialização do banco de dados para o serviços diversos (comercial, MCP, etc.)
 */
 
--- CREATE DATABASE kubex_db
--- WITH
---     ENCODING 'UTF-8' LC_COLLATE = 'pt_BR.UTF-8' LC_CTYPE = 'pt_BR.UTF-8' OWNER kubex_adm CONNECTION
--- LIMIT -1 TEMPLATE template0 TABLESPACE pg_default IS_TEMPLATE false;
-
 CREATE SCHEMA IF NOT EXISTS public;
 
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";

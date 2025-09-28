@@ -120,7 +120,7 @@ func WriteInitDBSQL() (string, error) {
 		gl.Log("error", fmt.Sprintf("Error creating directory: %v", err))
 		return "", err
 	}
-	filePath := filepath.Join(configDir, "init-db.sql")
+	filePath := filepath.Join(configDir, "001_init.sql")
 	if _, err := os.Stat(filePath); err == nil {
 		gl.Log("debug", fmt.Sprintf("File %s already exists, skipping creation", filePath))
 	} else {
@@ -176,8 +176,8 @@ func SetupDatabaseServices(d IDockerService, config *t.DBConfig) error {
 							// 	continue
 							// }
 							// Write the init script to the init directory
-							// if err := os.WriteFile(filepath.Join(pgVolInitDir, "init-db.sql"), initDBSQL, 0644); err != nil {
-							// 	gl.Log("error", fmt.Sprintf("❌ Erro ao criar init-db.sql do PostgreSQL: %v", err))
+							// if err := os.WriteFile(filepath.Join(pgVolInitDir, "001_init.sql"), initDBSQL, 0644); err != nil {
+							// 	gl.Log("error", fmt.Sprintf("❌ Erro ao criar 001_init.sql do PostgreSQL: %v", err))
 							// 	continue
 							// }
 							if err := d.CreateVolume("gdbase-pg-init", pgVolInitDir); err != nil {
@@ -219,7 +219,7 @@ func SetupDatabaseServices(d IDockerService, config *t.DBConfig) error {
 
 							// // Write the init script to the init directory
 							// // Check if the init script already exists
-							// initScriptPath := filepath.Join(pgVolInitDir, "init-db.sql")
+							// initScriptPath := filepath.Join(pgVolInitDir, "001_init.sql")
 							// if _, err := os.Stat(initScriptPath); err == nil {
 							// 	gl.Log("debug", fmt.Sprintf("Init script %s already exists, skipping creation", initScriptPath))
 							// } else {
