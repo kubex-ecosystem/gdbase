@@ -13,7 +13,7 @@ import (
 	jobqueue "github.com/kubex-ecosystem/gdbase/internal/models/job_queue"
 	gl "github.com/kubex-ecosystem/gdbase/internal/module/logger"
 	t "github.com/kubex-ecosystem/gdbase/types"
-	"github.com/streadway/amqp"
+	amqp "github.com/rabbitmq/amqp091-go"
 )
 
 type ICronJobService interface {

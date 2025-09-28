@@ -1,3 +1,4 @@
+// Package products contains models and interfaces related to products
 package products
 
 import (

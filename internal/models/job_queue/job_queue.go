@@ -50,10 +50,10 @@ type IJobQueue interface {
 	SetJobMethod(jobMethod string)
 	GetJobAPIEndpoint() string
 	SetJobAPIEndpoint(jobAPIEndpoint string)
-	GetJobPayload() string
-	SetJobPayload(jobPayload string)
-	GetJobHeaders() string
-	SetJobHeaders(jobHeaders string)
+	GetJobPayload() t.JSONB
+	SetJobPayload(jobPayload t.JSONB)
+	GetJobHeaders() t.JSONB
+	SetJobHeaders(jobHeaders t.JSONB)
 	GetJobRetries() int
 	SetJobRetries(jobRetries int)
 	GetJobTimeout() int
@@ -86,6 +86,13 @@ type JobQueue struct {
 	JobHeaders     t.JSONB   `json:"job_headers" xml:"job_headers" yaml:"job_headers" gorm:"column:job_headers"`
 	JobRetries     int       `json:"job_retries" xml:"job_retries" yaml:"job_retries" gorm:"column:job_retries;default:0"`
 	JobTimeout     int       `json:"job_timeout" xml:"job_timeout" yaml:"job_timeout" gorm:"column:job_timeout;default:0"`
+}
+
+func NewJobQueueModel() IJobQueue {
+	return &JobQueue{
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+	}
 }
 
 func (j *JobQueue) TableName() string                          { return "job_queue" }

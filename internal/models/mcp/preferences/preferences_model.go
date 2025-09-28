@@ -42,7 +42,7 @@ func NewPreferencesModel() *PreferencesModel {
 	return &PreferencesModel{
 		ID:        "",
 		Scope:     "defaults",
-		Config:    t.JSONB{},
+		Config:    make(t.JSONB),
 		CreatedAt: time.Now().Format(time.RFC3339),
 		UpdatedAt: time.Now().Format(time.RFC3339),
 	}
@@ -78,8 +78,8 @@ func (p *PreferencesModel) Validate() error {
 	if p.Scope == "" {
 		return fmt.Errorf("scope cannot be empty")
 	}
-	if p.Config == nil {
-		return fmt.Errorf("config cannot be nil")
+	if p.Config.IsNil() {
+		p.Config = make(t.JSONB) // Initialize if nil
 	}
 	return nil
 }

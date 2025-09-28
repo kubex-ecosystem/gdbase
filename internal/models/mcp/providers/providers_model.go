@@ -46,7 +46,7 @@ func NewProvidersModel() *ProvidersModel {
 		ID:         "",
 		Provider:   "",
 		OrgOrGroup: "",
-		Config:     t.JSONB{},
+		Config:     make(t.JSONB),
 		CreatedAt:  time.Now().Format(time.RFC3339),
 		UpdatedAt:  time.Now().Format(time.RFC3339),
 	}
@@ -87,8 +87,8 @@ func (p *ProvidersModel) Validate() error {
 	if p.OrgOrGroup == "" {
 		return fmt.Errorf("org_or_group cannot be empty")
 	}
-	if p.Config == nil {
-		return fmt.Errorf("config cannot be nil")
+	if p.Config.IsNil() {
+		p.Config = make(t.JSONB) // Initialize if nil
 	}
 	return nil
 }

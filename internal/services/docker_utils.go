@@ -23,7 +23,7 @@ import (
 // The default database is implemented in PostgreSQL and can provide a simple, but complete
 // database for working with almost any comercial scenario for products selling.
 
-//go:embed assets/init-db.sql
+//go:embed all:assets
 var initDBSQL []byte
 
 var (
