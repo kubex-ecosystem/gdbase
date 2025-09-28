@@ -19,7 +19,7 @@ type IWebhook interface {
 	GetStatus() string
 	GetCreatedAt() time.Time
 	GetUpdatedAt() time.Time
-	SetURL(fullUrl string) error
+	SetURL(fullURL string) error
 	SetEvent(event string)
 	SetStatus(status string)
 	SetCreatedAt(createdAt time.Time)
@@ -43,16 +43,16 @@ type Webhook struct {
 	// Você pode adicionar outros campos úteis para controle, como configurações do child server.
 }
 
-func NewWebhook(fullUrl, event, status string) IWebhook {
-	parsedUrl, err := url.Parse(fullUrl)
+func NewWebhook(fullURL, event, status string) IWebhook {
+	parsedURL, err := url.Parse(fullURL)
 	if err != nil {
 		panic("Invalid URL: " + err.Error())
 	}
 
 	return &Webhook{
 		Mutexes:   t.NewMutexesType(),
-		Reference: t.NewReference(parsedUrl.String()).GetReference(),
-		URL:       parsedUrl,
+		Reference: t.NewReference(parsedURL.String()).GetReference(),
+		URL:       parsedURL,
 		Event:     event,
 		Status:    status,
 		CreatedAt: time.Now(),
@@ -81,13 +81,13 @@ func (w *Webhook) GetCreatedAt() time.Time {
 func (w *Webhook) GetUpdatedAt() time.Time {
 	return w.UpdatedAt
 }
-func (w *Webhook) SetURL(fullUrl string) error {
-	parsedUrl, err := url.Parse(fullUrl)
+func (w *Webhook) SetURL(fullURL string) error {
+	parsedURL, err := url.Parse(fullURL)
 	if err != nil {
 		return err
 	}
-	w.Reference.SetName(parsedUrl.String())
-	w.URL = parsedUrl
+	w.Reference.SetName(parsedURL.String())
+	w.URL = parsedURL
 	return nil
 }
 func (w *Webhook) SetEvent(event string) {
@@ -103,7 +103,7 @@ func (w *Webhook) SetUpdatedAt(updatedAt time.Time) {
 	w.UpdatedAt = updatedAt
 }
 func (w *Webhook) SetWebhook(webhook Webhook) {
-	w.ID = webhook.ID
+	w.Reference.ID = webhook.Reference.ID
 	w.URL = webhook.URL
 	w.Event = webhook.Event
 	w.Status = webhook.Status
@@ -138,7 +138,7 @@ func (w *Webhook) IsValid() bool {
 }
 func (w *Webhook) GetMapper() ci.IMapper[*Webhook] {
 	if w.Mapper == nil {
-		w.Mapper = t.NewMapper[*Webhook](&w, "")
+		w.Mapper = t.NewMapper(&w, "")
 	}
 	return w.Mapper
 }

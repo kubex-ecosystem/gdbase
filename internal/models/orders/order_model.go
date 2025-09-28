@@ -1,3 +1,4 @@
+// Package orders contains models and interfaces related to orders
 package orders
 
 import (
@@ -74,6 +75,7 @@ type OrderItem struct {
 }
 
 // Métodos de IOrderItem
+
 func (oi *OrderItem) TableName() string      { return "order_items" }
 func (oi *OrderItem) GetID() string          { return oi.ID }
 func (oi *OrderItem) GetProductID() string   { return oi.ProductID }
@@ -167,6 +169,7 @@ type Order struct {
 }
 
 // Métodos de IOrder
+
 func (o *Order) TableName() string   { return "orders" }
 func (o *Order) GetID() string       { return o.ID }
 func (o *Order) GetCode() *string    { return o.Code }

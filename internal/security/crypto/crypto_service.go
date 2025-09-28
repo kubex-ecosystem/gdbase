@@ -1,3 +1,4 @@
+// Package crypto provides cryptographic services for encrypting and decrypting data
 package crypto
 
 import (
@@ -7,6 +8,7 @@ import (
 	"fmt"
 	"math/big"
 	"regexp"
+	"strings"
 
 	gl "github.com/kubex-ecosystem/gdbase/internal/module/logger"
 	sci "github.com/kubex-ecosystem/gdbase/internal/security/interfaces"
@@ -40,87 +42,144 @@ func NewCryptoServiceType() *CryptoService {
 }
 
 // EncodeIfDecoded encodes a byte slice to Base64 URL encoding if it is not already encoded
+
 func (s *CryptoService) Encrypt(data []byte, key []byte) (string, string, error) {
 	if len(data) == 0 {
-		return "", "", fmt.Errorf("dados vazios")
+		return "", "", fmt.Errorf("data is empty")
 	}
 
-	decodedData, err := s.DecodeIfEncoded(data)
-	if err != nil {
-		gl.Log("error", fmt.Sprintf("failed to decode data: %v", err))
-		return "", "", err
-	}
+	copyData := make([]byte, len(data))
+	copy(copyData, data)
+
+	var encodedData string
+	var decodedBytes []byte
+	var encodedDataErr, decodedDataErr error
 
 	// Check if already encrypted
-	if s.IsEncrypted(decodedData) {
-		encodedData, err := s.EncodeIfDecoded(data)
-		if err != nil {
-			gl.Log("error", fmt.Sprintf("failed to encode data: %v", err))
-			return "", "", err
+	if s.IsEncrypted(copyData) {
+		isEncoded := s.IsBase64String(string(bytes.TrimSpace(copyData)))
+
+		if !isEncoded {
+			encodedData = EncodeBase64(bytes.TrimSpace([]byte(copyData)))
+		} else {
+			encodedData = string(copyData)
 		}
-		return string(decodedData), string(encodedData), nil
+		return string(copyData), encodedData, nil
 	}
 
-	block, err := chacha20poly1305.NewX(key)
+	isEncoded := s.IsBase64String(string(bytes.TrimSpace(copyData)))
+	if isEncoded {
+		decodedBytes, decodedDataErr = DecodeBase64(string(copyData))
+		if decodedDataErr != nil {
+			gl.Log("error", fmt.Sprintf("failed to decode data: %v", decodedDataErr))
+			return "", "", decodedDataErr
+		}
+	} else {
+		decodedBytes = copyData
+	}
+
+	// Validate if the key is encoded
+	strKey := string(key)
+	isEncoded = s.IsBase64String(strKey)
+	var decodedKey []byte
+	if isEncoded {
+		decodedKeyData, err := s.DecodeBase64(strKey)
+		if err != nil {
+			gl.Log("error", fmt.Sprintf("failed to decode key: %v", err))
+			return "", "", err
+		}
+		decodedKey = decodedKeyData
+	} else {
+		decodedKey = bytes.TrimSpace(key)
+	}
+
+	block, err := chacha20poly1305.NewX(decodedKey)
 	if err != nil {
-		gl.Log("error", fmt.Sprintf("failed to create cipher: %v, %d", err, len(key)))
-		return "", "", fmt.Errorf("erro ao criar cipher: %w", err)
+		gl.Log("error", fmt.Sprintf("failed to create cipher: %v, %d", err, len(decodedKey)))
+		return "", "", fmt.Errorf("failed to create cipher: %w", err)
 	}
 
 	nonce := make([]byte, block.NonceSize())
 	if _, err := rand.Read(nonce); err != nil {
-		return "", "", fmt.Errorf("erro ao gerar nonce: %w", err)
+		return "", "", fmt.Errorf("failed to generate nonce: %w", err)
 	}
 
-	ciphertext := block.Seal(nonce, nonce, decodedData, nil)
-
-	encodedData, err := s.EncodeIfDecoded(ciphertext)
-	if err != nil {
-		gl.Log("error", fmt.Sprintf("failed to encode data: %v", err))
-		return "", "", err
+	ciphertext := block.Seal(nonce, nonce, decodedBytes, nil)
+	isEncoded = s.IsBase64String(string(bytes.TrimSpace(ciphertext)))
+	if !isEncoded {
+		encodedData = EncodeBase64(ciphertext)
+		if encodedData == "" {
+			gl.Log("error", fmt.Sprintf("failed to encode data: %v", encodedDataErr))
+			return "", "", encodedDataErr
+		}
+	} else {
+		encodedData = string(ciphertext)
 	}
-	return string(ciphertext), encodedData, nil
+
+	return string(decodedBytes), encodedData, nil
 }
 
 // Decrypt decrypts the given encrypted data using ChaCha20-Poly1305 algorithm
 // It ensures the data is decoded before decryption
 func (s *CryptoService) Decrypt(encrypted []byte, key []byte) (string, string, error) {
+	encrypted = bytes.TrimSpace(encrypted)
 	if len(encrypted) == 0 {
 		return "", "", fmt.Errorf("encrypted data is empty")
 	}
 
-	stringData := string(encrypted)
+	var stringData string
+	encryptedEncoded := strings.TrimSpace(string(encrypted))
 
-	isBase64String := IsBase64String(stringData)
+	isBase64String := s.IsBase64String(encryptedEncoded)
 	if isBase64String {
-		decodedData, err := DecodeBase64(stringData)
+		decodedData, err := s.DecodeBase64(encryptedEncoded)
 		if err != nil {
 			gl.Log("error", fmt.Sprintf("failed to decode data: %v", err))
 			return "", "", err
 		}
 		stringData = string(decodedData)
+	} else {
+		stringData = encryptedEncoded
 	}
 
-	block, err := chacha20poly1305.NewX(key)
+	// Validate if the data is empty
+	if len(stringData) == 0 {
+		gl.Log("error", "encrypted data is empty")
+		return "", "", fmt.Errorf("encrypted data is empty")
+	}
+
+	strKey := string(key)
+	isBase64String = s.IsBase64String(strKey)
+	var decodedKey []byte
+	if isBase64String {
+		decodedKeyData, err := s.DecodeBase64(strKey)
+		if err != nil {
+			gl.Log("error", fmt.Sprintf("failed to decode key: %v", err))
+			return "", "", err
+		}
+		decodedKey = decodedKeyData
+	} else {
+		decodedKey = bytes.TrimSpace(key)
+	}
+
+	// Validate size with key parse process
+	block, err := chacha20poly1305.NewX(decodedKey)
 	if err != nil {
-		gl.Log("error", fmt.Sprintf("failed to create cipher: %v, %d", err, len(key)))
-		return "", "", fmt.Errorf("erro ao criar cipher: %w", err)
+		return "", "", fmt.Errorf("failed to create cipher: %w", err)
 	}
 
-	nonce, ciphertext := encrypted[:block.NonceSize()], encrypted[block.NonceSize():]
-	decrypted, err := block.Open(nil, nonce, ciphertext, nil)
+	// Validate the ciphertext, nonce, and tag
+	nonce, ciphertext := stringData[:block.NonceSize()], stringData[block.NonceSize():]
+	decrypted, err := block.Open(nil, []byte(nonce), []byte(ciphertext), nil)
+
 	if err != nil {
 		gl.Log("error", fmt.Sprintf("failed to decrypt data: %v", err))
-		return "", "", fmt.Errorf("erro ao descriptografar dados: %w", err)
+		return "", "", fmt.Errorf("failed to decrypt data: %w", err)
 	}
 
-	encodedData, err := s.EncodeIfDecoded(decrypted)
-	if err != nil {
-		gl.Log("error", fmt.Sprintf("failed to encode data: %v", err))
-		return "", "", err
-	}
+	encoded := s.EncodeBase64(decrypted)
 
-	return string(decrypted), encodedData, nil
+	return string(decrypted), encoded, nil
 }
 
 // GenerateKey generates a random key of the specified length using the crypto/rand package
@@ -165,9 +224,17 @@ func (s *CryptoService) IsEncrypted(data []byte) bool {
 	copyData := make([]byte, len(data))
 	copy(copyData, data)
 
-	decodedData, err := s.DecodeIfEncoded(copyData)
-	if err != nil {
-		return false
+	// Check if the data is Base64 encoded
+	isBase64String := s.IsBase64String(string(copyData))
+	var decodedData []byte
+	var err error
+	if !isBase64String {
+		decodedData, err = s.DecodeIfEncoded(copyData)
+		if err != nil {
+			return false
+		}
+	} else {
+		decodedData = copyData
 	}
 
 	if len(decodedData) < chacha20poly1305.NonceSizeX {
@@ -213,13 +280,11 @@ func (s *CryptoService) DecodeIfEncoded(data []byte) ([]byte, error) {
 	if len(data) == 0 {
 		return nil, fmt.Errorf("data is empty")
 	}
-	copyData := make([]byte, len(data))
-	copy(copyData, data)
-	stringData := string(copyData)
+	stringData := string(data)
 
-	isBase64String := IsBase64String(stringData)
+	isBase64String := s.IsBase64String(stringData)
 	if isBase64String {
-		return DecodeBase64(stringData)
+		return s.DecodeBase64(stringData)
 	}
 	return data, nil
 }
@@ -230,11 +295,11 @@ func (s *CryptoService) EncodeIfDecoded(data []byte) (string, error) {
 		return "", fmt.Errorf("data is empty")
 	}
 	stringData := string(data)
-	isBase64Byte := IsBase64String(stringData)
+	isBase64Byte := s.IsBase64String(stringData)
 	if isBase64Byte {
 		return stringData, nil
 	}
-	return EncodeBase64([]byte(stringData)), nil
+	return s.EncodeBase64([]byte(stringData)), nil
 }
 
 func (s *CryptoService) IsBase64String(encoded string) bool { return IsBase64String(encoded) }
@@ -244,28 +309,125 @@ func (s *CryptoService) EncodeBase64(data []byte) string { return EncodeBase64(d
 func (s *CryptoService) DecodeBase64(encoded string) ([]byte, error) { return DecodeBase64(encoded) }
 
 func IsBase64String(s string) bool {
+	s = strings.TrimSpace(s)
+
 	if len(s) == 0 {
 		return false
 	}
-	encodedSlice := len(DetectBase64InString(s))
-	return encodedSlice > 0
+
+	base64DataArr := DetectBase64InString(s)
+
+	return len(base64DataArr) != 0
 }
 
+// Detecta strings Base64 dentro de um texto e corrige padding e encoding
+
 func DetectBase64InString(s string) []string {
-	var found []string
-	base64Regex := regexp.MustCompile(`[A-Za-z0-9+\/]{4,}={0,2}`)
-	matches := base64Regex.FindAllString(s, -1)
-	for _, match := range matches {
-		_, err := base64.URLEncoding.DecodeString(match)
-		if err == nil {
-			found = append(found, match)
+	// Múltiplas regexes para capturar Base64 padrão e URL Safe
+	base64Regex := []*regexp.Regexp{
+		regexp.MustCompile(`[A-Za-z0-9+\/]{16,}=*`),
+		regexp.MustCompile(`[A-Za-z0-9\-_]{16,}=*`),
+		regexp.MustCompile(`[A-Za-z0-9\-_]{16,}={1,2}`),
+		regexp.MustCompile(`[A-Za-z0-9\-_]{16,}`),
+		regexp.MustCompile(`[A-Za-z0-9+/]{16,}={1,2}`),
+		regexp.MustCompile(`[A-Za-z0-9+/]{16,}`),
+	}
+
+	// Mapa para correção de caracteres
+	var charFix = map[byte]string{
+		'_':  "/",
+		'-':  "+",
+		'=':  "",
+		'.':  "",
+		' ':  "",
+		'\n': "",
+		'\r': "",
+		'\t': "",
+		'\f': "",
+	}
+
+	uniqueMatches := make(map[string]struct{})
+
+	// Busca por Base64 em todas as regexes
+	for _, regex := range base64Regex {
+		matches := regex.FindAllString(s, -1)
+		for _, match := range matches {
+			matchBytes := bytes.TrimSpace([]byte(match))
+
+			// Ajusta caracteres inválidos antes da validação
+			for len(matchBytes)%4 != 0 {
+				lastChar := matchBytes[len(matchBytes)-1]
+				if replacement, exists := charFix[lastChar]; exists {
+					matchBytes = bytes.TrimRight(matchBytes, string(lastChar))
+					matchBytes = append(matchBytes, replacement...)
+				} else {
+					break
+				}
+			}
+
+			// Adiciona padding se necessário
+			for len(matchBytes)%4 != 0 {
+				matchBytes = append(matchBytes, '=')
+			}
+
+			// Testa decodificação com modo permissivo
+			decoded, err := base64.URLEncoding.DecodeString(string(matchBytes))
+			if err != nil {
+				decoded, err = base64.StdEncoding.DecodeString(string(matchBytes)) // Alternativa Standard
+				if err != nil {
+					gl.Log("error", fmt.Sprintf("failed to decode base64 string: %v", err))
+					continue
+				}
+			}
+
+			decoded = bytes.TrimSpace(decoded)
+			if len(decoded) == 0 {
+				gl.Log("error", "decoded data is empty")
+				continue
+			}
+			uniqueMatches[string(matchBytes)] = struct{}{}
 		}
 	}
+
+	// Converte mapa para slice
+	var found []string
+	for match := range uniqueMatches {
+		found = append(found, match)
+	}
+
 	return found
 }
 
 // EncodeBase64 encodes a byte slice to Base64 URL encoding
-func EncodeBase64(data []byte) string { return base64.URLEncoding.EncodeToString(data) }
+func EncodeBase64(data []byte) string {
+
+	encodedData := base64.
+		URLEncoding.
+		WithPadding(base64.NoPadding).
+		Strict().
+		EncodeToString(data)
+
+	return encodedData
+}
 
 // DecodeBase64 decodes a Base64 URL encoded string
-func DecodeBase64(encoded string) ([]byte, error) { return base64.URLEncoding.DecodeString(encoded) }
+func DecodeBase64(encoded string) ([]byte, error) {
+	decodedData, err := base64.
+		URLEncoding.
+		WithPadding(base64.NoPadding).
+		Strict().
+		DecodeString(encoded)
+
+	if err != nil {
+		gl.Log("error", fmt.Sprintf("failed to decode base64 string: %v", err))
+		return nil, err
+	}
+
+	decodedData = bytes.TrimSpace(decodedData)
+
+	if len(decodedData) == 0 {
+		return nil, fmt.Errorf("decoded data is empty")
+	}
+
+	return decodedData, nil
+}
