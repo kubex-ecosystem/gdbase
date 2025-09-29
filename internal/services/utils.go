@@ -196,81 +196,6 @@ func SetupDatabaseServices(d IDockerService, config *t.DBConfig) error {
 								gl.Log("error", fmt.Sprintf("❌ Erro ao criar volume do PostgreSQL: %v", err))
 								continue
 							}
-
-							// // Check if Password is empty, if so, try to retrieve it from keyring
-							// // if not found, generate a new one
-							// if dbConfig.Password == "" {
-							// 	pgPassKey, pgPassErr := glb.GetOrGenPasswordKeyringPass("pgpass")
-							// 	if pgPassErr != nil {
-							// 		gl.Log("error", fmt.Sprintf("Error generating key: %v", pgPassErr))
-							// 		continue
-							// 	}
-							// 	dbConfig.Password = string(pgPassKey)
-							// } else {
-							// 	gl.Log("debug", fmt.Sprintf("Password found in config: %s", dbConfig.Password))
-							// }
-							// if dbConfig.Volume == "" {
-							// 	dbConfig.Volume = os.ExpandEnv(glb.DefaultPostgresVolume)
-							// }
-							// pgVolRootDir := os.ExpandEnv(dbConfig.Volume)
-							// pgVolInitDir := filepath.Join(pgVolRootDir, "init")
-							// if err := os.MkdirAll(pgVolInitDir, 0755); err != nil {
-							// 	gl.Log("error", fmt.Sprintf("❌ Erro ao criar diretório do PostgreSQL: %v", err))
-							// 	continue
-							// }
-							// gl.Log("info", fmt.Sprintf("PostgreSQL init directory: %s", pgVolInitDir))
-
-							// // Write the init script to the init directory
-							// // Check if the init script already exists
-							// initScriptPath := filepath.Join(pgVolInitDir, "001_init.sql")
-							// if _, err := os.Stat(initScriptPath); err == nil {
-							// 	gl.Log("debug", fmt.Sprintf("Init script %s already exists, skipping creation", initScriptPath))
-							// } else {
-							// 	// userGroupArg := []string{}
-							// 	// user, err := u.GetPrimaryUser()
-							// 	// if err == nil {
-							// 	// 	group, err := u.GetPrimaryGroup()
-							// 	// 	if err != nil {
-							// 	// 		gl.Log("error", fmt.Sprintf("❌ Erro ao obter grupo primário: %v", err))
-							// 	// 		continue
-							// 	// 	}
-							// 	// 	userGroupArg = []string{user, group}
-							// 	// }
-							// 	// if err := u.EnsureFile(initScriptPath, 0644, userGroupArg); err != nil {
-							// 	// 	gl.Log("error", fmt.Sprintf("❌ Erro ao criar diretório do PostgreSQL: %v", err))
-							// 	// 	continue
-							// 	// }
-							// 	if err := os.WriteFile(initScriptPath, initDBSQL, 0644); err != nil {
-							// 		gl.Log("error", fmt.Sprintf("❌ Erro ao criar diretório do PostgreSQL: %v", err))
-							// 		continue
-							// 	}
-							// 	gl.Log("info", fmt.Sprintf("Init script written to %s", initScriptPath))
-							// }
-
-							// // Create the volume for PostgreSQL, if exists definitions on the config
-							// if err := d.CreateVolume("gdbase-pg-init", pgVolInitDir); err != nil {
-							// 	gl.Log("error", fmt.Sprintf("❌ Erro ao criar volume do PostgreSQL: %v", err))
-							// 	continue
-							// }
-							// pgVolDataDir := filepath.Join(pgVolRootDir, "pgdata")
-							// if _, err := os.Stat(pgVolDataDir); os.IsNotExist(err) {
-							// 	// if err := u.EnsureDir(pgVolDataDir, 0755, []string{}); err != nil {
-							// 	// 	gl.Log("error", fmt.Sprintf("❌ Erro ao criar diretório do PostgreSQL: %v", err))
-							// 	// 	continue
-							// 	// }
-							// 	if err := os.MkdirAll(pgVolDataDir, 0755); err != nil {
-							// 		gl.Log("error", fmt.Sprintf("❌ Erro ao criar diretório do PostgreSQL: %v", err))
-							// 		continue
-							// 	}
-							// 	if _, err := os.Stat(pgVolDataDir); os.IsNotExist(err) {
-							// 		gl.Log("error", fmt.Sprintf("❌ Erro ao criar diretório do PostgreSQL: %v", err))
-							// 		continue
-							// 	}
-							// }
-							// if err := d.CreateVolume("gdbase-pg-data", pgVolDataDir); err != nil {
-							// 	gl.Log("error", fmt.Sprintf("❌ Erro ao criar volume do PostgreSQL: %v", err))
-							// 	continue
-							// }
 							// Check if the port is already in use and find an available one if necessary
 							if dbConfig.Port == nil || dbConfig.Port == "" {
 								dbConfig.Port = "5432"
@@ -348,9 +273,9 @@ func SetupDatabaseServices(d IDockerService, config *t.DBConfig) error {
 				if rabbitCfg.Reference.Name == "" {
 					rabbitCfg.Reference.Name = "gdbase-rabbitmq"
 				}
-				if rabbitCfg.Volume == "" {
-					rabbitCfg.Volume = os.ExpandEnv(glb.DefaultRabbitMQVolume)
-				}
+				// if rabbitCfg.Volume == "" {
+				// 	rabbitCfg.Volume = os.ExpandEnv(glb.DefaultRabbitMQVolume)
+				// }
 				if rabbitCfg.Host == "" {
 					rabbitCfg.Host = "localhost"
 				}
@@ -416,16 +341,16 @@ func SetupDatabaseServices(d IDockerService, config *t.DBConfig) error {
 						"RABBITMQ_DEFAULT_VHOST=" + rabbitCfg.Vhost,
 						"RABBITMQ_PORT=" + rabbitCfg.Port.(string),
 						"RABBITMQ_DB_NAME=" + rabbitCfg.Reference.Name,
-						"RABBITMQ_DB_VOLUME=" + rabbitCfg.Volume,
+						// "RABBITMQ_DB_VOLUME=" + rabbitCfg.Volume,
 						"RABBITMQ_ERLANG_COOKIE=" + rabbitCfg.ErlangCookie,
 						"RABBITMQ_PORT_5672_TCP_ADDR=" + rabbitCfg.Host,
 						"RABBITMQ_PORT_5672_TCP_PORT=" + rabbitCfg.Port.(string),
 						"RABBITMQ_PORT_15672_TCP_ADDR=" + rabbitCfg.Host,
 						"RABBITMQ_PORT_15672_TCP_PORT=" + rabbitCfg.Port.(string),
 					}, portBindings,
-					map[string]struct{}{
+					map[string]struct{}{}, /* map[string]struct{}{
 						fmt.Sprintf("%s:/var/lib/rabbitmq", rabbitCfg.Volume): {},
-					},
+					}, */
 				)
 				services = append(services, dbConnObj)
 			}
@@ -501,7 +426,7 @@ func SetupDatabaseServices(d IDockerService, config *t.DBConfig) error {
 		// 	gl.Log("info", fmt.Sprintf("✅ %s já está rodando!", srv.Name))
 		// 	continue
 		// }
-		if err := d.StartContainer(srv.Name, srv.Image, srv.Env, mapPorts, srv.Volumes); err != nil {
+		if err := d.StartContainer(srv.Name, srv.Image, srv.Env, mapPorts, nil); err != nil {
 			return err
 		}
 	}

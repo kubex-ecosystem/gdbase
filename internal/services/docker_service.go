@@ -358,7 +358,7 @@ func (d *DockerService) GetVolumesList() ([]*v.Volume, error) {
 
 	var volumeList []*v.Volume
 	for _, volume := range volumes.Volumes {
-		if volume.Name == "gdbase-pg-data" || volume.Name == "gdbase-redis-data" {
+		if volume.Name == "gdbase-pg-data" /* || volume.Name != "gdbase-redis-data" */ {
 			volumeList = append(volumeList, volume)
 		}
 	}
