@@ -77,10 +77,10 @@ func FindAvailablePort(basePort int, maxAttempts int) (string, error) {
 			return "", fmt.Errorf("error checking port %s: %w", port, err)
 		}
 		if !isOpen {
-			fmt.Printf("⚠️ Port %s is occupied, trying the next one...\n", port)
+			gl.Log("warn", fmt.Sprintf("⚠️ Port %s is occupied, trying the next one...\n", port))
 			continue
 		}
-		fmt.Printf("✅ Available port found: %s\n", port)
+		gl.Log("info", fmt.Sprintf("✅ Available port found: %s\n", port))
 		return port, nil
 	}
 	return "", fmt.Errorf("no available port in range %d-%d", basePort, basePort+maxAttempts-1)
@@ -89,7 +89,7 @@ func IsServiceRunning(serviceName string) bool {
 	cmd := exec.Command("docker", "ps", "--filter", fmt.Sprintf("name=%s", serviceName), "--format", "{{.Names}}")
 	output, err := cmd.Output()
 	if err != nil {
-		fmt.Printf("❌ Error checking containers: %v\n", err)
+		gl.Log("error", fmt.Sprintf("❌ Error checking containers: %v\n", err))
 	}
 	return string(output) != ""
 }
@@ -125,7 +125,7 @@ func WriteInitDBSQL(initVolumePath, initDBSQL, initDBSQLData string) (string, er
 		gl.Log("error", fmt.Sprintf("Error writing file: %v", err))
 		return "", err
 	}
-	fmt.Printf("✅ File %s created successfully!\n", filePath)
+	gl.Log("info", fmt.Sprintf("✅ File %s created successfully!\n", filePath))
 	return filePath, nil
 }
 func SetupDatabaseServices(d IDockerService, config *t.DBConfig) error {
@@ -326,7 +326,7 @@ func SetupDatabaseServices(d IDockerService, config *t.DBConfig) error {
 		if config.Messagery.RabbitMQ != nil && config.Messagery.RabbitMQ.Enabled {
 			// Check if the RabbitMQ service is already running
 			if IsServiceRunning("gdbase-rabbitmq") {
-				fmt.Printf("✅ %s já está rodando!\n", "gdbase-rabbitmq")
+				gl.Log("info", fmt.Sprintf("✅ %s já está rodando!\n", "gdbase-rabbitmq"))
 			} else {
 				rabbitCfg := config.Messagery.RabbitMQ
 				rabbitUser := rabbitCfg.Username
@@ -433,10 +433,10 @@ func SetupDatabaseServices(d IDockerService, config *t.DBConfig) error {
 	postRabbit:
 		if config.Messagery.Redis != nil && config.Messagery.Redis.Enabled {
 			if IsServiceRunning("gdbase-redis") {
-				fmt.Printf("✅ %s já está rodando!\n", "gdbase-redis")
+				gl.Log("info", fmt.Sprintf("✅ %s já está rodando!\n", "gdbase-redis"))
 			} else {
 				if err := d.StartContainerByName("gdbase-redis"); err == nil {
-					fmt.Printf("✅ %s já está rodando!\n", "gdbase-redis")
+					gl.Log("info", fmt.Sprintf("✅ %s já está rodando!\n", "gdbase-redis"))
 				} else {
 					rdsCfg := config.Messagery.Redis
 					redisPass := rdsCfg.Password
@@ -589,7 +589,7 @@ func AskToStartDocker() bool {
 	case response := <-responseCh:
 		return response == "Y"
 	case <-time.After(15 * time.Second):
-		fmt.Println("\nTempo esgotado. Docker não será ativado.")
+		gl.Log("warn", "\nTempo esgotado. Docker não será ativado.")
 		return false
 	}
 }
