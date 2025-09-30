@@ -1,3 +1,4 @@
+// Package models implements the base structures and functions for managing data models in the application.
 package models
 
 import (
