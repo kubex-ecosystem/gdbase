@@ -37,8 +37,8 @@ type PropertyValBase[T any] struct {
 
 // NewVal is a function that creates a new PropertyValBase instance.
 func newVal[T any](name string, v *T) *PropertyValBase[T] {
+	// Create a new validation instance
 	ref := NewReference(name)
-
 	// Create a new PropertyValBase instance
 	vv := atomic.Pointer[T]{}
 	if v != nil {
@@ -52,7 +52,10 @@ func newVal[T any](name string, v *T) *PropertyValBase[T] {
 
 	// Create a new validation instance
 	validation := newValidation[T]()
-
+	validators := validation.GetValidators()
+	for _, validator := range validators {
+		validation.RemoveValidator(validator.GetPriority())
+	}
 	gl.Log("debug", "Created new PropertyValBase instance for:", name, "ID:", ref.GetID().String())
 
 	return &PropertyValBase[T]{
@@ -64,33 +67,7 @@ func newVal[T any](name string, v *T) *PropertyValBase[T] {
 	}
 }
 
-func NewVal[T any](name string, v *T) ci.IPropertyValBase[T] {
-	ref := NewReference(name)
-
-	// Create a new PropertyValBase instance
-	vv := atomic.Pointer[T]{}
-	if v != nil {
-		vv.Store(v)
-	} else {
-		vv.Store(new(T))
-	}
-
-	// Create a new mutexes instance
-	mu := NewMutexesType()
-
-	// Create a new validation instance
-	validation := newValidation[T]()
-
-	gl.Log("debug", "Created new PropertyValBase instance for:", name, "ID:", ref.GetID().String())
-
-	return &PropertyValBase[T]{
-		Pointer:    &vv,
-		Validation: validation,
-		Reference:  ref.GetReference(),
-		channelCtl: NewChannelCtl[T](name, nil).(*ChannelCtl[T]),
-		Mutexes:    mu,
-	}
-}
+func NewVal[T any](name string, v *T) ci.IPropertyValBase[T] { return newVal(name, v) }
 
 // GetLogger is a method that returns the logger for the value.
 func (v *PropertyValBase[T]) GetLogger() l.Logger {
@@ -168,15 +145,21 @@ func (v *PropertyValBase[T]) Set(t *T) bool {
 		gl.Log("error", "Set: property does not exist (", reflect.TypeFor[T]().String(), ")")
 		return false
 	}
+	// Deixa o nil entrar na validação, pra ter a tratativa que a pessoa inseriu na validação que
+	// pode ser customizada, etc...
+	if v.Validation != nil {
+		if v.CheckIfWillValidate() {
+			gl.Log("warning", "Set: validation is disabled (", reflect.TypeFor[T]().String(), ")")
+		} else {
+			if ok := v.Validate(t); !ok.GetIsValid() {
+				gl.Log("error", fmt.Sprintf("Set: validation error (%s): %v", reflect.TypeFor[T]().String(), v.Validation.GetResults()))
+				return false
+			}
+		}
+	}
 	if t == nil {
 		gl.Log("error", "Set: value is nil (", reflect.TypeFor[T]().String(), ")")
 		return false
-	}
-	if v.Validation != nil {
-		if ok := v.Validation.Validate(t); !ok.GetIsValid() {
-			gl.Log("error", fmt.Sprintf("Set: validation error (%s): %v", reflect.TypeFor[T]().String(), v.Validation.GetResults()))
-			return false
-		}
 	}
 	v.Store(t)
 	if v.channelCtl != nil {
