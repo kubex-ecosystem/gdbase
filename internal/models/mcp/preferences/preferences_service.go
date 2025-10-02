@@ -4,7 +4,8 @@ import (
 	"errors"
 	"fmt"
 
-	t "github.com/kubex-ecosystem/gdbase/types"
+	is "github.com/kubex-ecosystem/gdbase/internal/services"
+	t "github.com/kubex-ecosystem/gdbase/internal/types"
 )
 
 type IPreferencesService interface {
@@ -16,7 +17,7 @@ type IPreferencesService interface {
 	GetPreferencesByScope(scope string) (IPreferencesModel, error)
 	GetPreferencesByUserID(userID string) ([]IPreferencesModel, error)
 	UpsertPreferencesByScope(scope string, config t.JSONB, userID string) (IPreferencesModel, error)
-	GetContextDBService() t.IDBService
+	GetContextDBService() *is.DBService
 }
 
 type PreferencesService struct {
@@ -124,6 +125,6 @@ func (ps *PreferencesService) UpsertPreferencesByScope(scope string, config t.JS
 	return ps.UpdatePreferences(existing)
 }
 
-func (ps *PreferencesService) GetContextDBService() t.IDBService {
-	return ps.repo.GetContextDBService()
+func (ps *PreferencesService) GetContextDBService() *is.DBService {
+	return ps.repo.GetContextDBService().(*is.DBService)
 }

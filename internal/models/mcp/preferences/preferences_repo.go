@@ -1,6 +1,7 @@
 package preferences
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/google/uuid"
@@ -165,7 +166,7 @@ func (pr *PreferencesRepo) List(where ...interface{}) (xtt.TableDataHandler, err
 }
 
 func (pr *PreferencesRepo) GetContextDBService() t.IDBService {
-	dbService, dbServiceErr := is.NewDatabaseService(t.NewDBConfigWithDBConnection(pr.g), l.GetLogger("GdoBase"))
+	dbService, dbServiceErr := is.NewDatabaseService(context.Background(), is.NewDBConfigWithDBConnection(pr.g), l.GetLogger("GdoBase"))
 	if dbServiceErr != nil {
 		gl.Log("error", fmt.Sprintf("PreferencesModel repository: failed to get context DB service: %v", dbServiceErr))
 		return nil

@@ -6,7 +6,7 @@ import (
 
 	"github.com/google/uuid"
 	n "github.com/kubex-ecosystem/gdbase/internal/models/mcp/notifications"
-	t "github.com/kubex-ecosystem/gdbase/types"
+	t "github.com/kubex-ecosystem/gdbase/internal/types"
 )
 
 // Notification Rules

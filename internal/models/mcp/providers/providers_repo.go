@@ -2,12 +2,13 @@
 package providers
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/google/uuid"
+	ci "github.com/kubex-ecosystem/gdbase/internal/interfaces"
 	gl "github.com/kubex-ecosystem/gdbase/internal/module/logger"
 	is "github.com/kubex-ecosystem/gdbase/internal/services"
-	t "github.com/kubex-ecosystem/gdbase/types"
 	l "github.com/kubex-ecosystem/logz"
 	xtt "github.com/kubex-ecosystem/xtui/types"
 	"gorm.io/gorm"
@@ -23,7 +24,7 @@ type IProvidersRepo interface {
 	Delete(id string) error
 	Close() error
 	List(where ...interface{}) (xtt.TableDataHandler, error)
-	GetContextDBService() t.IDBService
+	GetContextDBService() ci.IDBService
 }
 
 type ProvidersRepo struct {
@@ -166,8 +167,8 @@ func (pr *ProvidersRepo) List(where ...interface{}) (xtt.TableDataHandler, error
 	return xtt.NewTableHandlerFromRows([]string{"#", "ID", "Provider", "Org/Group", "Config Size", "Created At", "Updated At"}, tableHandlerMap), nil
 }
 
-func (pr *ProvidersRepo) GetContextDBService() t.IDBService {
-	dbService, dbServiceErr := is.NewDatabaseService(t.NewDBConfigWithDBConnection(pr.g), l.GetLogger("GdoBase"))
+func (pr *ProvidersRepo) GetContextDBService() ci.IDBService {
+	dbService, dbServiceErr := is.NewDatabaseService(context.Background(), is.NewDBConfigWithDBConnection(pr.g), l.GetLogger("GdoBase"))
 	if dbServiceErr != nil {
 		gl.Log("error", fmt.Sprintf("ProvidersModel repository: failed to get context DB service: %v", dbServiceErr))
 		return nil

@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	t "github.com/kubex-ecosystem/gdbase/types"
+	t "github.com/kubex-ecosystem/gdbase/internal/types"
 )
 
 // ConversationStatus represents the status of a conversation
@@ -137,28 +137,32 @@ func NewConversationModel() *ConversationModel {
 func (c *ConversationModel) TableName() string { return "mcp_conversations" }
 
 // Basic getters and setters
-func (c *ConversationModel) GetID() string                                                  { return c.ID }
-func (c *ConversationModel) SetID(id string)                                               { c.ID = id }
-func (c *ConversationModel) GetPlatform() Platform                                         { return c.Platform }
-func (c *ConversationModel) SetPlatform(platform Platform)                                 { c.Platform = platform }
-func (c *ConversationModel) GetPlatformConversationID() string                             { return c.PlatformConversationID }
-func (c *ConversationModel) SetPlatformConversationID(platformConversationID string)      { c.PlatformConversationID = platformConversationID }
-func (c *ConversationModel) GetIntegrationID() string                                      { return c.IntegrationID }
-func (c *ConversationModel) SetIntegrationID(integrationID string)                         { c.IntegrationID = integrationID }
-func (c *ConversationModel) GetTitle() string                                              { return c.Title }
-func (c *ConversationModel) SetTitle(title string)                                         { c.Title = title }
-func (c *ConversationModel) GetDescription() string                                        { return c.Description }
-func (c *ConversationModel) SetDescription(description string)                             { c.Description = description }
-func (c *ConversationModel) GetConversationType() ConversationType                         { return c.ConversationType }
-func (c *ConversationModel) SetConversationType(conversationType ConversationType)         { c.ConversationType = conversationType }
-func (c *ConversationModel) GetStatus() ConversationStatus                                 { return c.Status }
-func (c *ConversationModel) SetStatus(status ConversationStatus)                           { c.Status = status }
-func (c *ConversationModel) GetParticipants() t.JSONB                                      { return c.Participants }
-func (c *ConversationModel) SetParticipants(participants t.JSONB)                          { c.Participants = participants }
-func (c *ConversationModel) GetMetadata() t.JSONB                                          { return c.Metadata }
-func (c *ConversationModel) SetMetadata(metadata t.JSONB)                                  { c.Metadata = metadata }
-func (c *ConversationModel) GetLastMessageID() string                                      { return c.LastMessageID }
-func (c *ConversationModel) SetLastMessageID(lastMessageID string)                         { c.LastMessageID = lastMessageID }
+func (c *ConversationModel) GetID() string                     { return c.ID }
+func (c *ConversationModel) SetID(id string)                   { c.ID = id }
+func (c *ConversationModel) GetPlatform() Platform             { return c.Platform }
+func (c *ConversationModel) SetPlatform(platform Platform)     { c.Platform = platform }
+func (c *ConversationModel) GetPlatformConversationID() string { return c.PlatformConversationID }
+func (c *ConversationModel) SetPlatformConversationID(platformConversationID string) {
+	c.PlatformConversationID = platformConversationID
+}
+func (c *ConversationModel) GetIntegrationID() string              { return c.IntegrationID }
+func (c *ConversationModel) SetIntegrationID(integrationID string) { c.IntegrationID = integrationID }
+func (c *ConversationModel) GetTitle() string                      { return c.Title }
+func (c *ConversationModel) SetTitle(title string)                 { c.Title = title }
+func (c *ConversationModel) GetDescription() string                { return c.Description }
+func (c *ConversationModel) SetDescription(description string)     { c.Description = description }
+func (c *ConversationModel) GetConversationType() ConversationType { return c.ConversationType }
+func (c *ConversationModel) SetConversationType(conversationType ConversationType) {
+	c.ConversationType = conversationType
+}
+func (c *ConversationModel) GetStatus() ConversationStatus         { return c.Status }
+func (c *ConversationModel) SetStatus(status ConversationStatus)   { c.Status = status }
+func (c *ConversationModel) GetParticipants() t.JSONB              { return c.Participants }
+func (c *ConversationModel) SetParticipants(participants t.JSONB)  { c.Participants = participants }
+func (c *ConversationModel) GetMetadata() t.JSONB                  { return c.Metadata }
+func (c *ConversationModel) SetMetadata(metadata t.JSONB)          { c.Metadata = metadata }
+func (c *ConversationModel) GetLastMessageID() string              { return c.LastMessageID }
+func (c *ConversationModel) SetLastMessageID(lastMessageID string) { c.LastMessageID = lastMessageID }
 
 func (c *ConversationModel) GetLastMessageAt() time.Time {
 	lastMessageAt, _ := time.Parse(time.RFC3339, c.LastMessageAt)
@@ -168,12 +172,12 @@ func (c *ConversationModel) SetLastMessageAt(lastMessageAt time.Time) {
 	c.LastMessageAt = lastMessageAt.Format(time.RFC3339)
 }
 
-func (c *ConversationModel) GetMessageCount() int64                        { return c.MessageCount }
-func (c *ConversationModel) SetMessageCount(messageCount int64)            { c.MessageCount = messageCount }
-func (c *ConversationModel) GetUserID() string                             { return c.UserID }
-func (c *ConversationModel) SetUserID(userID string)                       { c.UserID = userID }
-func (c *ConversationModel) GetTargetTaskID() string                       { return c.TargetTaskID }
-func (c *ConversationModel) SetTargetTaskID(targetTaskID string)           { c.TargetTaskID = targetTaskID }
+func (c *ConversationModel) GetMessageCount() int64              { return c.MessageCount }
+func (c *ConversationModel) SetMessageCount(messageCount int64)  { c.MessageCount = messageCount }
+func (c *ConversationModel) GetUserID() string                   { return c.UserID }
+func (c *ConversationModel) SetUserID(userID string)             { c.UserID = userID }
+func (c *ConversationModel) GetTargetTaskID() string             { return c.TargetTaskID }
+func (c *ConversationModel) SetTargetTaskID(targetTaskID string) { c.TargetTaskID = targetTaskID }
 
 // Timestamp getters and setters
 func (c *ConversationModel) GetCreatedAt() time.Time {
@@ -190,10 +194,10 @@ func (c *ConversationModel) GetUpdatedAt() time.Time {
 func (c *ConversationModel) SetUpdatedAt(updatedAt time.Time) {
 	c.UpdatedAt = updatedAt.Format(time.RFC3339)
 }
-func (c *ConversationModel) GetCreatedBy() string                { return c.CreatedBy }
-func (c *ConversationModel) SetCreatedBy(createdBy string)       { c.CreatedBy = createdBy }
-func (c *ConversationModel) GetUpdatedBy() string                { return c.UpdatedBy }
-func (c *ConversationModel) SetUpdatedBy(updatedBy string)       { c.UpdatedBy = updatedBy }
+func (c *ConversationModel) GetCreatedBy() string          { return c.CreatedBy }
+func (c *ConversationModel) SetCreatedBy(createdBy string) { c.CreatedBy = createdBy }
+func (c *ConversationModel) GetUpdatedBy() string          { return c.UpdatedBy }
+func (c *ConversationModel) SetUpdatedBy(updatedBy string) { c.UpdatedBy = updatedBy }
 
 // Validation method
 func (c *ConversationModel) Validate() error {

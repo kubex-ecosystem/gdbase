@@ -6,7 +6,8 @@ import (
 	"fmt"
 	"time"
 
-	t "github.com/kubex-ecosystem/gdbase/types"
+	ci "github.com/kubex-ecosystem/gdbase/internal/interfaces"
+	t "github.com/kubex-ecosystem/gdbase/internal/types"
 )
 
 type IDiscordService interface {
@@ -47,7 +48,7 @@ type IDiscordService interface {
 	// Upsert operations
 	UpsertDiscordIntegrationByDiscordUserID(discordUserID string, discord IDiscordModel) (IDiscordModel, error)
 
-	GetContextDBService() t.IDBService
+	GetContextDBService() ci.IDBService
 }
 
 type DiscordService struct {
@@ -320,6 +321,6 @@ func (ds *DiscordService) UpsertDiscordIntegrationByDiscordUserID(discordUserID 
 	return ds.UpdateDiscordIntegration(existing)
 }
 
-func (ds *DiscordService) GetContextDBService() t.IDBService {
+func (ds *DiscordService) GetContextDBService() ci.IDBService {
 	return ds.repo.GetContextDBService()
 }

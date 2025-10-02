@@ -5,7 +5,7 @@ import (
 
 	"github.com/google/uuid"
 	m "github.com/kubex-ecosystem/gdbase/internal/models/mcp/tasks"
-	tp "github.com/kubex-ecosystem/gdbase/types"
+	tp "github.com/kubex-ecosystem/gdbase/internal/types"
 	"gorm.io/gorm"
 )
 

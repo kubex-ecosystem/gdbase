@@ -1,3 +1,4 @@
+// Package external provides implementations for external services
 package external
 
 import (

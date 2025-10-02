@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 
-	t "github.com/kubex-ecosystem/gdbase/types"
+	ci "github.com/kubex-ecosystem/gdbase/internal/interfaces"
 )
 
 type IUserService interface {
@@ -16,7 +16,7 @@ type IUserService interface {
 	GetUserByEmail(email string) (IUser, error)
 	GetUserByUsername(username string) (IUser, error)
 	GetUserByPhone(phone string) (IUser, error)
-	GetContextDBService() t.DBService
+	GetContextDBService() ci.IDBService
 }
 
 type UserService struct {
@@ -95,6 +95,6 @@ func (us *UserService) GetUserByPhone(phone string) (IUser, error) {
 	return user, nil
 }
 
-func (us *UserService) GetContextDBService() t.DBService {
+func (us *UserService) GetContextDBService() ci.IDBService {
 	return us.repo.GetContextDBService()
 }

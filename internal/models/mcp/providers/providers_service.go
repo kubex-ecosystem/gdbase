@@ -5,7 +5,8 @@ import (
 	"errors"
 	"fmt"
 
-	t "github.com/kubex-ecosystem/gdbase/types"
+	ci "github.com/kubex-ecosystem/gdbase/internal/interfaces"
+	t "github.com/kubex-ecosystem/gdbase/internal/types"
 )
 
 type IProvidersService interface {
@@ -19,7 +20,7 @@ type IProvidersService interface {
 	GetProviderByNameAndOrg(providerName, orgOrGroup string) (IProvidersModel, error)
 	GetProvidersByUserID(userID string) ([]IProvidersModel, error)
 	UpsertProviderByNameAndOrg(providerName, orgOrGroup string, config t.JSONB, userID string) (IProvidersModel, error)
-	GetContextDBService() t.IDBService
+	GetContextDBService() ci.IDBService
 }
 
 type ProvidersService struct {
@@ -144,6 +145,6 @@ func (ps *ProvidersService) UpsertProviderByNameAndOrg(providerName, orgOrGroup 
 	return ps.UpdateProvider(existing)
 }
 
-func (ps *ProvidersService) GetContextDBService() t.IDBService {
+func (ps *ProvidersService) GetContextDBService() ci.IDBService {
 	return ps.repo.GetContextDBService()
 }

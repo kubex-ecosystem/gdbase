@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	t "github.com/kubex-ecosystem/gdbase/types"
+	t "github.com/kubex-ecosystem/gdbase/internal/types"
 )
 
 type IJobQueue interface {

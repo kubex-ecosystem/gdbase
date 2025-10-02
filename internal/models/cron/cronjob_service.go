@@ -12,7 +12,7 @@ import (
 	"github.com/google/uuid"
 	jobqueue "github.com/kubex-ecosystem/gdbase/internal/models/job_queue"
 	gl "github.com/kubex-ecosystem/gdbase/internal/module/logger"
-	t "github.com/kubex-ecosystem/gdbase/types"
+	svc "github.com/kubex-ecosystem/gdbase/internal/services"
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 
@@ -34,7 +34,7 @@ type ICronJobService interface {
 }
 
 var (
-	dbConfig *t.DBConfig
+	dbConfig *svc.DBConfig
 )
 
 type CronJobService struct {
@@ -46,7 +46,7 @@ func NewCronJobService(repo ICronJobRepo) ICronJobService {
 }
 
 func (s *CronJobService) publishToRabbitMQ(ctx context.Context, queueName string, message string) error {
-	iDBConfig := t.NewDBConfig(dbConfig)
+	iDBConfig := svc.NewDBConfig(dbConfig)
 	if iDBConfig == nil {
 		gl.Log("error", "Failed to create database config")
 		return errors.New("failed to create database config")
@@ -263,7 +263,7 @@ func (s *CronJobService) SaveCronJob(ctx context.Context, job *CronJob, defaultU
 	return err
 }
 
-func getRabbitMQURL(dbConfig *t.DBConfig) string {
+func getRabbitMQURL(dbConfig *svc.DBConfig) string {
 	if dbConfig != nil {
 		if dbConfig.Messagery != nil {
 			if dbConfig.Messagery.RabbitMQ != nil {

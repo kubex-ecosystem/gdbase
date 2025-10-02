@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	t "github.com/kubex-ecosystem/gdbase/types"
+	t "github.com/kubex-ecosystem/gdbase/internal/types"
 	l "github.com/kubex-ecosystem/logz"
 
 	jobqueue "github.com/kubex-ecosystem/gdbase/internal/models/job_queue"

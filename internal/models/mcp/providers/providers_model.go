@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	t "github.com/kubex-ecosystem/gdbase/types"
+	t "github.com/kubex-ecosystem/gdbase/internal/types"
 )
 
 type IProvidersModel interface {

@@ -7,7 +7,7 @@ import (
 	"github.com/docker/go-connections/nat"
 	glb "github.com/kubex-ecosystem/gdbase/internal/globals"
 	gl "github.com/kubex-ecosystem/gdbase/internal/module/logger"
-	t "github.com/kubex-ecosystem/gdbase/types"
+	t "github.com/kubex-ecosystem/gdbase/internal/types"
 )
 
 func SetupRabbitMQ(config *t.RabbitMQ, dockerService IDockerService) error {
@@ -55,7 +55,7 @@ func SetupRabbitMQ(config *t.RabbitMQ, dockerService IDockerService) error {
 		}
 	}
 	if config.Volume == "" {
-		config.Volume = os.ExpandEnv(glb.DefaultRabbitMQVolume)
+		config.Volume = os.ExpandEnv(DefaultRabbitMQVolume)
 	}
 
 	// Cria o volume, se necessário

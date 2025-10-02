@@ -8,15 +8,12 @@ import (
 
 	"github.com/docker/docker/client"
 	dkrs "github.com/kubex-ecosystem/gdbase/internal/services"
-	t "github.com/kubex-ecosystem/gdbase/types"
 	l "github.com/kubex-ecosystem/logz"
 )
 
-type DockerSrv interface {
-	dkrs.IDockerService
-}
+type DockerSrv = dkrs.IDockerService
 
-func NewDockerService(config *t.DBConfig, logger l.Logger) (DockerSrv, error) {
+func NewDockerService(config *dkrs.DBConfig, logger l.Logger) (DockerSrv, error) {
 	return dkrs.NewDockerService(config, logger)
 }
 

@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"context"
 	"fmt"
 	"os"
 
@@ -70,7 +71,7 @@ func startDockerCmd() *cobra.Command {
 				fmt.Printf("Error initializing Docker service: %v\n", dkrErr)
 				return
 			}
-			dkrErr = s.SetupDatabaseServices(dkr, nil)
+			dkrErr = s.SetupDatabaseServices(context.Background(), dkr, nil)
 			if dkrErr != nil {
 				gl.Log("error", fmt.Sprintf("Error setting up database services: %v", dkrErr))
 				return
@@ -155,7 +156,7 @@ func restartDockerCmd() *cobra.Command {
 				fmt.Printf("Error initializing Docker service: %v\n", dkrErr)
 				return
 			}
-			dkrErr = s.SetupDatabaseServices(dkr, nil)
+			dkrErr = s.SetupDatabaseServices(context.Background(), dkr, nil)
 			if dkrErr != nil {
 				gl.Log("error", fmt.Sprintf("Error setting up database services: %v", dkrErr))
 				return

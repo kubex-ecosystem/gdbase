@@ -2,6 +2,7 @@ package services
 
 import (
 	"bufio"
+	"context"
 	"embed"
 	"fmt"
 	"math/rand"
@@ -15,7 +16,6 @@ import (
 	"github.com/docker/go-connections/nat"
 	glb "github.com/kubex-ecosystem/gdbase/internal/globals"
 	gl "github.com/kubex-ecosystem/gdbase/internal/module/logger"
-	t "github.com/kubex-ecosystem/gdbase/types"
 	u "github.com/kubex-ecosystem/gdbase/utils"
 )
 
@@ -128,7 +128,7 @@ func WriteInitDBSQL(initVolumePath, initDBSQL, initDBSQLData string) (string, er
 	gl.Log("info", fmt.Sprintf("✅ File %s created successfully!\n", filePath))
 	return filePath, nil
 }
-func SetupDatabaseServices(d IDockerService, config *t.DBConfig) error {
+func SetupDatabaseServices(ctx context.Context, d IDockerService, config *DBConfig) error {
 	if config == nil {
 		return fmt.Errorf("❌ Configuração do banco de dados não encontrada")
 	}
@@ -163,7 +163,7 @@ func SetupDatabaseServices(d IDockerService, config *t.DBConfig) error {
 								gl.Log("debug", fmt.Sprintf("Password found in config: %s", dbConfig.Password))
 							}
 							if dbConfig.Volume == "" {
-								dbConfig.Volume = os.ExpandEnv(glb.DefaultPostgresVolume)
+								dbConfig.Volume = os.ExpandEnv(DefaultPostgresVolume)
 							}
 							pgVolRootDir := os.ExpandEnv(dbConfig.Volume)
 							pgVolInitDir := filepath.Join(pgVolRootDir, "init")

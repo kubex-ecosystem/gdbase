@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"io"
@@ -10,7 +11,6 @@ import (
 
 	gl "github.com/kubex-ecosystem/gdbase/internal/module/logger"
 	is "github.com/kubex-ecosystem/gdbase/internal/services"
-	t "github.com/kubex-ecosystem/gdbase/types"
 	l "github.com/kubex-ecosystem/logz"
 	_ "gorm.io/driver/mysql"
 	_ "gorm.io/driver/postgres"
@@ -71,26 +71,26 @@ func titleCase(s string) string {
 }
 
 func initDB() (*gorm.DB, *sql.DB, error) {
-	dbConfig := t.NewDBConfigWithFilePath("GoBE-DB", "/home/user/.kubex/gdbase/config/config.json")
+	dbConfig := is.NewDBConfigWithFilePath("GoBE-DB", "/home/user/.kubex/gdbase/config/config.json")
 	if dbConfig == nil {
 		gl.Log("fatal", "Error loading database configuration")
 		return nil, nil, fmt.Errorf("error loading database configuration")
 	}
 	// Initialize database
 	// Create database service
-	dbService, err := is.NewDatabaseService(dbConfig, l.GetLogger("gen_models"))
+	dbService, err := is.NewDatabaseService(context.Background(), dbConfig, l.GetLogger("gen_models"))
 	if err != nil {
 		gl.Log("fatal", fmt.Sprintf("Error creating database service: %v", err))
 		return nil, nil, err
 	}
 	// Initialize database service
-	err = dbService.Initialize()
+	err = dbService.Initialize(context.Background())
 	if err != nil {
 		gl.Log("fatal", fmt.Sprintf("Error initializing database service: %v", err))
 		return nil, nil, err
 	}
 	// Get database configuration
-	db, err := dbService.GetDB()
+	db, err := dbService.GetDB(context.Background())
 	if err != nil {
 		gl.Log("fatal", fmt.Sprintf("Error getting database: %v", err))
 		return nil, nil, err

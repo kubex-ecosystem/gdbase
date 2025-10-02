@@ -1,12 +1,13 @@
 package tasks
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/google/uuid"
+	ci "github.com/kubex-ecosystem/gdbase/internal/interfaces"
 	gl "github.com/kubex-ecosystem/gdbase/internal/module/logger"
 	is "github.com/kubex-ecosystem/gdbase/internal/services"
-	t "github.com/kubex-ecosystem/gdbase/types"
 	l "github.com/kubex-ecosystem/logz"
 	xtt "github.com/kubex-ecosystem/xtui/types"
 	"gorm.io/gorm"
@@ -22,7 +23,7 @@ type ITasksRepo interface {
 	Delete(id string) error
 	Close() error
 	List(where ...any) (xtt.TableDataHandler, error)
-	GetContextDBService() t.IDBService
+	GetContextDBService() ci.IDBService
 }
 
 type TasksRepo struct {
@@ -187,8 +188,8 @@ func (tr *TasksRepo) List(where ...any) (xtt.TableDataHandler, error) {
 	return xtt.NewTableHandlerFromRows([]string{"#", "ID", "Provider", "Target", "Type", "Cron", "Status", "Active", "Next Run", "Last Run", "Last Status"}, tableHandlerMap), nil
 }
 
-func (tr *TasksRepo) GetContextDBService() t.IDBService {
-	dbService, dbServiceErr := is.NewDatabaseService(t.NewDBConfigWithDBConnection(tr.g), l.GetLogger("GdoBase"))
+func (tr *TasksRepo) GetContextDBService() ci.IDBService {
+	dbService, dbServiceErr := is.NewDatabaseService(context.Background(), is.NewDBConfigWithDBConnection(tr.g), l.GetLogger("GdoBase"))
 	if dbServiceErr != nil {
 		gl.Log("error", fmt.Sprintf("TasksModel repository: failed to get context DB service: %v", dbServiceErr))
 		return nil

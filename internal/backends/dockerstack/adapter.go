@@ -4,17 +4,21 @@ package dockerstack
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/kubex-ecosystem/gdbase/internal/provider"
-	"github.com/kubex-ecosystem/gdbase/internal/services"
-	"github.com/kubex-ecosystem/gdbase/types"
+
+	gl "github.com/kubex-ecosystem/gdbase/internal/module/kbx"
+	svc "github.com/kubex-ecosystem/gdbase/internal/services"
+	"github.com/kubex-ecosystem/gdbase/internal/types"
+
 	l "github.com/kubex-ecosystem/logz"
 )
 
 // DockerStackProvider wraps legacy Docker services into new Provider interface
 type DockerStackProvider struct {
 	logger        l.Logger
-	dockerService services.IDockerService
+	dockerService *svc.DockerService
 }
 
 // NewDockerStackProvider creates a new Docker-based provider
@@ -50,16 +54,20 @@ func (p *DockerStackProvider) Capabilities(ctx context.Context) (provider.Capabi
 func (p *DockerStackProvider) Start(ctx context.Context, spec provider.StartSpec) (map[string]provider.Endpoint, error) {
 	// 1. Convert provider.StartSpec to legacy DBConfig format
 	dbConfig := p.convertSpecToDBConfig(spec)
-
+	var ok bool
 	// 2. Initialize Docker service (legacy)
-	dockerService, err := services.NewDockerService(dbConfig, p.logger)
+	dockerService, err := svc.NewDockerService(dbConfig, p.logger)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create docker service: %w", err)
 	}
-	p.dockerService = dockerService
+
+	p.dockerService, ok = dockerService.(*svc.DockerService)
+	if !ok {
+		return nil, fmt.Errorf("failed to assert docker service type")
+	}
 
 	// 3. Initialize services (calls legacy SetupDatabaseServices)
-	if err := dockerService.Initialize(); err != nil {
+	if err := p.dockerService.Initialize(); err != nil {
 		return nil, fmt.Errorf("failed to initialize docker services: %w", err)
 	}
 
@@ -69,12 +77,19 @@ func (p *DockerStackProvider) Start(ctx context.Context, spec provider.StartSpec
 		return nil, fmt.Errorf("failed to extract endpoints: %w", err)
 	}
 
+	// 5. 🎯 NOVA LÓGICA: Executar migrations SEMPRE após container subir
+	if pgEndpoint, exists := endpoints["pg"]; exists {
+		if err := p.runPostgresMigrations(ctx, pgEndpoint.DSN); err != nil {
+			return nil, fmt.Errorf("failed to run PostgreSQL migrations: %w", err)
+		}
+	}
+
 	return endpoints, nil
 }
 
 // convertSpecToDBConfig converts new StartSpec to legacy DBConfig
-func (p *DockerStackProvider) convertSpecToDBConfig(spec provider.StartSpec) *types.DBConfig {
-	dbConfig := &types.DBConfig{
+func (p *DockerStackProvider) convertSpecToDBConfig(spec provider.StartSpec) *svc.DBConfig {
+	dbConfig := &svc.DBConfig{
 		Databases: make(map[string]*types.Database),
 	}
 
@@ -144,7 +159,7 @@ func (p *DockerStackProvider) convertSpecToDBConfig(spec provider.StartSpec) *ty
 }
 
 // extractEndpoints converts legacy DBConfig to new Endpoint format
-func (p *DockerStackProvider) extractEndpoints(cfg *types.DBConfig) (map[string]provider.Endpoint, error) {
+func (p *DockerStackProvider) extractEndpoints(cfg *svc.DBConfig) (map[string]provider.Endpoint, error) {
 	endpoints := make(map[string]provider.Endpoint)
 
 	for _, db := range cfg.Databases {
@@ -212,6 +227,51 @@ func (p *DockerStackProvider) extractEndpoints(cfg *types.DBConfig) (map[string]
 	}
 
 	return endpoints, nil
+}
+
+// runPostgresMigrations executes SQL migrations programmatically
+func (p *DockerStackProvider) runPostgresMigrations(ctx context.Context, dsn string) error {
+	migrationManager := NewMigrationManager(dsn, p.logger)
+
+	// Wait for PostgreSQL to be ready
+	if err := migrationManager.WaitForPostgres(ctx, 30*time.Second); err != nil {
+		return err
+	}
+
+	// Check if schema already exists (avoid re-running)
+	exists, err := migrationManager.SchemaExists()
+	if err != nil {
+		gl.Log("warn", fmt.Sprintf("Could not check schema existence: %v", err))
+	}
+
+	if exists {
+		gl.Log("info", "PostgreSQL schema already exists, skipping migrations")
+		return nil
+	}
+
+	// Run migrations with error recovery
+	gl.Log("info", "Running PostgreSQL migrations...")
+	results, err := migrationManager.RunMigrations(ctx)
+	if err != nil {
+		return err
+	}
+
+	// Log final summary
+	totalSuccess := 0
+	totalFailed := 0
+	for _, r := range results {
+		totalSuccess += r.SuccessfulStmts
+		totalFailed += r.FailedStmts
+	}
+
+	if totalFailed > 0 {
+		gl.Log("warn", fmt.Sprintf("Migration completed with partial success: %d succeeded, %d failed", totalSuccess, totalFailed))
+		// Don't return error for partial failures - let the service continue
+	} else {
+		gl.Log("info", fmt.Sprintf("All migrations completed successfully! (%d statements)", totalSuccess))
+	}
+
+	return nil
 }
 
 // Health verifies connectivity to all services

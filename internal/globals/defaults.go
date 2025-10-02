@@ -26,15 +26,7 @@ func init() {
 }
 
 const (
-	KeyringService            = "kubex"
-	DefaultGoBEKeyPath        = "$HOME/.kubex/gobe/gobe-key.pem"
-	DefaultGoBECertPath       = "$HOME/.kubex/gobe/gobe-cert.pem"
-	DefaultGodoBaseConfigPath = "$HOME/.kubex/gdbase/config/config.json"
-	DefaultVolumesDir         = "$HOME/.kubex/volumes"
-	DefaultRedisVolume        = "$HOME/.kubex/volumes/redis"
-	DefaultPostgresVolume     = "$HOME/.kubex/volumes/postgresql"
-	DefaultMongoVolume        = "$HOME/.kubex/volumes/mongo"
-	DefaultRabbitMQVolume     = "$HOME/.kubex/volumes/rabbitmq"
+	KeyringService = "kubex"
 )
 
 type GenericRepo interface {
