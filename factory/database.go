@@ -11,13 +11,13 @@ import (
 	l "github.com/kubex-ecosystem/logz"
 )
 
-type DBService = ci.IDBService
+type DBService = svc.IDBService
 type IDBService interface {
-	ci.IDBService
+	svc.IDBService
 }
-type DBConfig = ci.IDBConfig
+type DBConfig = svc.IDBConfig
 type IDBConfig interface {
-	ci.IDBConfig
+	svc.IDBConfig
 }
 
 func NewDatabaseService(ctx context.Context, config DBConfig, logger l.Logger) (DBService, error) {

@@ -7,7 +7,6 @@ import (
 
 	"github.com/google/uuid"
 
-	ci "github.com/kubex-ecosystem/gdbase/internal/interfaces"
 	gl "github.com/kubex-ecosystem/gdbase/internal/module/logger"
 	is "github.com/kubex-ecosystem/gdbase/internal/services"
 	l "github.com/kubex-ecosystem/logz"
@@ -26,7 +25,7 @@ type IDiscordRepo interface {
 	Delete(id string) error
 	Close() error
 	List(where ...interface{}) (xtt.TableDataHandler, error)
-	GetContextDBService() ci.IDBService
+	GetContextDBService() is.IDBService
 }
 
 type DiscordRepo struct {
@@ -173,7 +172,7 @@ func (dr *DiscordRepo) List(where ...interface{}) (xtt.TableDataHandler, error) 
 	}, tableHandlerMap), nil
 }
 
-func (dr *DiscordRepo) GetContextDBService() ci.IDBService {
+func (dr *DiscordRepo) GetContextDBService() is.IDBService {
 	dbService, dbServiceErr := is.NewDatabaseService(context.Background(), is.NewDBConfigWithDBConnection(dr.g), l.GetLogger("GdoBase"))
 	if dbServiceErr != nil {
 		gl.Log("error", "DiscordModel repository: error creating database service: "+dbServiceErr.Error())

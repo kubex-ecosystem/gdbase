@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"github.com/google/uuid"
-	ci "github.com/kubex-ecosystem/gdbase/internal/interfaces"
 	gl "github.com/kubex-ecosystem/gdbase/internal/module/logger"
 	is "github.com/kubex-ecosystem/gdbase/internal/services"
 	l "github.com/kubex-ecosystem/logz"
@@ -23,7 +22,7 @@ type IUserRepo interface {
 	Delete(id string) error
 	Close() error
 	List(where ...interface{}) (xtt.TableDataHandler, error)
-	GetContextDBService() ci.IDBService
+	GetContextDBService() is.IDBService
 }
 
 type UserRepo struct {
@@ -134,7 +133,7 @@ func (ur *UserRepo) List(where ...interface{}) (xtt.TableDataHandler, error) {
 
 	return xtt.NewTableHandlerFromRows([]string{"#", "ID", "Name", "Username", "Email", "Phone", "Active"}, tableHandlerMap), nil
 }
-func (ur *UserRepo) GetContextDBService() ci.IDBService {
+func (ur *UserRepo) GetContextDBService() is.IDBService {
 	dbService, dbServiceErr := is.NewDatabaseService(context.Background(), is.NewDBConfigWithDBConnection(ur.g), l.GetLogger("GodoBase"))
 	if dbServiceErr != nil {
 		gl.Log("error", fmt.Sprintf("UserModel repository: failed to get context DB service (%s)", dbServiceErr))

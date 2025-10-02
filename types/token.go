@@ -8,6 +8,7 @@ import (
 
 	ci "github.com/kubex-ecosystem/gdbase/internal/interfaces"
 	sci "github.com/kubex-ecosystem/gdbase/internal/security/external"
+	is "github.com/kubex-ecosystem/gdbase/internal/services"
 )
 
 type TSConfig struct {
@@ -19,7 +20,7 @@ type TSConfig struct {
 	RefreshExpirationSecs int64
 	KeyringPass           string
 	TokenClient           TokenClient
-	DBService             ci.IDBService
+	DBService             is.IDBService
 	KeyringService        *sci.KeyringService
 }
 type TokenPair struct {

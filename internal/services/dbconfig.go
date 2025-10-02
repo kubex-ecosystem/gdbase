@@ -31,6 +31,23 @@ const (
 	DefaultRabbitMQVolume = "$HOME/.kubex/volumes/rabbitmq"
 )
 
+type IDBConfig interface {
+	GetDBName() string
+	GetDBType() string
+	GetEnvironment() string
+	GetPostgresConfig() any
+	GetMySQLConfig() any
+	GetSQLiteConfig() any
+	GetMongoDBConfig() any
+	GetRedisConfig() any
+	GetRabbitMQConfig() any
+	IsAutoMigrate() bool
+	IsDebug() bool
+	GetLogger() any
+	GetConfig(context.Context) DBConfig
+	GetConfigMap(context.Context) map[string]any
+}
+
 type DBConfig struct {
 	// Name is used to configure the name of the database
 	Name string `json:"name" yaml:"name" xml:"name" toml:"name" mapstructure:"name"`
@@ -400,7 +417,15 @@ func (d *DBConfig) GetLogger() interface{} {
 	}
 	return d.Logger
 }
-func (d *DBConfig) GetConfig(ctx context.Context) map[string]any {
+
+func (d *DBConfig) GetConfig(ctx context.Context) DBConfig {
+	if d == nil {
+		return DBConfig{}
+	}
+	return *d
+}
+
+func (d *DBConfig) GetConfigMap(ctx context.Context) map[string]any {
 	// Quero percorrer toda a struct de DBConfig independente da profundidade e das propriedades
 	// Criar um map disso e retornar
 	if d == nil {

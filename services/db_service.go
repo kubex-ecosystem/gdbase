@@ -16,7 +16,7 @@ type IDBConfig interface {
 }
 
 type IDBService interface {
-	ci.IDBService
+	svc.IDBService
 }
 
 type DBService = svc.DBService
@@ -24,7 +24,7 @@ type DBService = svc.DBService
 type IDockerService = svc.IDockerService
 type DockerService = svc.DockerService
 
-func NewDatabaseService(ctx context.Context, config *svc.DBConfig, logger l.Logger) (ci.IDBService, error) {
+func NewDatabaseService(ctx context.Context, config *svc.DBConfig, logger l.Logger) (svc.IDBService, error) {
 	return svc.NewDatabaseService(ctx, config, logger)
 }
 

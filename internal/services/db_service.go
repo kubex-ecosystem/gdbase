@@ -25,6 +25,21 @@ import (
 	"gorm.io/gorm"
 )
 
+type IDBService interface {
+	Initialize(ctx context.Context) error
+	InitializeFromEnv(ctx context.Context, env ci.IEnvironment) error
+	GetDB(ctx context.Context) (*gorm.DB, error)
+	CloseDBConnection(ctx context.Context) error
+	CheckDatabaseHealth(ctx context.Context) error
+	GetConnection(ctx context.Context, database string, timeout time.Duration) (*sql.Conn, error)
+	IsConnected(ctx context.Context) error
+	Reconnect(ctx context.Context) error
+	GetName(ctx context.Context) (string, error)
+	GetHost(ctx context.Context) (string, error)
+	GetConfig(ctx context.Context) DBConfig
+	RunMigrations(ctx context.Context, files map[string]string) (int, int, error)
+}
+
 type DBService struct {
 	Logger    l.Logger
 	reference ci.IReference
@@ -108,11 +123,14 @@ func newDatabaseService(ctx context.Context, config *DBConfig, logger l.Logger) 
 	return dbService, nil
 }
 
-func NewDatabaseService(ctx context.Context, config *DBConfig, logger l.Logger) (ci.IDBService, error) {
+func NewDatabaseService(ctx context.Context, config *DBConfig, logger l.Logger) (IDBService, error) {
 	return newDatabaseService(ctx, config, logger)
 }
 
 func (d *DBService) Initialize(ctx context.Context) error {
+	if d == nil {
+		return fmt.Errorf("❌ Serviço de banco de dados não inicializado")
+	}
 	if d.db != nil {
 		return nil
 	}
@@ -320,13 +338,13 @@ func (d *DBService) GetHost(ctx context.Context) (string, error) {
 	return vl, nil
 }
 
-func (d *DBService) GetConfig(ctx context.Context) map[string]any {
-	if d.db == nil {
-		return nil
+func (d *DBService) GetConfig(ctx context.Context) DBConfig {
+	if d == nil {
+		return DBConfig{}
 	}
 	cfgT := d.properties["config"].(*ti.Property[*DBConfig])
 	if cfgT == nil {
-		return nil
+		return DBConfig{}
 	}
 	config := cfgT.GetValue()
 	return config.GetConfig(ctx)
