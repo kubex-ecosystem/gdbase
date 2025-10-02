@@ -1,70 +1,61 @@
-package zmq
+// Package sockets provides a websocket-based messaging system.
+package sockets
 
-// import (
-// 	"encoding/json"
-// 	"fmt"
-// 	"log"
+import (
+	"encoding/json"
+	"fmt"
+	"log"
 
-// 	zmq "github.com/pebbe/zmq4@v1.4.0"
+	"github.com/gorilla/websocket"
+	is "github.com/kubex-ecosystem/gdbase/internal/services"
+)
 
-// 	"github.com/kubex-ecosystem/gobe/internal/config"
-// )
+type Publisher struct {
+	conn   *websocket.Conn
+	config is.WebSocketConfig
+}
 
-// type Publisher struct {
-// 	socket  *zmq4.Socket
-// 	config  config.ZMQConfig
-// 	address string
-// }
+func NewPublisher(config is.WebSocketConfig) *Publisher {
+	return &Publisher{
+		config: config,
+	}
+}
 
-// func NewPublisher(config config.ZMQConfig) *Publisher {
-// 	return &Publisher{
-// 		config:  config,
-// 		address: fmt.Sprintf("%s:%d", config.Address, config.Port),
-// 	}
-// }
+func (p *Publisher) Connect() error {
+	var err error
+	p.conn, _, err = websocket.DefaultDialer.Dial(p.config.URL, nil)
+	if err != nil {
+		return fmt.Errorf("failed to connect to WebSocket: %w", err)
+	}
+	log.Printf("WebSocket Publisher connected to %s", p.config.URL)
+	return nil
+}
 
-// func (p *Publisher) Connect() error {
-// 	socket, err := zmq.NewSocket(zmq.PUB)
-// 	if err != nil {
-// 		return fmt.Errorf("failed to create ZMQ socket: %w", err)
-// 	}
+func (p *Publisher) PublishMessage(topic string, data interface{}) error {
+	if p.conn == nil {
+		if err := p.Connect(); err != nil {
+			return err
+		}
+	}
 
-// 	err = socket.Bind(p.address)
-// 	if err != nil {
-// 		socket.Close()
-// 		return fmt.Errorf("failed to bind ZMQ socket to %s: %w", p.address, err)
-// 	}
+	jsonData, err := json.Marshal(data)
+	if err != nil {
+		return fmt.Errorf("failed to marshal data: %w", err)
+	}
 
-// 	p.socket = socket
-// 	log.Printf("ZMQ Publisher connected to %s", p.address)
-// 	return nil
-// }
+	message := fmt.Sprintf("%s %s", topic, string(jsonData))
+	err = p.conn.WriteMessage(websocket.TextMessage, []byte(message))
+	if err != nil {
+		return fmt.Errorf("failed to send WebSocket message: %w", err)
+	}
 
-// func (p *Publisher) PublishMessage(topic string, data interface{}) error {
-// 	if p.socket == nil {
-// 		if err := p.Connect(); err != nil {
-// 			return err
-// 		}
-// 	}
+	log.Printf("Published WebSocket message: %s", topic)
+	return nil
+}
 
-// 	jsonData, err := json.Marshal(data)
-// 	if err != nil {
-// 		return fmt.Errorf("failed to marshal data: %w", err)
-// 	}
-
-// 	message := fmt.Sprintf("%s %s", topic, string(jsonData))
-// 	_, err = p.socket.Send(message, 0)
-// 	if err != nil {
-// 		return fmt.Errorf("failed to send ZMQ message: %w", err)
-// 	}
-
-// 	log.Printf("Published ZMQ message: %s", topic)
-// 	return nil
-// }
-
-// func (p *Publisher) Close() error {
-// 	if p.socket != nil {
-// 		return p.socket.Close()
-// 	}
-// 	return nil
-// }
+func (p *Publisher) Close() error {
+	if p.conn != nil {
+		return p.conn.Close()
+	}
+	return nil
+}
