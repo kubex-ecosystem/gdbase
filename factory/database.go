@@ -15,23 +15,26 @@ type DBService = svc.IDBService
 type IDBService interface {
 	svc.IDBService
 }
+type DBServiceImpl = svc.DBService
+
 type DBConfig = svc.IDBConfig
 type IDBConfig interface {
 	svc.IDBConfig
 }
+type DBConfigImpl = svc.DBConfig
 
-func NewDatabaseService(ctx context.Context, config DBConfig, logger l.Logger) (DBService, error) {
-	return svc.NewDatabaseService(ctx, config.(*svc.DBConfig), logger)
+func NewDatabaseService(ctx context.Context, config *DBConfigImpl, logger l.Logger) (DBService, error) {
+	return svc.NewDatabaseService(ctx, config, logger)
 }
 
-func SetupDatabaseServices(ctx context.Context, d svc.IDockerService, config DBConfig) error {
-	return svc.SetupDatabaseServices(ctx, d, config.(*svc.DBConfig))
+func SetupDatabaseServices(ctx context.Context, d svc.IDockerService, config *DBConfigImpl) error {
+	return svc.SetupDatabaseServices(ctx, d, config)
 }
 
-func NewDBConfigWithArgs(ctx context.Context, dbName, dbConfigFilePath string, autoMigrate bool, logger l.Logger, debug bool) DBConfig {
+func NewDBConfigWithArgs(ctx context.Context, dbName, dbConfigFilePath string, autoMigrate bool, logger l.Logger, debug bool) *DBConfigImpl {
 	return svc.NewDBConfigWithArgs(ctx, dbName, dbConfigFilePath, autoMigrate, logger, debug)
 }
-func NewDBConfigFromFile(ctx context.Context, dbConfigFilePath string, autoMigrate bool, logger l.Logger, debug bool) (DBConfig, error) {
+func NewDBConfigFromFile(ctx context.Context, dbConfigFilePath string, autoMigrate bool, logger l.Logger, debug bool) (*DBConfigImpl, error) {
 	return svc.NewDBConfigFromFile(ctx, dbConfigFilePath, autoMigrate, logger, debug)
 }
 
@@ -49,8 +52,8 @@ type Database = it.Database
 type Environment = ci.IEnvironment
 type EnvironmentType = it.Environment
 
-func NewEnvironment(configFile string, isConfidential bool, logger l.Logger) (ci.IEnvironment, error) {
-	return it.NewEnvironment(configFile, isConfidential, logger)
+func NewEnvironment(configFile string, isConfidential bool, logger l.Logger) (*EnvironmentType, error) {
+	return it.NewEnvironmentType(configFile, isConfidential, logger)
 }
 
 type MongoDB = it.MongoDB
@@ -62,7 +65,7 @@ type RabbitMQ = it.RabbitMQ
 type IDockerService = svc.IDockerService
 type DockerService = svc.DockerService
 
-type DatabaseType = it.Database
+type DatabaseImpl = it.Database
 type RabbitMQConfig = it.RabbitMQ
 type PostgresConfig = it.Database
 type MySQLConfig = it.Database

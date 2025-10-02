@@ -218,7 +218,9 @@ func SetupDatabaseServices(ctx context.Context, d IDockerService, config *DBConf
 								"gdbase-pg",
 								"postgres:17-alpine",
 								[]string{
+									// "POSTGRES_HOST_AUTH_METHOD=trust", // Use only for development, not recommended for production
 									"POSTGRES_HOST_AUTH_METHOD=trust",
+									// Necessary for Postgres 12+
 									"POSTGRES_INITDB_ARGS=--data-checksums",
 									"POSTGRES_INITDB_ARGS=--encoding=UTF8",
 									"POSTGRES_INITDB_ARGS=--locale=pt_BR.UTF-8",
@@ -228,9 +230,18 @@ func SetupDatabaseServices(ctx context.Context, d IDockerService, config *DBConf
 									"POSTGRES_PORT=" + dbConfig.Port.(string),
 									"POSTGRES_DB_NAME=" + dbConfig.Name,
 									"POSTGRES_DB_VOLUME=" + dbConfig.Volume,
+									"POSTGRES_DB_SSLMODE=disable",
+									"POSTGRES_DB_INITDB_ARGS=--data-checksums",
+									// Necessary for some clients
+									"PGUSER=" + dbConfig.Username,
+									"PGPASSWORD=" + dbConfig.Password,
+									"PGDATABASE=" + dbConfig.Name,
+									"PGPORT=" + dbConfig.Port.(string),
+									"PGHOST=localhost",
 									"PGDATA=/var/lib/postgresql/data/pgdata",
 									"PGSSLMODE=disable",
-								}, []nat.PortMap{portMap},
+								},
+								[]nat.PortMap{portMap},
 								map[string]struct{}{
 									// pgVolInitDir + ":/docker-entrypoint-initdb.d":                            {},
 									// pgVolDataDir + ":/var/lib/postgresql/data":                               {},

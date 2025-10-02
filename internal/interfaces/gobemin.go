@@ -1,3 +1,4 @@
+// Package interfaces provides the interfaces for the GoBE application
 package interfaces
 
 import (

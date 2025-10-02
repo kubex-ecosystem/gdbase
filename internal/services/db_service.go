@@ -445,9 +445,9 @@ func connectDatabase(_ context.Context, dbType, dsn string) (*gorm.DB, error) {
 	}
 
 	// Configurações opcionais de pool de conexões
-	sqlDB.SetMaxIdleConns(10)
-	sqlDB.SetMaxOpenConns(100)
-	sqlDB.SetConnMaxLifetime(0)
+	// sqlDB.SetMaxIdleConns(10)
+	// sqlDB.SetMaxOpenConns(100)
+	// sqlDB.SetConnMaxLifetime(0)
 
 	// Testa a conexão
 	if err := sqlDB.Ping(); err != nil {

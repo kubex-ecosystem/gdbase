@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"reflect"
 
-	gl "github.com/kubex-ecosystem/gdbase/internal/module/logger"
+	gl "github.com/kubex-ecosystem/gdbase/internal/module/kbx"
 	crp "github.com/kubex-ecosystem/gdbase/internal/security/crypto"
 	krs "github.com/kubex-ecosystem/gdbase/internal/security/external"
 
@@ -98,7 +98,7 @@ func newDBConfig(name, filePath string, enabled bool, logger l.Logger, debug boo
 	}
 
 	if debug {
-		gl.SetDebug(debug)
+		gl.SetDebugMode(debug)
 	}
 
 	if name == "" {
@@ -129,20 +129,25 @@ func newDBConfig(name, filePath string, enabled bool, logger l.Logger, debug boo
 				gl.Log("error", fmt.Sprintf("Error getting password from keyring: %v", rabbitPassErr))
 				return nil
 			}
-
+			dsn := fmt.Sprintf(
+				"postgres://%s:%s@localhost:5432/%s?sslmode=disable",
+				gl.GetEnvOrDefault("POSTGRES_USER", "kubex_adm"),
+				pgPass,
+				gl.GetEnvOrDefault("POSTGRES_DB", "kubex_db"),
+			)
 			dbConfigDefault := &DBConfig{
 				Databases: map[string]*ti.Database{
 					"postgresql": {
-						Enabled:          true,
+						Enabled:          gl.GetEnvOrDefault("POSTGRES_ENABLED", "true") == "true",
 						Reference:        ti.NewReference(name).GetReference(),
 						Type:             "postgresql",
 						Driver:           "postgres",
-						ConnectionString: fmt.Sprintf("postgres://kubex_adm:%s@localhost:5432/kubex_db", pgPass),
-						Dsn:              fmt.Sprintf("postgres://kubex_adm:%s@localhost:5432/kubex_db", pgPass),
+						ConnectionString: dsn,
+						Dsn:              dsn,
 						Path:             os.ExpandEnv(DefaultPostgresVolume),
 						Host:             "localhost",
 						Port:             "5432",
-						Username:         "kubex_adm",
+						Username:         gl.GetEnvOrDefault("POSTGRES_USER", "kubex_adm"),
 						Password:         pgPass,
 						Volume:           os.ExpandEnv(DefaultPostgresVolume),
 						Name:             "kubex_db",
