@@ -13,7 +13,7 @@ type IEnvironment interface {
 	GetEnvFilePath() string
 	Getenv(key string) string
 	Setenv(key, value string) error
-	GetEnvCache() map[string]string
+	GetEnvCache() map[string]any
 	ParseEnvVar(s string) (string, string)
 	LoadEnvFromShell() error
 	MemAvailable() int

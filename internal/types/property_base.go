@@ -2,7 +2,7 @@ package types
 
 import (
 	ci "github.com/kubex-ecosystem/gdbase/internal/interfaces"
-	gl "github.com/kubex-ecosystem/gdbase/internal/module/logger"
+	gl "github.com/kubex-ecosystem/gdbase/internal/module/kbx"
 	l "github.com/kubex-ecosystem/logz"
 
 	"fmt"
@@ -12,33 +12,34 @@ import (
 	"github.com/google/uuid"
 )
 
+type Pointer[T any] = atomic.Pointer[T]
+
 // PropertyValBase is a type for the value.
 type PropertyValBase[T any] struct {
 	// Logger is the logger for this context.
-	Logger l.Logger
+	Logger l.Logger `json:"-" yaml:"-" toml:"-" xml:"-"`
 
 	// v is the value.
-	*atomic.Pointer[T]
+	*Pointer[T] `json:"-" yaml:"-" toml:"-" xml:"-"`
 
 	// Reference is the identifiers for the context.
 	// IReference
-	*Reference
+	*Reference `mapstructure:",squash,omitempty"`
 
 	//muCtx is the mutexes for the context.
-	*Mutexes
+	*Mutexes `mapstructure:",squash,omitempty"`
 
 	// validation is the validation for the value.
-	*Validation[T]
-
+	*Validation[T] `json:"-" yaml:"-" toml:"-" xml:"-"`
 	// Channel is the channel for the value.
-	ci.IChannelCtl[T]
-	channelCtl *ChannelCtl[T]
+	ci.IChannelCtl[T] `json:"-" yaml:"-" toml:"-" xml:"-"`
+	channelCtl        *ChannelCtl[T] `json:"-" yaml:"-" toml:"-" xml:"-"`
 }
 
 // NewVal is a function that creates a new PropertyValBase instance.
 func newVal[T any](name string, v *T) *PropertyValBase[T] {
-	// Create a new validation instance
 	ref := NewReference(name)
+
 	// Create a new PropertyValBase instance
 	vv := atomic.Pointer[T]{}
 	if v != nil {
@@ -102,7 +103,7 @@ func (v *PropertyValBase[T]) Value() *T {
 		gl.Log("error", "Value: property does not exist (", reflect.TypeFor[T]().String(), ")")
 		return nil
 	}
-	return v.Load()
+	return v.Pointer.Load()
 }
 
 // StartCtl is a method that starts the control channel.
@@ -127,16 +128,21 @@ func (v *PropertyValBase[T]) Get(async bool) any {
 		gl.Log("error", "Get: property does not exist (", reflect.TypeFor[T]().String(), ")")
 		return nil
 	}
+	vl := v.Pointer.Load()
 	if async {
 		if v.channelCtl != nil {
 			gl.Log("debug", "Getting value from channel for:", v.Name, "ID:", v.ID.String())
-			v.channelCtl.Channels["get"].(chan T) <- *v.Load()
+			mCh := v.channelCtl.Channels["get"]
+			if mCh != nil {
+				ch := reflect.ValueOf(mCh)
+				ch.Send(reflect.ValueOf(vl))
+			}
 		}
+		return vl
 	} else {
 		gl.Log("debug", "Getting value for:", v.Name, "ID:", v.ID.String())
-		return v.Load()
+		return v.Pointer.Load()
 	}
-	return nil
 }
 
 // Set is a method that sets the value.
@@ -147,7 +153,16 @@ func (v *PropertyValBase[T]) Set(t *T) bool {
 	}
 	// Deixa o nil entrar na validação, pra ter a tratativa que a pessoa inseriu na validação que
 	// pode ser customizada, etc...
-
+	// if v.Validation != nil {
+	// 	if v.CheckIfWillValidate() {
+	// 		gl.Log("warning", "Set: validation is disabled (", reflect.TypeFor[T]().String(), ")")
+	// 	} else {
+	// 		if ok := v.Validate(t); !ok.GetIsValid() {
+	// 			gl.Log("error", fmt.Sprintf("Set: validation error (%s): %v", reflect.TypeFor[T]().String(), v.Validation.GetResults()))
+	// 			return false
+	// 		}
+	// 	}
+	// }
 	if t == nil {
 		gl.Log("error", "Set: value is nil (", reflect.TypeFor[T]().String(), ")")
 		return false
@@ -187,7 +202,7 @@ func (v *PropertyValBase[T]) Serialize(filePath, format string) ([]byte, error) 
 	if value := v.Value(); value == nil {
 		return nil, fmt.Errorf("value is nil")
 	} else {
-		mapper := NewMapper[T](value, filePath)
+		mapper := NewMapper(value, filePath)
 		if data, err := mapper.Serialize(format); err != nil {
 			gl.Log("error", "Failed to serialize data:", err.Error())
 			return nil, err
@@ -202,7 +217,7 @@ func (v *PropertyValBase[T]) Deserialize(data []byte, format, filePath string) e
 	if value := v.Value(); value == nil {
 		return fmt.Errorf("value is nil")
 	} else {
-		mapper := NewMapper[T](value, filePath)
+		mapper := NewMapper(value, filePath)
 		if vl, vErr := mapper.Deserialize(data, format); vErr != nil {
 			gl.Log("error", "Failed to deserialize data:", vErr.Error())
 			return vErr
