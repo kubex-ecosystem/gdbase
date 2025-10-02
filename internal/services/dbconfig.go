@@ -11,6 +11,7 @@ import (
 	gl "github.com/kubex-ecosystem/gdbase/internal/module/logger"
 	crp "github.com/kubex-ecosystem/gdbase/internal/security/crypto"
 	krs "github.com/kubex-ecosystem/gdbase/internal/security/external"
+
 	ti "github.com/kubex-ecosystem/gdbase/internal/types"
 	l "github.com/kubex-ecosystem/logz"
 	"gorm.io/gorm"
@@ -35,16 +36,16 @@ type IDBConfig interface {
 	GetDBName() string
 	GetDBType() string
 	GetEnvironment() string
-	GetPostgresConfig() any
-	GetMySQLConfig() any
-	GetSQLiteConfig() any
-	GetMongoDBConfig() any
-	GetRedisConfig() any
-	GetRabbitMQConfig() any
+	GetPostgresConfig() *ti.Database
+	GetMySQLConfig() *ti.Database
+	GetSQLiteConfig() *ti.Database
+	GetMongoDBConfig() *ti.MongoDB
+	GetRedisConfig() *ti.Redis
+	GetRabbitMQConfig() *ti.RabbitMQ
 	IsAutoMigrate() bool
 	IsDebug() bool
 	GetLogger() any
-	GetConfig(context.Context) DBConfig
+	GetConfig(context.Context) *DBConfig
 	GetConfigMap(context.Context) map[string]any
 }
 
@@ -329,7 +330,7 @@ func (d *DBConfig) GetDBType() string {
 	}
 	return ""
 }
-func (d *DBConfig) GetPostgresConfig() interface{} {
+func (d *DBConfig) GetPostgresConfig() *ti.Database {
 	if d == nil {
 		return nil
 	}
@@ -339,7 +340,7 @@ func (d *DBConfig) GetPostgresConfig() interface{} {
 	}
 	return postgres
 }
-func (d *DBConfig) GetMySQLConfig() interface{} {
+func (d *DBConfig) GetMySQLConfig() *ti.Database {
 	if d == nil {
 		return nil
 	}
@@ -350,7 +351,7 @@ func (d *DBConfig) GetMySQLConfig() interface{} {
 	return mysql
 }
 
-func (d *DBConfig) GetSQLiteConfig() interface{} {
+func (d *DBConfig) GetSQLiteConfig() *ti.Database {
 	if d == nil {
 		return nil
 	}
@@ -360,35 +361,23 @@ func (d *DBConfig) GetSQLiteConfig() interface{} {
 	}
 	return sqlite
 }
-func (d *DBConfig) GetMongoDBConfig() interface{} {
+func (d *DBConfig) GetMongoDBConfig() *ti.MongoDB {
 	if d == nil {
 		return nil
 	}
-	mongoDB, ok := d.Databases["mongodb"]
-	if !ok {
-		return nil
-	}
-	return mongoDB
+	return &d.MongoDB
 }
-func (d *DBConfig) GetRedisConfig() interface{} {
+func (d *DBConfig) GetRedisConfig() *ti.Redis {
 	if d == nil {
 		return nil
 	}
-	redis, ok := d.Databases["redis"]
-	if !ok {
-		return nil
-	}
-	return redis
+	return d.Messagery.Redis
 }
-func (d *DBConfig) GetRabbitMQConfig() interface{} {
+func (d *DBConfig) GetRabbitMQConfig() *ti.RabbitMQ {
 	if d == nil {
 		return nil
 	}
-	rabbitMQ, ok := d.Databases["rabbitmq"]
-	if !ok {
-		return nil
-	}
-	return rabbitMQ
+	return d.Messagery.RabbitMQ
 }
 func (d *DBConfig) IsAutoMigrate() bool {
 	if d == nil {
@@ -418,11 +407,11 @@ func (d *DBConfig) GetLogger() interface{} {
 	return d.Logger
 }
 
-func (d *DBConfig) GetConfig(ctx context.Context) DBConfig {
+func (d *DBConfig) GetConfig(ctx context.Context) *DBConfig {
 	if d == nil {
-		return DBConfig{}
+		return nil
 	}
-	return *d
+	return d
 }
 
 func (d *DBConfig) GetConfigMap(ctx context.Context) map[string]any {

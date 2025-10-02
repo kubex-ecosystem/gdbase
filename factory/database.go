@@ -46,7 +46,13 @@ func GetMigrationFiles() embed.FS {
 }
 
 type Database = it.Database
-type Environment = it.Environment
+type Environment = ci.IEnvironment
+type EnvironmentType = it.Environment
+
+func NewEnvironment(configFile string, isConfidential bool, logger l.Logger) (ci.IEnvironment, error) {
+	return it.NewEnvironment(configFile, isConfidential, logger)
+}
+
 type MongoDB = it.MongoDB
 type Redis = it.Redis
 type RabbitMQ = it.RabbitMQ
@@ -63,7 +69,6 @@ type MySQLConfig = it.Database
 type SQLiteConfig = it.Database
 type MongoDBConfig = it.MongoDB
 type RedisConfig = it.Redis
-type EnvironmentType = it.Environment
 
 type JSONB = ci.IJSONB
 type IJSONB interface {

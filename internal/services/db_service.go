@@ -36,7 +36,7 @@ type IDBService interface {
 	Reconnect(ctx context.Context) error
 	GetName(ctx context.Context) (string, error)
 	GetHost(ctx context.Context) (string, error)
-	GetConfig(ctx context.Context) DBConfig
+	GetConfig(ctx context.Context) IDBConfig
 	RunMigrations(ctx context.Context, files map[string]string) (int, int, error)
 }
 
@@ -47,6 +47,8 @@ type DBService struct {
 
 	db   *gorm.DB
 	pool *sync.Pool
+
+	config *DBConfig
 
 	// properties are used to store database settings and configurations
 	properties map[string]any
@@ -112,6 +114,10 @@ func newDatabaseService(ctx context.Context, config *DBConfig, logger l.Logger) 
 		pool:       &sync.Pool{},
 	}
 
+	dbService.config = config
+
+	dbService.properties["name"] = ti.NewProperty("name", &dbName, true, nil)
+	dbService.properties["host"] = ti.NewProperty("host", &dbHost, true, nil)
 	dbService.properties["config"] = ti.NewProperty("config", &config, true, nil)
 
 	if db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{}); err != nil {
@@ -338,16 +344,11 @@ func (d *DBService) GetHost(ctx context.Context) (string, error) {
 	return vl, nil
 }
 
-func (d *DBService) GetConfig(ctx context.Context) DBConfig {
+func (d *DBService) GetConfig(ctx context.Context) IDBConfig {
 	if d == nil {
-		return DBConfig{}
+		return nil
 	}
-	cfgT := d.properties["config"].(*ti.Property[*DBConfig])
-	if cfgT == nil {
-		return DBConfig{}
-	}
-	config := cfgT.GetValue()
-	return config.GetConfig(ctx)
+	return d.config
 }
 
 func (d *DBService) RunMigrations(ctx context.Context, files map[string]string) (int, int, error) {
