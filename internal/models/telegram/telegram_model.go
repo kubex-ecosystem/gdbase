@@ -75,8 +75,8 @@ type ITelegramModel interface {
 	SetBotToken(botToken string)
 	GetWebhookURL() string
 	SetWebhookURL(webhookURL string)
-	GetApiKey() string
-	SetApiKey(apiKey string)
+	GetAPIKey() string
+	SetAPIKey(apiKey string)
 	GetBotPermissions() t.JSONB
 	SetBotPermissions(permissions t.JSONB)
 	GetConfig() t.JSONB
@@ -117,7 +117,7 @@ type TelegramModel struct {
 	GroupID         string                  `gorm:"type:text" json:"group_id,omitempty" example:"-123456789"`
 	BotToken        string                  `gorm:"type:text" json:"bot_token,omitempty"`
 	WebhookURL      string                  `gorm:"type:text" json:"webhook_url,omitempty"`
-	ApiKey          string                  `gorm:"type:text" json:"api_key,omitempty"`
+	APIKey          string                  `gorm:"type:text" json:"api_key,omitempty"`
 	BotPermissions  t.JSONB                 `json:"bot_permissions,omitempty"`
 	Config          t.JSONB                 `json:"config" binding:"omitempty"`
 	LastActivity    string                  `gorm:"type:timestamp;default:now()" json:"last_activity,omitempty" example:"2024-01-01T00:00:00Z"`
@@ -147,7 +147,7 @@ func NewTelegramModel() *TelegramModel {
 		GroupID:         "",
 		BotToken:        "",
 		WebhookURL:      "",
-		ApiKey:          "",
+		APIKey:          "",
 		BotPermissions:  t.JSONB{},
 		Config:          t.JSONB{},
 		LastActivity:    time.Now().Format(time.RFC3339),
@@ -163,6 +163,7 @@ func NewTelegramModel() *TelegramModel {
 func (t *TelegramModel) TableName() string { return "mcp_telegram_integrations" }
 
 // Basic getters and setters
+
 func (t *TelegramModel) GetID() string                           { return t.ID }
 func (t *TelegramModel) SetID(id string)                         { t.ID = id }
 func (t *TelegramModel) GetTelegramUserID() string               { return t.TelegramUserID }
@@ -181,6 +182,7 @@ func (t *TelegramModel) GetLanguageCode() string                 { return t.Lang
 func (t *TelegramModel) SetLanguageCode(languageCode string)     { t.LanguageCode = languageCode }
 
 // Type-specific getters and setters
+
 func (t *TelegramModel) GetUserType() TelegramUserType               { return t.UserType }
 func (t *TelegramModel) SetUserType(userType TelegramUserType)       { t.UserType = userType }
 func (t *TelegramModel) GetStatus() TelegramStatus                   { return t.Status }
@@ -191,6 +193,7 @@ func (t *TelegramModel) SetIntegrationType(integrationType TelegramIntegrationTy
 }
 
 // Telegram-specific getters and setters
+
 func (t *TelegramModel) GetChatID() string                     { return t.ChatID }
 func (t *TelegramModel) SetChatID(chatID string)               { t.ChatID = chatID }
 func (t *TelegramModel) GetChannelID() string                  { return t.ChannelID }
@@ -201,8 +204,8 @@ func (t *TelegramModel) GetBotToken() string                   { return t.BotTok
 func (t *TelegramModel) SetBotToken(botToken string)           { t.BotToken = botToken }
 func (t *TelegramModel) GetWebhookURL() string                 { return t.WebhookURL }
 func (t *TelegramModel) SetWebhookURL(webhookURL string)       { t.WebhookURL = webhookURL }
-func (t *TelegramModel) GetApiKey() string                     { return t.ApiKey }
-func (t *TelegramModel) SetApiKey(apiKey string)               { t.ApiKey = apiKey }
+func (t *TelegramModel) GetAPIKey() string                     { return t.APIKey }
+func (t *TelegramModel) SetAPIKey(apiKey string)               { t.APIKey = apiKey }
 func (t *TelegramModel) GetBotPermissions() t.JSONB            { return t.BotPermissions }
 func (t *TelegramModel) SetBotPermissions(permissions t.JSONB) { t.BotPermissions = permissions }
 func (t *TelegramModel) GetConfig() t.JSONB                    { return t.Config }
@@ -217,12 +220,14 @@ func (t *TelegramModel) SetLastActivity(lastActivity time.Time) {
 }
 
 // MCP integration getters and setters
+
 func (t *TelegramModel) GetUserID() string                   { return t.UserID }
 func (t *TelegramModel) SetUserID(userID string)             { t.UserID = userID }
 func (t *TelegramModel) GetTargetTaskID() string             { return t.TargetTaskID }
 func (t *TelegramModel) SetTargetTaskID(targetTaskID string) { t.TargetTaskID = targetTaskID }
 
 // Timestamp getters and setters
+
 func (t *TelegramModel) GetCreatedAt() time.Time {
 	createdAt, _ := time.Parse(time.RFC3339, t.CreatedAt)
 	return createdAt
@@ -243,6 +248,7 @@ func (t *TelegramModel) GetUpdatedBy() string          { return t.UpdatedBy }
 func (t *TelegramModel) SetUpdatedBy(updatedBy string) { t.UpdatedBy = updatedBy }
 
 // Validation method
+
 func (t *TelegramModel) Validate() error {
 	if t.TelegramUserID == "" {
 		return fmt.Errorf("telegram_user_id is required")

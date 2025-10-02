@@ -311,7 +311,7 @@ func (s *TelegramService) TestConnection(ctx context.Context, id string) error {
 		gl.Log("info", "Testing Telegram webhook connection", integration.ID)
 
 	case TelegramIntegrationTypeAPI:
-		if integration.ApiKey == "" {
+		if integration.APIKey == "" {
 			return errors.New("API key is required for testing API integration")
 		}
 		// Here you would implement actual API test

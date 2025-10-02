@@ -163,6 +163,7 @@ func NewMessageModel() *MessageModel {
 func (m *MessageModel) TableName() string { return "mcp_messages" }
 
 // Basic getters and setters
+
 func (m *MessageModel) GetID() string                           { return m.ID }
 func (m *MessageModel) SetID(id string)                         { m.ID = id }
 func (m *MessageModel) GetConversationID() string               { return m.ConversationID }
@@ -234,6 +235,7 @@ func (m *MessageModel) GetUserID() string       { return m.UserID }
 func (m *MessageModel) SetUserID(userID string) { m.UserID = userID }
 
 // Timestamp getters and setters
+
 func (m *MessageModel) GetCreatedAt() time.Time {
 	createdAt, _ := time.Parse(time.RFC3339, m.CreatedAt)
 	return createdAt
@@ -254,6 +256,7 @@ func (m *MessageModel) GetUpdatedBy() string          { return m.UpdatedBy }
 func (m *MessageModel) SetUpdatedBy(updatedBy string) { m.UpdatedBy = updatedBy }
 
 // Validation method
+
 func (m *MessageModel) Validate() error {
 	if m.ConversationID == "" {
 		return fmt.Errorf("conversation_id is required")

@@ -6,15 +6,18 @@ import (
 )
 
 // Conversation types
+
 type ConversationModel = m.ConversationModel
 type ConversationModelInterface = m.IConversationModel
 type ConversationRepo = m.IConversationRepo
 
 // Message types
+
 type MessageModel = m.MessageModel
 type MessageModelInterface = m.IMessageModel
 
 // Enum type aliases
+
 type ConversationStatus = m.ConversationStatus
 type ConversationType = m.ConversationType
 type Platform = m.Platform
@@ -23,6 +26,7 @@ type MessageType = m.MessageType
 type MessageDirection = m.MessageDirection
 
 // Platform constants
+
 const (
 	PlatformDiscord  = m.PlatformDiscord
 	PlatformTelegram = m.PlatformTelegram
@@ -32,6 +36,7 @@ const (
 )
 
 // Conversation status constants
+
 const (
 	ConversationStatusActive   = m.ConversationStatusActive
 	ConversationStatusInactive = m.ConversationStatusInactive
@@ -41,6 +46,7 @@ const (
 )
 
 // Conversation type constants
+
 const (
 	ConversationTypePrivate = m.ConversationTypePrivate
 	ConversationTypeGroup   = m.ConversationTypeGroup
@@ -50,6 +56,7 @@ const (
 )
 
 // Message status constants
+
 const (
 	MessageStatusSent      = m.MessageStatusSent
 	MessageStatusDelivered = m.MessageStatusDelivered
@@ -60,6 +67,7 @@ const (
 )
 
 // Message type constants
+
 const (
 	MessageTypeText     = m.MessageTypeText
 	MessageTypeImage    = m.MessageTypeImage
@@ -78,12 +86,14 @@ const (
 )
 
 // Message direction constants
+
 const (
 	MessageDirectionInbound  = m.MessageDirectionInbound
 	MessageDirectionOutbound = m.MessageDirectionOutbound
 )
 
 // Conversation functions
+
 func NewConversationRepo(db *gorm.DB) ConversationRepo {
 	return m.NewConversationRepository(db)
 }
@@ -93,6 +103,7 @@ func NewConversationModel() ConversationModelInterface {
 }
 
 // Message functions
+
 func NewMessageModel() MessageModelInterface {
 	return m.NewMessageModel()
 }

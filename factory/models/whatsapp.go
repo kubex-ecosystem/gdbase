@@ -11,6 +11,7 @@ type WhatsAppService = w.IWhatsAppService
 type WhatsAppRepo = w.IWhatsAppRepo
 
 // Type aliases for enums
+
 type WhatsAppUserType = w.WhatsAppUserType
 type WhatsAppStatus = w.WhatsAppStatus
 type WhatsAppIntegrationType = w.WhatsAppIntegrationType

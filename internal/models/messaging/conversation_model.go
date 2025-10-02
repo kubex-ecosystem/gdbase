@@ -137,6 +137,7 @@ func NewConversationModel() *ConversationModel {
 func (c *ConversationModel) TableName() string { return "mcp_conversations" }
 
 // Basic getters and setters
+
 func (c *ConversationModel) GetID() string                     { return c.ID }
 func (c *ConversationModel) SetID(id string)                   { c.ID = id }
 func (c *ConversationModel) GetPlatform() Platform             { return c.Platform }
@@ -180,6 +181,7 @@ func (c *ConversationModel) GetTargetTaskID() string             { return c.Targ
 func (c *ConversationModel) SetTargetTaskID(targetTaskID string) { c.TargetTaskID = targetTaskID }
 
 // Timestamp getters and setters
+
 func (c *ConversationModel) GetCreatedAt() time.Time {
 	createdAt, _ := time.Parse(time.RFC3339, c.CreatedAt)
 	return createdAt
@@ -200,6 +202,7 @@ func (c *ConversationModel) GetUpdatedBy() string          { return c.UpdatedBy 
 func (c *ConversationModel) SetUpdatedBy(updatedBy string) { c.UpdatedBy = updatedBy }
 
 // Validation method
+
 func (c *ConversationModel) Validate() error {
 	if c.Platform == "" {
 		return fmt.Errorf("platform is required")

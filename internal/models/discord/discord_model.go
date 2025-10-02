@@ -164,6 +164,7 @@ func NewDiscordModel() *DiscordModel {
 func (d *DiscordModel) TableName() string { return "mcp_discord_integrations" }
 
 // Basic getters and setters
+
 func (d *DiscordModel) GetID() string                         { return d.ID }
 func (d *DiscordModel) SetID(id string)                       { d.ID = id }
 func (d *DiscordModel) GetDiscordUserID() string              { return d.DiscordUserID }
@@ -182,6 +183,7 @@ func (d *DiscordModel) GetLocale() string                     { return d.Locale 
 func (d *DiscordModel) SetLocale(locale string)               { d.Locale = locale }
 
 // Type-specific getters and setters
+
 func (d *DiscordModel) GetUserType() DiscordUserType               { return d.UserType }
 func (d *DiscordModel) SetUserType(userType DiscordUserType)       { d.UserType = userType }
 func (d *DiscordModel) GetStatus() DiscordStatus                   { return d.Status }
@@ -192,6 +194,7 @@ func (d *DiscordModel) SetIntegrationType(integrationType DiscordIntegrationType
 }
 
 // Discord-specific getters and setters
+
 func (d *DiscordModel) GetGuildID() string                  { return d.GuildID }
 func (d *DiscordModel) SetGuildID(guildID string)           { d.GuildID = guildID }
 func (d *DiscordModel) GetChannelID() string                { return d.ChannelID }
@@ -227,12 +230,14 @@ func (d *DiscordModel) SetLastActivity(lastActivity time.Time) {
 }
 
 // MCP integration getters and setters
+
 func (d *DiscordModel) GetUserID() string                   { return d.UserID }
 func (d *DiscordModel) SetUserID(userID string)             { d.UserID = userID }
 func (d *DiscordModel) GetTargetTaskID() string             { return d.TargetTaskID }
 func (d *DiscordModel) SetTargetTaskID(targetTaskID string) { d.TargetTaskID = targetTaskID }
 
 // Timestamp getters and setters
+
 func (d *DiscordModel) GetCreatedAt() time.Time {
 	createdAt, _ := time.Parse(time.RFC3339, d.CreatedAt)
 	return createdAt
@@ -253,6 +258,7 @@ func (d *DiscordModel) GetUpdatedBy() string          { return d.UpdatedBy }
 func (d *DiscordModel) SetUpdatedBy(updatedBy string) { d.UpdatedBy = updatedBy }
 
 // Validation method
+
 func (d *DiscordModel) Validate() error {
 	if d.DiscordUserID == "" {
 		return fmt.Errorf("discord_user_id is required")

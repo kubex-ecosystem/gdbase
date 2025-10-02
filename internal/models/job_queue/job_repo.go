@@ -56,6 +56,7 @@ func NewJobQueueRepository(db *gorm.DB) IJobQueueRepo {
 }
 
 // Implement repository methods here
+
 func (repo *JobQueueRepository) Create(ctx context.Context, job *JobQueue) (*JobQueue, error) {
 	if err := repo.db.Create(job).Error; err != nil {
 		return nil, err

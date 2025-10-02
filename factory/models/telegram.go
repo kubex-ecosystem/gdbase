@@ -11,6 +11,7 @@ type TelegramService = t.ITelegramService
 type TelegramRepo = t.ITelegramRepo
 
 // Type aliases for enums
+
 type TelegramUserType = t.TelegramUserType
 type TelegramStatus = t.TelegramStatus
 type TelegramIntegrationType = t.TelegramIntegrationType

@@ -190,6 +190,7 @@ func (ds *DiscordService) GetDiscordOAuth2Integrations() ([]IDiscordModel, error
 }
 
 // Activity and status management
+
 func (ds *DiscordService) UpdateLastActivity(id string) error {
 	discord, err := ds.GetDiscordIntegrationByID(id)
 	if err != nil {
@@ -230,6 +231,7 @@ func (ds *DiscordService) SetDiscordIntegrationError(id string) error {
 }
 
 // Token management
+
 func (ds *DiscordService) UpdateAccessToken(id string, accessToken string, refreshToken string, expiresAt time.Time) error {
 	discord, err := ds.GetDiscordIntegrationByID(id)
 	if err != nil {
@@ -261,6 +263,7 @@ func (ds *DiscordService) IsTokenExpired(id string) (bool, error) {
 }
 
 // Configuration management
+
 func (ds *DiscordService) UpdateDiscordIntegrationConfig(id string, config t.JSONB) error {
 	discord, err := ds.GetDiscordIntegrationByID(id)
 	if err != nil {
@@ -282,6 +285,7 @@ func (ds *DiscordService) GetDiscordIntegrationConfig(id string) (t.JSONB, error
 }
 
 // Upsert operations
+
 func (ds *DiscordService) UpsertDiscordIntegrationByDiscordUserID(discordUserID string, discord IDiscordModel) (IDiscordModel, error) {
 	// Try to find existing integration by Discord User ID
 	existing, err := ds.repo.FindOne("discord_user_id = ?", discordUserID)

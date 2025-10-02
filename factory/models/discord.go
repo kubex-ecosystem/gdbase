@@ -11,11 +11,13 @@ type DiscordService = d.IDiscordService
 type DiscordRepo = d.IDiscordRepo
 
 // Type aliases for enums
+
 type DiscordUserType = d.DiscordUserType
 type DiscordStatus = d.DiscordStatus
 type DiscordIntegrationType = d.DiscordIntegrationType
 
 // Enum constants
+
 const (
 	DiscordUserTypeBot    = d.DiscordUserTypeBot
 	DiscordUserTypeUser   = d.DiscordUserTypeUser
