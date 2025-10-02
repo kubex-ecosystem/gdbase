@@ -350,6 +350,10 @@ func (d *DBService) RunMigrations(ctx context.Context, files map[string]string) 
 
 }
 
+func (d *DBService) GetProperties(ctx context.Context) map[string]any {
+	return d.properties
+}
+
 func connectDatabase(_ context.Context, dbType, dsn string) (*gorm.DB, error) {
 	// var dialector *sql.DB
 	var dialector *sql.DB
