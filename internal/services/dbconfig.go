@@ -274,31 +274,6 @@ func getPasswordFromKeyring(name string) (string, error) {
 	return base64.URLEncoding.EncodeToString([]byte(krPass)), nil
 }
 
-func GetConnectionString(dbConfig *ti.Database) string {
-	if dbConfig.ConnectionString != "" {
-		return dbConfig.ConnectionString
-	}
-	if dbConfig.Host != "" && dbConfig.Port != nil && dbConfig.Username != "" && dbConfig.Name != "" {
-		dbPass := dbConfig.Password
-		if dbPass == "" {
-			dbPassKey, dbPassErr := getPasswordFromKeyring("pgpass")
-			if dbPassErr != nil {
-				gl.Log("error", fmt.Sprintf("❌ Erro ao recuperar senha do banco de dados: %v", dbPassErr))
-			} else {
-				dbConfig.Password = string(dbPassKey)
-				dbPass = dbConfig.Password
-			}
-		}
-		return fmt.Sprintf(
-			"host=%s port=%s user=%s password=%s dbname=%s sslmode=disable TimeZone=America/Sao_Paulo",
-			// "host=%s port=%s user=%s dbname=%s sslmode=disable TimeZone=America/Sao_Paulo",
-			dbConfig.Host, dbConfig.Port.(string), dbConfig.Username, dbPass, dbConfig.Name,
-			// dbConfig.Host, dbConfig.Port.(string), dbConfig.Username /* dbPass, */, dbConfig.Name,
-		)
-	}
-	return ""
-}
-
 func (d *DBConfig) GetDBName() string {
 	if d == nil {
 		return ""

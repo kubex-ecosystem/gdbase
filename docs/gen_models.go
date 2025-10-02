@@ -90,7 +90,7 @@ func initDB() (*gorm.DB, *sql.DB, error) {
 		return nil, nil, err
 	}
 	// Get database configuration
-	db, err := dbService.GetDB(context.Background())
+	db, err := dbService.GetDB(context.Background(), "postgresql")
 	if err != nil {
 		gl.Log("fatal", fmt.Sprintf("Error getting database: %v", err))
 		return nil, nil, err

@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"math/rand"
 	"os"
 	"time"
 
@@ -28,16 +29,16 @@ import (
 type IDBService interface {
 	Initialize(ctx context.Context) error
 	InitializeFromEnv(ctx context.Context, env ci.IEnvironment) error
-	GetDB(ctx context.Context) (*gorm.DB, error)
-	CloseDBConnection(ctx context.Context) error
-	CheckDatabaseHealth(ctx context.Context) error
+	GetDB(ctx context.Context, dbName string) (*gorm.DB, error)
+	CloseDBConnection(ctx context.Context, dbName string) error
+	CheckDatabaseHealth(ctx context.Context, dbName string) error
 	GetConnection(ctx context.Context, database string, timeout time.Duration) (*sql.Conn, error)
-	IsConnected(ctx context.Context) error
-	Reconnect(ctx context.Context) error
-	GetName(ctx context.Context) (string, error)
-	GetHost(ctx context.Context) (string, error)
+	IsConnected(ctx context.Context, dbName string) error
+	Reconnect(ctx context.Context, dbName string) error
+	GetName(ctx context.Context, dbName string) (string, error)
+	GetHost(ctx context.Context, dbName string) (string, error)
 	GetConfig(ctx context.Context) IDBConfig
-	RunMigrations(ctx context.Context, files map[string]string) (int, int, error)
+	RunMigrations(ctx context.Context, dbName string, files map[string]string) (int, int, error)
 }
 
 type DBService struct {
@@ -45,7 +46,7 @@ type DBService struct {
 	reference ci.IReference
 	mutexes   ci.IMutexes
 
-	db   *gorm.DB
+	db   map[string]*gorm.DB
 	pool *sync.Pool
 
 	config *DBConfig
@@ -54,7 +55,7 @@ type DBService struct {
 	properties map[string]any
 }
 
-func newDatabaseService(ctx context.Context, config *DBConfig, logger l.Logger) (*DBService, error) {
+func newDatabaseService(_ context.Context, config *DBConfig, logger l.Logger) (*DBService, error) {
 	if logger == nil {
 		logger = l.GetLogger("GDBase")
 	}
@@ -64,6 +65,43 @@ func newDatabaseService(ctx context.Context, config *DBConfig, logger l.Logger) 
 	}
 	if len(config.Databases) == 0 {
 		return nil, fmt.Errorf("❌ Configuração de banco de dados não pode ser vazia")
+	}
+
+	dbService := &DBService{
+		Logger:     logger,
+		reference:  ti.NewReference("DBService"),
+		mutexes:    ti.NewMutexesType(),
+		properties: make(map[string]any),
+		pool:       &sync.Pool{},
+		db:         make(map[string]*gorm.DB),
+	}
+	dbService.config = config
+	dbService.properties["config"] = ti.NewProperty("config", &config, true, nil)
+
+	return dbService, nil
+}
+
+func NewDatabaseService(ctx context.Context, config *DBConfig, logger l.Logger) (*DBService, error) {
+	return newDatabaseService(ctx, config, logger)
+}
+
+func (d *DBService) Initialize(ctx context.Context) error {
+	if d == nil {
+		return fmt.Errorf("❌ Serviço de banco de dados não inicializado")
+	}
+	if d.db != nil {
+		d.db = make(map[string]*gorm.DB)
+	}
+	config := d.config
+	if config == nil {
+		cfgT := d.properties["config"].(*ti.Property[*DBConfig])
+		if cfgT == nil {
+			return fmt.Errorf("❌ Erro ao recuperar a configuração do banco de dados (propriedade nula)")
+		}
+		config = cfgT.GetValue()
+		if config == nil {
+			return fmt.Errorf("❌ Erro ao recuperar a configuração do banco de dados (valor nulo)")
+		}
 	}
 
 	//driver = db.Driver // Pro futuro.. rs
@@ -106,67 +144,29 @@ func newDatabaseService(ctx context.Context, config *DBConfig, logger l.Logger) 
 		}
 	}
 
-	dbService := &DBService{
-		Logger:     logger,
-		reference:  ti.NewReference("DBService"),
-		mutexes:    ti.NewMutexesType(),
-		properties: make(map[string]any),
-		pool:       &sync.Pool{},
-	}
-
-	dbService.config = config
-
-	dbService.properties["name"] = ti.NewProperty("name", &dbName, true, nil)
-	dbService.properties["host"] = ti.NewProperty("host", &dbHost, true, nil)
-	dbService.properties["config"] = ti.NewProperty("config", &config, true, nil)
-
-	if db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{}); err != nil {
-		return nil, fmt.Errorf("❌ Erro ao conectar ao banco de dados: %v", err)
-	} else {
-		dbService.db = db
-	}
-
-	return dbService, nil
-}
-
-func NewDatabaseService(ctx context.Context, config *DBConfig, logger l.Logger) (IDBService, error) {
-	return newDatabaseService(ctx, config, logger)
-}
-
-func (d *DBService) Initialize(ctx context.Context) error {
-	if d == nil {
-		return fmt.Errorf("❌ Serviço de banco de dados não inicializado")
-	}
-	if d.db != nil {
-		return nil
-	}
-	cfgT := d.properties["config"].(*ti.Property[*DBConfig])
-	if cfgT == nil {
-		return fmt.Errorf("❌ Erro ao recuperar a configuração do banco de dados")
-	}
-	config := cfgT.GetValue()
-	if config == nil {
-		return fmt.Errorf("❌ Erro ao recuperar a configuração do banco de dados")
-	}
-
+	// Conecta (Databases habilitados)
 	for _, dbConfig := range config.Databases {
-		if dbConfig.Type == "" || !dbConfig.Enabled {
+		if dbConfig.Enabled {
+			db, _, err := connectDatabase(ctx, dbConfig)
+			if err != nil {
+				gl.Log("error", fmt.Sprintf("❌ Erro ao conectar ao banco de dados '%s': %v", dbConfig.Name, err))
+				continue
+			}
+			d.db[dbConfig.Name] = db
 			continue
-		}
-		dsn := GetConnectionString(dbConfig)
-		if dsn == "" {
-			continue
-		}
-		if db, err := connectDatabase(context.Background(), dbConfig.Type, dsn); err != nil {
-			return fmt.Errorf("❌ Erro ao conectar ao banco de dados: %v", err)
-		} else {
-			d.db = db
-			break
 		}
 	}
 
-	if d.db == nil {
-		return fmt.Errorf("❌ Erro ao conectar ao banco de dados: configuração inválida")
+	// Conecta (Messagery habilitados)
+	if config.Messagery != nil {
+		if config.Messagery.RabbitMQ.Enabled {
+			// Implementar conexão com RabbitMQ se necessário
+			gl.Log("info", "RabbitMQ habilitado")
+		}
+		if config.Messagery.Redis.Enabled {
+			// Implementar conexão com Redis se necessário
+			gl.Log("info", "Redis habilitado")
+		}
 	}
 
 	return nil
@@ -222,27 +222,52 @@ func (d *DBService) InitializeFromEnv(ctx context.Context, env ci.IEnvironment) 
 		return fmt.Errorf("❌ Erro ao conectar ao banco de dados: %v", err)
 	}
 	defer conn.Close()
-	d.db = db
+	d.db[databaseConfig.Name] = db
 	return nil
 }
 
-func (d *DBService) GetDB(ctx context.Context) (*gorm.DB, error) {
+func (d *DBService) GetDB(ctx context.Context, dbName string) (*gorm.DB, error) {
+	if d == nil {
+		return nil, fmt.Errorf("❌ Serviço de banco de dados não inicializado")
+	}
 	if d.db == nil {
 		return nil, fmt.Errorf("❌ Banco de dados não inicializado")
 	}
-	return d.db, nil
+	if d.config == nil {
+		return nil, fmt.Errorf("❌ Database Service não configurado")
+	}
+	if dbName == "" {
+		return nil, fmt.Errorf("❌ Nome do banco de dados não pode ser vazio")
+	}
+	if db, exists := d.db[dbName]; !exists {
+		return nil, fmt.Errorf("❌ Banco de dados '%s' não encontrado", dbName)
+	} else {
+		if db == nil {
+			return nil, fmt.Errorf("❌ Banco de dados '%s' não disponível", dbName)
+		}
+		return db, nil
+	}
+
 }
 
-func (d *DBService) CloseDBConnection(ctx context.Context) error {
-	sqlDB, err := d.db.DB()
+func (d *DBService) CloseDBConnection(ctx context.Context, dbName string) error {
+	db, err := d.GetDB(ctx, dbName)
+	if err != nil {
+		return fmt.Errorf("❌ Erro ao obter banco de dados: %v", err)
+	}
+	sqlDB, err := db.DB()
 	if err != nil {
 		return fmt.Errorf("❌ Erro ao obter conexão SQL: %v", err)
 	}
 	return sqlDB.Close()
 }
 
-func (d *DBService) CheckDatabaseHealth(ctx context.Context) error {
-	if err := d.db.Raw("SELECT 1").Error; err != nil {
+func (d *DBService) CheckDatabaseHealth(ctx context.Context, dbName string) error {
+	db, err := d.GetDB(ctx, dbName)
+	if err != nil {
+		return fmt.Errorf("❌ Erro ao obter banco de dados: %v", err)
+	}
+	if err := db.Raw("SELECT 1").Error; err != nil {
 		return fmt.Errorf("❌ Banco de dados offline: %v", err)
 	}
 	return nil
@@ -284,19 +309,25 @@ func (d *DBService) GetConnection(ctx context.Context, database string, timeout 
 	return conn, nil
 }
 
-func (d *DBService) IsConnected(ctx context.Context) error {
-	if d.db == nil {
-		return fmt.Errorf("❌ Banco de dados não inicializado")
+func (d *DBService) IsConnected(ctx context.Context, dbName string) error {
+	db, err := d.GetDB(ctx, dbName)
+	if err != nil {
+		return fmt.Errorf("❌ Erro ao obter banco de dados: %v", err)
 	}
-	if err := d.db.Raw("SELECT 1").Error; err != nil {
+	if err := db.Raw("SELECT 1").Error; err != nil {
 		return fmt.Errorf("❌ Banco de dados offline: %v", err)
 	}
 	return nil
 }
 
-func (d *DBService) Reconnect(ctx context.Context) error {
-	if d.db != nil {
-		sqlDB, err := d.db.DB()
+func (d *DBService) Reconnect(ctx context.Context, dbName string) error {
+	var err error
+	db, err := d.GetDB(ctx, dbName)
+	if err != nil {
+		return fmt.Errorf("❌ Erro ao obter banco de dados: %v", err)
+	}
+	if db != nil {
+		sqlDB, err := db.DB()
 		if err != nil {
 			return fmt.Errorf("❌ Erro ao obter conexão SQL: %v", err)
 		}
@@ -305,16 +336,21 @@ func (d *DBService) Reconnect(ctx context.Context) error {
 		}
 	}
 
-	db, err := d.GetDB(ctx)
+	dbConfig := d.config.Databases[dbName]
+	if dbConfig == nil {
+		return fmt.Errorf("❌ Configuração do banco de dados '%s' não encontrada", dbName)
+	}
+
+	db, _, err = waitAndConnect(context.Background(), dbConfig, 1*time.Minute)
 	if err != nil {
 		return fmt.Errorf("❌ Erro ao obter banco de dados: %v", err)
 	}
 
-	d.db = db
+	d.db[dbName] = db
 	return nil
 }
 
-func (d *DBService) GetName(ctx context.Context) (string, error) {
+func (d *DBService) GetName(ctx context.Context, dbName string) (string, error) {
 	if d.db == nil {
 		return "", fmt.Errorf("❌ Banco de dados não inicializado")
 	}
@@ -329,7 +365,7 @@ func (d *DBService) GetName(ctx context.Context) (string, error) {
 	return vl, nil
 }
 
-func (d *DBService) GetHost(ctx context.Context) (string, error) {
+func (d *DBService) GetHost(ctx context.Context, dbName string) (string, error) {
 	if d.db == nil {
 		return "", fmt.Errorf("❌ Banco de dados não inicializado")
 	}
@@ -351,11 +387,11 @@ func (d *DBService) GetConfig(ctx context.Context) IDBConfig {
 	return d.config
 }
 
-func (d *DBService) RunMigrations(ctx context.Context, files map[string]string) (int, int, error) {
+func (d *DBService) RunMigrations(ctx context.Context, dbName string, files map[string]string) (int, int, error) {
 	if d.db == nil {
 		return 0, 0, fmt.Errorf("❌ Banco de dados não inicializado")
 	}
-	sqlDB, err := d.db.DB()
+	sqlDB, err := d.db[dbName].DB()
 	if err != nil {
 		return 0, 0, fmt.Errorf("❌ Erro ao obter conexão SQL: %v", err)
 	}
@@ -373,40 +409,47 @@ func (d *DBService) GetProperties(ctx context.Context) map[string]any {
 	return d.properties
 }
 
-func connectDatabase(_ context.Context, dbType, dsn string) (*gorm.DB, error) {
+// connectDatabase conecta ao banco de dados e retorna a instância do GORM
+// Retorna também um booleano indicando se a conexão foi bem-sucedida
+// e um erro caso ocorra algum problema durante a conexão
+// Retorna:
+// - *gorm.DB: instância do GORM conectada ao banco de dados
+// - bool: Indica se é uma conexão válida
+// - error: erro caso ocorra algum problema durante a conexão
+func connectDatabase(_ context.Context, config *ti.Database) (*gorm.DB, bool, error) {
 	// var dialector *sql.DB
 	var dialector *sql.DB
 	var err error
 	// Abre a conexão SQL padrão
-	switch dbType {
+	switch config.Type {
 	case "mysql":
-		dialector, err = sql.Open("mysql", dsn)
+		dialector, err = sql.Open("mysql", GetConnectionString(config))
 	case "postgres", "postgresql":
-		dialector, err = sql.Open("postgres", dsn)
+		dialector, err = sql.Open("postgres", GetConnectionString(config))
 	case "sqlite":
-		dialector, err = sql.Open("sqlite", dsn)
+		dialector, err = sql.Open("sqlite", GetConnectionString(config))
 	case "mariadb":
-		dialector, err = sql.Open("mariadb", dsn)
+		dialector, err = sql.Open("mariadb", GetConnectionString(config))
 	case "sqlserver":
-		dialector, err = sql.Open("sqlserver", dsn) // Implementar quando necessário
+		dialector, err = sql.Open("sqlserver", GetConnectionString(config))
 	case "oracle":
 		// dialector = oracle.Open(dsn) // Implementar quando necessário
-		return nil, fmt.Errorf("banco de dados Oracle não suportado no momento")
+		return nil, false, fmt.Errorf("banco de dados Oracle não suportado no momento")
 	case "mongodb":
-		return nil, fmt.Errorf("banco de dados MongoDB não suportado pelo GORM")
+		return nil, false, fmt.Errorf("banco de dados MongoDB não suportado pelo GORM")
 	case "redis":
-		return nil, fmt.Errorf("banco de dados Redis não suportado pelo GORM")
+		return nil, false, fmt.Errorf("banco de dados Redis não suportado pelo GORM")
 	case "rabbitmq":
-		return nil, fmt.Errorf("RabbitMQ não é um banco de dados suportado pelo GORM")
+		return nil, false, fmt.Errorf("RabbitMQ não é um banco de dados suportado pelo GORM")
 	default:
-		return nil, fmt.Errorf("banco de dados não suportado: %s", dbType)
+		return nil, false, fmt.Errorf("banco de dados não suportado: %s", config.Type)
 	}
 	if err != nil {
-		return nil, fmt.Errorf("❌ Erro ao abrir conexão SQL: %v", err)
+		return nil, true, fmt.Errorf("❌ Erro ao abrir conexão SQL: %v", err)
 	}
 
 	var gormDialector gorm.Dialector
-	switch dbType {
+	switch config.Type {
 	case "mysql":
 		gormDialector = mysql.New(mysql.Config{
 			Conn:                      dialector,
@@ -431,82 +474,130 @@ func connectDatabase(_ context.Context, dbType, dsn string) (*gorm.DB, error) {
 			Conn: dialector,
 		})
 	default:
-		return nil, fmt.Errorf("banco de dados não suportado: %s", dbType)
+		return nil, false, fmt.Errorf("banco de dados não suportado: %s", config.Type)
 	}
 
 	db, err := gorm.Open(gormDialector, &gorm.Config{})
 	if err != nil {
-		return nil, fmt.Errorf("❌ Erro ao conectar ao banco de dados: %v", err)
+		return nil, true, fmt.Errorf("❌ Erro ao conectar ao banco de dados: %v", err)
 	}
 
 	sqlDB, err := db.DB()
 	if err != nil {
-		return nil, fmt.Errorf("❌ Erro ao obter conexão SQL: %v", err)
+		return nil, true, fmt.Errorf("❌ Erro ao obter conexão SQL: %v", err)
 	}
-
-	// Configurações opcionais de pool de conexões
-	// sqlDB.SetMaxIdleConns(10)
-	// sqlDB.SetMaxOpenConns(100)
-	// sqlDB.SetConnMaxLifetime(0)
 
 	// Testa a conexão
 	if err := sqlDB.Ping(); err != nil {
-		return nil, fmt.Errorf("❌ Erro ao pingar o banco de dados: %v", err)
+		return nil, true, fmt.Errorf("❌ Erro ao pingar o banco de dados: %v", err)
 	}
 
-	return db, nil
+	return db, true, nil
 }
 
 // waitAndConnect aguarda PostgreSQL estar pronto e retorna conexão
 func waitAndConnect(ctx context.Context, cfg *ti.Database, maxWait time.Duration) (*gorm.DB, *sql.Conn, error) {
-	maxAttempts := 5
-	retryInterval := 5 * time.Second
+	// Configuração inteligente de retry
+	baseRetryInterval := 2 * time.Second // Base menor, mais responsivo
+	maxRetryInterval := 10 * time.Second // Limite máximo
+	maxAttempts := 5                     // Padrão conservador
+
 	if maxWait > 0 {
-		maxAttempts = int(maxWait / retryInterval)
-		if maxAttempts < 1 {
-			maxAttempts = 1
+		// Calcula tentativas baseado no tempo total disponível
+		maxAttempts = int(maxWait / baseRetryInterval)
+		if maxAttempts < 3 {
+			maxAttempts = 3 // Mínimo de 3 tentativas
+		}
+		if maxAttempts > 15 {
+			maxAttempts = 15 // Máximo de 15 tentativas
 		}
 	}
 
-	gl.Log("debug", fmt.Sprintf("⏳ Aguardando PostgreSQL ficar pronto (até %d tentativas em %v)...", maxAttempts, maxAttempts*int(retryInterval.Seconds())))
+	gl.Log("debug", fmt.Sprintf("⏳ Aguardando PostgreSQL ficar pronto (até %d tentativas)...", maxAttempts))
 
 	for attempt := 1; attempt <= maxAttempts; attempt++ {
-		db, err := connectDatabase(ctx, "postgresql", cfg.ConnectionString)
+		db, _, err := connectDatabase(ctx, cfg)
 		if err != nil {
-			gl.Log("debug", fmt.Sprintf("Tentativa %d/%d: falha ao conectar: %v", attempt, maxAttempts, err))
-			time.Sleep(retryInterval)
+			// Exponential backoff com jitter
+			retryDelay := calculateBackoff(attempt, baseRetryInterval, maxRetryInterval)
+			gl.Log("debug", fmt.Sprintf("Tentativa %d/%d: falha ao conectar: %v (retry em %v)", attempt, maxAttempts, err, retryDelay))
+			time.Sleep(retryDelay)
 			continue
 		}
 
 		sqlDB, err := db.DB()
 		if err != nil {
-			gl.Log("debug", fmt.Sprintf("Tentativa %d/%d: falha ao obter DB: %v", attempt, maxAttempts, err))
-			time.Sleep(retryInterval)
+			retryDelay := calculateBackoff(attempt, baseRetryInterval, maxRetryInterval)
+			gl.Log("debug", fmt.Sprintf("Tentativa %d/%d: falha ao obter DB: %v (retry em %v)", attempt, maxAttempts, err, retryDelay))
+			time.Sleep(retryDelay)
 			continue
 		}
 
 		conn, err := sqlDB.Conn(ctx)
 		if err != nil {
-			gl.Log("debug", fmt.Sprintf("Tentativa %d/%d: falha ao obter conexão: %v", attempt, maxAttempts, err))
-			time.Sleep(retryInterval)
+			sqlDB.Close()
+			retryDelay := calculateBackoff(attempt, baseRetryInterval, maxRetryInterval)
+			gl.Log("debug", fmt.Sprintf("Tentativa %d/%d: falha ao obter conexão: %v (retry em %v)", attempt, maxAttempts, err, retryDelay))
+			time.Sleep(retryDelay)
 			continue
 		}
-		defer conn.Close()
 
-		pingCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
-		if err := conn.PingContext(pingCtx); err != nil {
+		// Beauty sleep pra PostgreSQL acordar completamente
+		time.Sleep(500 * time.Millisecond)
+
+		// Ping com retry interno curto (2 tentativas)
+		pingSuccess := false
+		for pingAttempt := 1; pingAttempt <= 2; pingAttempt++ {
+			pingCtx, cancel := context.WithTimeout(ctx, 3*time.Second)
+			if err := conn.PingContext(pingCtx); err != nil {
+				cancel()
+				if pingAttempt == 2 {
+					// Última tentativa de ping falhou
+					conn.Close()
+					sqlDB.Close()
+					retryDelay := calculateBackoff(attempt, baseRetryInterval, maxRetryInterval)
+					gl.Log("debug", fmt.Sprintf("Tentativa %d/%d: falha ao pingar conexão após %d tentativas: %v (retry em %v)",
+						attempt, maxAttempts, pingAttempt, err, retryDelay))
+					time.Sleep(retryDelay)
+					break
+				}
+				cancel()
+				time.Sleep(500 * time.Millisecond) // Pequeno delay entre pings
+				continue
+			}
 			cancel()
-			gl.Log("debug", fmt.Sprintf("Tentativa %d/%d: falha ao pingar conexão: %v", attempt, maxAttempts, err))
-			time.Sleep(retryInterval)
-			continue
+			pingSuccess = true
+			break
 		}
-		cancel()
 
-		gl.Log("info", fmt.Sprintf("✅ PostgreSQL pronto (tentativa %d/%d)", attempt, maxAttempts))
-		return db, conn, nil
+		if pingSuccess {
+			gl.Log("info", fmt.Sprintf("✅ PostgreSQL pronto (tentativa %d/%d)", attempt, maxAttempts))
+			return db, conn, nil
+		}
 	}
 
-	return nil, nil, fmt.Errorf("PostgreSQL não ficou pronto após %d tentativas em %v", maxAttempts, maxAttempts*int(retryInterval.Seconds()))
+	return nil, nil, fmt.Errorf("PostgreSQL não ficou pronto após %d tentativas", maxAttempts)
+}
+
+// calculateBackoff calcula delay com exponential backoff + jitter
+func calculateBackoff(attempt int, baseInterval, maxInterval time.Duration) time.Duration {
+	// Exponential: 2s, 4s, 8s, 16s...
+	backoff := baseInterval * time.Duration(1<<uint(attempt-1))
+
+	// Limita ao máximo
+	if backoff > maxInterval {
+		backoff = maxInterval
+	}
+
+	// Adiciona jitter (aleatoriedade de ±25%)
+	jitter := time.Duration(rand.Int63n(int64(backoff) / 2)) // 0 a 50% do backoff
+	if rand.Intn(2) == 0 {
+		backoff += jitter / 2 // +0 a 25%
+	} else {
+		backoff -= jitter / 2 // -0 a 25%
+	}
+
+	return backoff
 }
 
 // GetOrGenPasswordKeyringPass retrieves the password from the keyring or generates a new one if it doesn't exist
@@ -582,4 +673,29 @@ func storeKeyringPassword(name string, pass []byte) (string, error) {
 
 	// Return the encoded password to be used by the caller/logic outside this package
 	return encodedPass, nil
+}
+
+func GetConnectionString(dbConfig *ti.Database) string {
+	if dbConfig.ConnectionString != "" {
+		return dbConfig.ConnectionString
+	}
+	if dbConfig.Host != "" && dbConfig.Port != nil && dbConfig.Username != "" && dbConfig.Name != "" {
+		dbPass := dbConfig.Password
+		if dbPass == "" {
+			dbPassKey, dbPassErr := getPasswordFromKeyring("pgpass")
+			if dbPassErr != nil {
+				gl.Log("error", fmt.Sprintf("❌ Erro ao recuperar senha do banco de dados: %v", dbPassErr))
+			} else {
+				dbConfig.Password = string(dbPassKey)
+				dbPass = dbConfig.Password
+			}
+		}
+		return fmt.Sprintf(
+			"host=%s port=%s user=%s password=%s dbname=%s sslmode=disable TimeZone=America/Sao_Paulo",
+			// "host=%s port=%s user=%s dbname=%s sslmode=disable TimeZone=America/Sao_Paulo",
+			dbConfig.Host, dbConfig.Port.(string), dbConfig.Username, dbPass, dbConfig.Name,
+			// dbConfig.Host, dbConfig.Port.(string), dbConfig.Username /* dbPass, */, dbConfig.Name,
+		)
+	}
+	return ""
 }

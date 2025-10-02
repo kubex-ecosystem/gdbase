@@ -43,12 +43,9 @@ type ProvidersModel struct {
 
 func NewProvidersModel() *ProvidersModel {
 	return &ProvidersModel{
-		ID:         "",
-		Provider:   "",
-		OrgOrGroup: "",
-		Config:     make(t.JSONB),
-		CreatedAt:  time.Now().Format(time.RFC3339),
-		UpdatedAt:  time.Now().Format(time.RFC3339),
+		Config:    *t.NewJSONBData().(*t.JSONB),
+		CreatedAt: time.Now().Format(time.RFC3339),
+		UpdatedAt: time.Now().Format(time.RFC3339),
 	}
 }
 

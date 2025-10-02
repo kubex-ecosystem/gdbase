@@ -23,7 +23,7 @@ type IDBConfig interface {
 }
 type DBConfigImpl = svc.DBConfig
 
-func NewDatabaseService(ctx context.Context, config *DBConfigImpl, logger l.Logger) (DBService, error) {
+func NewDatabaseService(ctx context.Context, config *DBConfigImpl, logger l.Logger) (*DBServiceImpl, error) {
 	return svc.NewDatabaseService(ctx, config, logger)
 }
 
