@@ -238,15 +238,32 @@ func (d *DBService) GetDB(ctx context.Context, dbName string) (*gorm.DB, error) 
 	if dbName == "" {
 		return nil, fmt.Errorf("❌ Nome do banco de dados não pode ser vazio")
 	}
-	if db, exists := d.db[dbName]; !exists {
-		return nil, fmt.Errorf("❌ Banco de dados '%s' não encontrado", dbName)
-	} else {
-		if db == nil {
-			return nil, fmt.Errorf("❌ Banco de dados '%s' não disponível", dbName)
-		}
+
+	var err error
+	db, exists := d.db[dbName]
+	if exists && db != nil {
 		return db, nil
 	}
 
+	// Se não existir, tenta conectar
+	var dbConfig *ti.Database
+	for _, cfg := range d.config.Databases {
+		if cfg.Name == dbName && cfg.Enabled {
+			dbConfig = cfg
+			break
+		}
+	}
+	if dbConfig == nil {
+		return nil, fmt.Errorf("❌ Configuração do banco de dados '%s' não encontrada", dbName)
+	}
+	db, _, err = connectDatabase(ctx, dbConfig)
+	if err != nil {
+		return nil, fmt.Errorf("❌ Erro ao conectar ao banco de dados '%s': %v", dbName, err)
+	}
+
+	// Armazena a conexão no cache
+	d.db[dbName] = db
+	return db, nil
 }
 
 func (d *DBService) CloseDBConnection(ctx context.Context, dbName string) error {

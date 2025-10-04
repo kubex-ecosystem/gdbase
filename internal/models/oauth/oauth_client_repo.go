@@ -1,10 +1,12 @@
 package oauth
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/google/uuid"
 	gl "github.com/kubex-ecosystem/gdbase/internal/module/logger"
+	svc "github.com/kubex-ecosystem/gdbase/internal/services"
 	"gorm.io/gorm"
 )
 
@@ -26,12 +28,21 @@ type OAuthClientRepo struct {
 }
 
 // NewOAuthClientRepo creates a new OAuth client repository
-func NewOAuthClientRepo(db *gorm.DB) IOAuthClientRepo {
-	if db == nil {
-		gl.Log("error", "OAuthClientRepo: gorm DB is nil")
+func NewOAuthClientRepo(ctx context.Context, dbService *svc.DBService, dbName string) IOAuthClientRepo {
+	if dbService == nil {
+		gl.Log("error", "OAuthClientRepo: dbService is nil")
 		return nil
 	}
-	return &OAuthClientRepo{db: db}
+	db, err := dbService.GetDB(ctx, dbName)
+	if err != nil {
+		gl.Log("error", fmt.Sprintf("OAuthClientRepo: failed to get db: %v", err))
+		return nil
+	}
+	if db == nil {
+		gl.Log("error", "OAuthClientRepo: db is nil")
+		return nil
+	}
+	return &OAuthClientRepo{db}
 }
 
 func (r *OAuthClientRepo) TableName() string {

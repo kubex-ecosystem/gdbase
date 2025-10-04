@@ -2,8 +2,10 @@
 package models
 
 import (
+	"context"
+
 	oauth "github.com/kubex-ecosystem/gdbase/internal/models/oauth"
-	"gorm.io/gorm"
+	svc "github.com/kubex-ecosystem/gdbase/internal/services"
 )
 
 // OAuth Client type aliases - exported for external use
@@ -35,8 +37,8 @@ func NewOAuthClientModel(clientID, clientName string, redirectURIs, scopes []str
 }
 
 // NewOAuthClientRepo creates a new OAuth client repository
-func NewOAuthClientRepo(db *gorm.DB) OAuthClientRepo {
-	return oauth.NewOAuthClientRepo(db)
+func NewOAuthClientRepo(ctx context.Context, dbService *svc.DBService, dbName string) OAuthClientRepo {
+	return oauth.NewOAuthClientRepo(ctx, dbService, dbName)
 }
 
 // NewOAuthClientService creates a new OAuth client service
@@ -57,7 +59,17 @@ func NewAuthCodeModel(code, clientID, userID, redirectURI, codeChallenge, method
 }
 
 // NewAuthCodeRepo creates a new authorization code repository
-func NewAuthCodeRepo(db *gorm.DB) AuthCodeRepo {
+func NewAuthCodeRepo(ctx context.Context, dbService *svc.DBService, dbName string) AuthCodeRepo {
+	if dbService == nil {
+		return nil
+	}
+	db, err := dbService.GetDB(ctx, dbName)
+	if err != nil {
+		return nil
+	}
+	if db == nil {
+		return nil
+	}
 	return oauth.NewAuthCodeRepo(db)
 }
 
