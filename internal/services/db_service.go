@@ -14,9 +14,8 @@ import (
 	crp "github.com/kubex-ecosystem/gdbase/internal/security/crypto"
 	krs "github.com/kubex-ecosystem/gdbase/internal/security/external"
 
-	glb "github.com/kubex-ecosystem/gdbase/internal/globals"
 	ci "github.com/kubex-ecosystem/gdbase/internal/interfaces"
-	gl "github.com/kubex-ecosystem/gdbase/internal/module/logger"
+	gl "github.com/kubex-ecosystem/gdbase/internal/module/kbx"
 	ti "github.com/kubex-ecosystem/gdbase/internal/types"
 	l "github.com/kubex-ecosystem/logz"
 	"gorm.io/driver/mysql"
@@ -117,7 +116,7 @@ func (d *DBService) Initialize(ctx context.Context) error {
 			if dbConfig.Type != "postgresql" {
 				dbPass = dbConfig.Password
 				if dbPass == "" {
-					dbPassKey, dbPassErr := glb.GetOrGenPasswordKeyringPass("pgpass")
+					dbPassKey, dbPassErr := gl.GetOrGenPasswordKeyringPass("pgpass")
 					if dbPassErr != nil {
 						gl.Log("error", fmt.Sprintf("❌ Erro ao recuperar senha do banco de dados: %v", dbPassErr))
 						continue

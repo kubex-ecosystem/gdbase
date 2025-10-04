@@ -11,6 +11,7 @@ import (
 	"time"
 
 	ds "github.com/docker/docker/api/types/container"
+	cf "github.com/kubex-ecosystem/gdbase/internal/bootstrap"
 
 	"github.com/docker/docker/client"
 	nl "github.com/docker/docker/libnetwork/netlabel"
@@ -23,11 +24,9 @@ import (
 // The default database is implemented in PostgreSQL and can provide a simple, but complete
 // database for working with almost any comercial scenario for products selling.
 
-//go:embed all:assets
-var initDBSQLFiles embed.FS
-
 var (
 	containersCache map[string]*Services
+	initDBSQLFiles  embed.FS = cf.MigrationFiles
 )
 
 // Services represents a Docker service configuration.

@@ -3,6 +3,7 @@ package kbx
 
 import (
 	"os"
+	"reflect"
 
 	gl "github.com/kubex-ecosystem/gdbase/internal/module/logger"
 	l "github.com/kubex-ecosystem/logz"
@@ -39,4 +40,12 @@ func GetEnvOrDefault(key, defaultValue string) string {
 		return defaultValue
 	}
 	return value
+}
+
+func GetValueOrDefault[T any](value T, defaultValue T) (T, reflect.Type) {
+	v := any(value)
+	if v == nil {
+		return defaultValue, reflect.TypeOf(v)
+	}
+	return value, reflect.TypeFor[T]()
 }

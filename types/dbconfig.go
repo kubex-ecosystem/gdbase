@@ -9,11 +9,16 @@ import (
 )
 
 const (
-	DefaultVolumesDir     = "$HOME/.kubex/volumes"
-	DefaultRedisVolume    = "$HOME/.kubex/volumes/redis"
-	DefaultPostgresVolume = "$HOME/.kubex/volumes/postgresql"
-	DefaultMongoVolume    = "$HOME/.kubex/volumes/mongo"
-	DefaultRabbitMQVolume = "$HOME/.kubex/volumes/rabbitmq"
+	// DefaultConfigDir is the default directory for configuration files
+	DefaultConfigDir = svc.DefaultConfigDir
+
+	// DefaultConfigFile is the default configuration file path
+	DefaultConfigFile     = svc.DefaultConfigFile
+	DefaultVolumesDir     = svc.DefaultVolumesDir
+	DefaultRedisVolume    = svc.DefaultRedisVolume
+	DefaultPostgresVolume = svc.DefaultPostgresVolume
+	DefaultMongoVolume    = svc.DefaultMongoVolume
+	DefaultRabbitMQVolume = svc.DefaultRabbitMQVolume
 )
 
 type DBConfig = svc.DBConfig

@@ -134,7 +134,7 @@ func (ur *UserRepo) List(where ...interface{}) (xtt.TableDataHandler, error) {
 	return xtt.NewTableHandlerFromRows([]string{"#", "ID", "Name", "Username", "Email", "Phone", "Active"}, tableHandlerMap), nil
 }
 func (ur *UserRepo) GetContextDBService() is.IDBService {
-	dbService, dbServiceErr := is.NewDatabaseService(context.Background(), is.NewDBConfigWithDBConnection(ur.g), l.GetLogger("GodoBase"))
+	dbService, dbServiceErr := is.NewDatabaseService(context.Background(), is.NewDBConfigWithDBConnection(ur.g), l.GetLogger("GDBase"))
 	if dbServiceErr != nil {
 		gl.Log("error", fmt.Sprintf("UserModel repository: failed to get context DB service (%s)", dbServiceErr))
 		return nil

@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"reflect"
 
+	ci "github.com/kubex-ecosystem/gdbase/internal/interfaces"
 	gl "github.com/kubex-ecosystem/gdbase/internal/module/kbx"
 	crp "github.com/kubex-ecosystem/gdbase/internal/security/crypto"
 	krs "github.com/kubex-ecosystem/gdbase/internal/security/external"
@@ -18,10 +19,15 @@ import (
 )
 
 const (
-	KeyringService            = "kubex"
-	DefaultGoBEKeyPath        = "$HOME/.kubex/gobe/gobe-key.pem"
-	DefaultGoBECertPath       = "$HOME/.kubex/gobe/gobe-cert.pem"
-	DefaultGodoBaseConfigPath = "$HOME/.kubex/gdbase/config/config.json"
+	KeyringService        = "kubex"
+	DefaultKubexConfigDir = "$HOME/.kubex"
+
+	DefaultGoBEKeyPath  = "$HOME/.kubex/gobe/gobe-key.pem"
+	DefaultGoBECertPath = "$HOME/.kubex/gobe/gobe-cert.pem"
+
+	DefaultConfigDir        = "$HOME/.kubex/gdbase/config"
+	DefaultConfigFile       = "$HOME/.kubex/gdbase/config.json"
+	DefaultGDBaseConfigPath = "$HOME/.kubex/gdbase/config/config.json"
 )
 
 const (
@@ -51,50 +57,57 @@ type IDBConfig interface {
 
 type DBConfig struct {
 	// Name is used to configure the name of the database
-	Name string `json:"name" yaml:"name" xml:"name" toml:"name" mapstructure:"name"`
+	Name string `json:"name,omitempty" yaml:"name,omitempty" xml:"name,omitempty" toml:"name,omitempty" mapstructure:"name,omitempty"`
 
 	// FilePath is used to configure the file path of the database
 	FilePath string `json:"file_path" yaml:"file_path" xml:"file_path" toml:"file_path" mapstructure:"file_path"`
 
 	// Logger is used to configure the logger
-	Logger l.Logger `json:"logger" yaml:"logger" xml:"logger" toml:"logger" mapstructure:"logger"`
+	Logger l.Logger `json:"logger,omitempty" yaml:"logger,omitempty" xml:"logger,omitempty" toml:"logger,omitempty" mapstructure:"logger,omitempty"`
 
 	// Mutexes is used to configure the mutexes, not serialized
-	*ti.Mutexes
+	*ti.Mutexes `json:"-" yaml:"-" xml:"-" toml:"-" mapstructure:"-"`
+
+	// IsConfidential is used to configure if the environment variables are confidential
+	IsConfidential bool `json:"is_confidential,omitempty" yaml:"is_confidential,omitempty" xml:"is_confidential,omitempty" toml:"is_confidential,omitempty" mapstructure:"is_confidential,omitempty"`
+
+	// env is used to configure the environment, not serialized
+	env ci.IProperty[*ti.Environment] `json:"-" yaml:"-" xml:"-" toml:"-" mapstructure:"-"`
 
 	// Properties is used to configure the properties of the database, not serialized
 	properties map[string]interface{} `json:"-" yaml:"-" xml:"-" toml:"-" mapstructure:"-"`
 
 	// Debug is used to configure the debug mode
-	Debug bool `json:"debug" yaml:"debug" xml:"debug" toml:"debug" mapstructure:"debug"`
+	Debug bool `json:"debug,omitempty" yaml:"debug,omitempty" xml:"debug,omitempty" toml:"debug,omitempty" mapstructure:"debug,omitempty"`
 
 	// AutoMigrate is used to configure the auto migration of the database
-	AutoMigrate bool `json:"auto_migrate" yaml:"auto_migrate" xml:"auto_migrate" toml:"auto_migrate" mapstructure:"auto_migrate"`
+	AutoMigrate bool `json:"auto_migrate,omitempty" yaml:"auto_migrate,omitempty" xml:"auto_migrate,omitempty" toml:"auto_migrate,omitempty" mapstructure:"auto_migrate,omitempty"`
 
 	// JWT is used to configure the JWT token settings
-	JWT ti.JWT `json:"jwt" yaml:"jwt" xml:"jwt" toml:"jwt" mapstructure:"jwt"`
+	JWT ti.JWT `json:"jwt,omitempty" yaml:"jwt,omitempty" xml:"jwt,omitempty" toml:"jwt,omitempty" mapstructure:"jwt,omitempty"`
 
 	// Reference is used to configure the reference of the database
-	*ti.Reference `json:"reference" yaml:"reference" xml:"reference" toml:"reference" mapstructure:"reference,squash"`
+	*ti.Reference `json:"reference,omitempty" yaml:"reference,omitempty" xml:"reference,omitempty" toml:"reference,omitempty" mapstructure:"reference,squash,omitempty"`
 
 	// Enabled is used to enable or disable the database
-	Enabled bool `json:"enabled" yaml:"enabled" xml:"enabled" toml:"enabled" mapstructure:"enabled"`
+	Enabled bool `json:"enabled,omitempty" yaml:"enabled,omitempty" xml:"enabled,omitempty" toml:"enabled,omitempty" mapstructure:"enabled,omitempty"`
 
 	// MongoDB is used to configure the MongoDB database
-	MongoDB ti.MongoDB `json:"mongodb" yaml:"mongodb" xml:"mongodb" toml:"mongodb" mapstructure:"mongodb"`
+	MongoDB ti.MongoDB `json:"mongodb,omitempty" yaml:"mongodb,omitempty" xml:"mongodb,omitempty" toml:"mongodb,omitempty" mapstructure:"mongodb,omitempty"`
 
 	// Databases is used to configure the databases (Postgres, MySQL, SQLite, SQLServer, Oracle)
-	Databases map[string]*ti.Database `json:"databases" yaml:"databases" xml:"databases" toml:"databases" mapstructure:"databases"`
+	Databases map[string]*ti.Database `json:"databases,omitempty" yaml:"databases,omitempty" xml:"databases,omitempty" toml:"databases,omitempty" mapstructure:"databases,omitempty"`
 
 	// Messagery is used to configure the messagery database
-	Messagery *ti.Messagery
+	Messagery *ti.Messagery `json:"messagery,omitempty" yaml:"messagery,omitempty" xml:"messagery,omitempty" toml:"messagery,omitempty" mapstructure:"messagery,omitempty"`
 
+	// Mapper is used to configure the mapper for serialization and deserialization, not serialized
 	Mapper *ti.Mapper[*DBConfig] `json:"-" yaml:"-" xml:"-" toml:"-" mapstructure:"-"`
 }
 
 func newDBConfig(name, filePath string, enabled bool, logger l.Logger, debug bool) *DBConfig {
 	if logger == nil {
-		logger = l.NewLogger("GodoBase")
+		logger = l.NewLogger("GDBase")
 	}
 
 	if debug {
@@ -105,7 +118,7 @@ func newDBConfig(name, filePath string, enabled bool, logger l.Logger, debug boo
 		name = "default"
 	}
 	if filePath == "" {
-		filePath = os.ExpandEnv(DefaultGodoBaseConfigPath)
+		filePath = os.ExpandEnv(DefaultGDBaseConfigPath)
 	}
 
 	dbConfig := &DBConfig{FilePath: filePath}
@@ -114,7 +127,7 @@ func newDBConfig(name, filePath string, enabled bool, logger l.Logger, debug boo
 	if err != nil {
 		gl.Log("warn", fmt.Sprintf("Error deserializing file: %v", err))
 		if obj == nil {
-			pgPass, pgPassErr := getPasswordFromKeyring(name)
+			pgPass, pgPassErr := getPasswordFromKeyring(name + "_Postgres")
 			if pgPassErr != nil {
 				gl.Log("error", fmt.Sprintf("Error getting password from keyring: %v", pgPassErr))
 				return nil
@@ -138,41 +151,41 @@ func newDBConfig(name, filePath string, enabled bool, logger l.Logger, debug boo
 			dbConfigDefault := &DBConfig{
 				Databases: map[string]*ti.Database{
 					"postgresql": {
-						Enabled:          gl.GetEnvOrDefault("POSTGRES_ENABLED", "true") == "true",
+						Enabled:          (gl.GetEnvOrDefault("GDBASE_POSTGRES_ENABLED", "true") != "false"),
 						Reference:        ti.NewReference(name).GetReference(),
 						Type:             "postgresql",
 						Driver:           "postgres",
-						ConnectionString: dsn,
-						Dsn:              dsn,
-						Path:             os.ExpandEnv(DefaultPostgresVolume),
-						Host:             "localhost",
-						Port:             "5432",
-						Username:         gl.GetEnvOrDefault("POSTGRES_USER", "kubex_adm"),
-						Password:         pgPass,
-						Volume:           os.ExpandEnv(DefaultPostgresVolume),
-						Name:             "kubex_db",
+						ConnectionString: gl.GetEnvOrDefault("GDBASE_POSTGRES_CONNECTION_STRING", dsn),
+						Dsn:              gl.GetEnvOrDefault("GDBASE_POSTGRES_DSN", dsn),
+						Path:             gl.GetEnvOrDefault("GDBASE_POSTGRES_PATH", os.ExpandEnv(DefaultPostgresVolume)),
+						Host:             gl.GetEnvOrDefault("GDBASE_POSTGRES_HOST", "localhost"),
+						Port:             gl.GetEnvOrDefault("GDBASE_POSTGRES_PORT", "5432"),
+						Username:         gl.GetEnvOrDefault("GDBASE_POSTGRES_USER", "kubex_adm"),
+						Password:         gl.GetEnvOrDefault("GDBASE_POSTGRES_PASSWORD", pgPass),
+						Volume:           gl.GetEnvOrDefault("GDBASE_POSTGRES_VOLUME", os.ExpandEnv(DefaultPostgresVolume)),
+						Name:             gl.GetEnvOrDefault("GDBASE_POSTGRES_NAME", "kubex_db"),
 					},
 				},
 				Messagery: &ti.Messagery{
 					Redis: &ti.Redis{
+						Enabled:   (gl.GetEnvOrDefault("GDBASE_REDIS_ENABLED", "true") != "false"),
 						Reference: ti.NewReference(name + "_Redis").GetReference(),
-						FilePath:  filePath,
-						Enabled:   true,
-						Addr:      "localhost",
-						Port:      "6379",
-						Username:  "default",
-						Password:  redisPass,
+						FilePath:  gl.GetEnvOrDefault("GDBASE_REDIS_FILE_PATH", filePath),
+						Addr:      gl.GetEnvOrDefault("GDBASE_REDIS_ADDR", "localhost"),
+						Port:      gl.GetEnvOrDefault("GDBASE_REDIS_PORT", "6379"),
+						Username:  gl.GetEnvOrDefault("GDBASE_REDIS_USER", "default"),
+						Password:  gl.GetEnvOrDefault("GDBASE_REDIS_PASSWORD", redisPass),
 						DB:        0,
 					},
 					RabbitMQ: &ti.RabbitMQ{
+						Enabled:        (gl.GetEnvOrDefault("GDBASE_RABBITMQ_ENABLED", "true") != "false"),
 						Reference:      ti.NewReference(name + "_RabbitMQ").GetReference(),
-						FilePath:       filePath,
-						Enabled:        true,
-						Username:       "gobe",
-						Password:       rabbitPass,
-						Port:           "5672",
-						ManagementPort: "15672",
-						Vhost:          "gobe",
+						FilePath:       gl.GetEnvOrDefault("GDBASE_RABBITMQ_FILE_PATH", filePath),
+						Username:       gl.GetEnvOrDefault("GDBASE_RABBITMQ_USER", "gobe"),
+						Password:       gl.GetEnvOrDefault("GDBASE_RABBITMQ_PASSWORD", rabbitPass),
+						Port:           gl.GetEnvOrDefault("GDBASE_RABBITMQ_PORT", "5672"),
+						ManagementPort: gl.GetEnvOrDefault("GDBASE_RABBITMQ_MANAGEMENT_PORT", "15672"),
+						Vhost:          gl.GetEnvOrDefault("GDBASE_RABBITMQ_VHOST", "gobe"),
 					},
 				},
 			}
@@ -210,7 +223,7 @@ func NewDBConfigWithArgs(ctx context.Context, name, filePath string, enabled boo
 }
 func NewDBConfig(dbConfig *DBConfig) *DBConfig {
 	if dbConfig.Logger == nil {
-		dbConfig.Logger = l.NewLogger("GodoBase")
+		dbConfig.Logger = l.NewLogger("GDBase")
 	}
 	if dbConfig.Name == "" {
 		dbConfig.Name = "default"
@@ -219,7 +232,7 @@ func NewDBConfig(dbConfig *DBConfig) *DBConfig {
 		dbConfig.Mutexes = ti.NewMutexesType()
 	}
 	if dbConfig.FilePath == "" {
-		dbConfig.FilePath = os.ExpandEnv(DefaultGodoBaseConfigPath)
+		dbConfig.FilePath = os.ExpandEnv(DefaultGDBaseConfigPath)
 	}
 	willWrite := false
 	if dbConfig.Mapper == nil {
@@ -231,7 +244,7 @@ func NewDBConfig(dbConfig *DBConfig) *DBConfig {
 				willWrite = true
 			}
 		} else {
-			_, err := dbConfig.Mapper.DeserializeFromFile("yaml")
+			_, err := dbConfig.Mapper.DeserializeFromFile("json")
 			if err != nil {
 				gl.Log("error", fmt.Sprintf("Error deserializing file: %v", err))
 			}
@@ -289,15 +302,35 @@ func (d *DBConfig) GetEnvironment() string {
 	if d == nil {
 		return ""
 	}
-	// config, ok := d.properties["config"].(*ti.Property[*DBConfig])
-	// if !ok {
-	// 	return ""
-	// }
-	// dbConfig := config.GetValue()
-	// if dbConfig == nil {
-	// 	return ""
-	// }
-	return os.Getenv("GO_ENV")
+	var env *ti.Environment
+	if d.env == nil {
+		e, err := ti.NewEnvironmentType(gl.GetEnvOrDefault("GDBASE_ENV_FILE", ".env"), d.IsConfidential, d.Logger)
+		if err != nil {
+			gl.Log("error", fmt.Sprintf("Error creating environment: %v", err))
+			return "development"
+		}
+		d.env = ti.NewProperty(
+			"env",
+			&e,
+			false,
+			nil,
+		)
+		env = e
+	} else {
+		env = d.env.GetValue()
+	}
+	dotEnvMode, _ := gl.GetValueOrDefault(env.Getenv("GDBASE_ENV"), "development")
+	envs := os.Environ()
+	for _, env := range envs {
+		pair := os.ExpandEnv(env)
+		if pairParts := filepath.SplitList(pair); len(pairParts) == 2 {
+			if pairParts[0] == "GDBASE_ENV" {
+				return pairParts[1]
+			}
+
+		}
+	}
+	return dotEnvMode
 }
 func (d *DBConfig) GetDBType() string {
 	if d == nil {

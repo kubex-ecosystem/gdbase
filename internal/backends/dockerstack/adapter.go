@@ -4,6 +4,7 @@ package dockerstack
 import (
 	"context"
 	"fmt"
+	"os"
 	"time"
 
 	"github.com/kubex-ecosystem/gdbase/internal/provider"
@@ -53,7 +54,7 @@ func (p *DockerStackProvider) Capabilities(ctx context.Context) (provider.Capabi
 // Start initializes database services using legacy SetupDatabaseServices
 func (p *DockerStackProvider) Start(ctx context.Context, spec provider.StartSpec) (map[string]provider.Endpoint, error) {
 	// 1. Convert provider.StartSpec to legacy DBConfig format
-	dbConfig := p.convertSpecToDBConfig(spec)
+	dbConfig := p.ConvertSpecToDBConfig(spec)
 	var ok bool
 	// 2. Initialize Docker service (legacy)
 	dockerService, err := svc.NewDockerService(dbConfig, p.logger)
@@ -72,14 +73,14 @@ func (p *DockerStackProvider) Start(ctx context.Context, spec provider.StartSpec
 	}
 
 	// 4. Extract endpoints from running containers
-	endpoints, err := p.extractEndpoints(dbConfig)
+	endpoints, err := p.ExtractEndpoints(dbConfig)
 	if err != nil {
 		return nil, fmt.Errorf("failed to extract endpoints: %w", err)
 	}
 
 	// 5. 🎯 NOVA LÓGICA: Executar migrations SEMPRE após container subir
 	if pgEndpoint, exists := endpoints["pg"]; exists {
-		if err := p.runPostgresMigrations(ctx, pgEndpoint.DSN); err != nil {
+		if err := p.RunPostgresMigrations(ctx, pgEndpoint.DSN); err != nil {
 			return nil, fmt.Errorf("failed to run PostgreSQL migrations: %w", err)
 		}
 	}
@@ -87,8 +88,8 @@ func (p *DockerStackProvider) Start(ctx context.Context, spec provider.StartSpec
 	return endpoints, nil
 }
 
-// convertSpecToDBConfig converts new StartSpec to legacy DBConfig
-func (p *DockerStackProvider) convertSpecToDBConfig(spec provider.StartSpec) *svc.DBConfig {
+// ConvertSpecToDBConfig converts new StartSpec to legacy DBConfig
+func (p *DockerStackProvider) ConvertSpecToDBConfig(spec provider.StartSpec) *svc.DBConfig {
 	dbConfig := &svc.DBConfig{
 		Databases: make(map[string]*types.Database),
 	}
@@ -102,9 +103,11 @@ func (p *DockerStackProvider) convertSpecToDBConfig(spec provider.StartSpec) *sv
 		switch svc.Engine {
 		case provider.EnginePostgres:
 			key = "postgresql"
+			db.Enabled = true
+			db.Volume = gl.GetEnvOrDefault("GOBE_POSTGRES_VOLUME", os.ExpandEnv(gl.DefaultPostgresVolume))
 			db.Type = "postgresql"
-			db.Name = "gdbase"
-			db.Username = "postgres"
+			db.Name = "kubex_db"
+			db.Username = "kubex_adm"
 			db.Password = spec.Secrets["pg_admin"]
 			db.Host = "127.0.0.1"
 			if port, ok := spec.PreferredPort["pg"]; ok {
@@ -115,6 +118,7 @@ func (p *DockerStackProvider) convertSpecToDBConfig(spec provider.StartSpec) *sv
 
 		case provider.EngineMongo:
 			key = "mongodb"
+			db.Enabled = true
 			db.Type = "mongodb"
 			db.Name = "gdbase"
 			db.Username = "root"
@@ -128,6 +132,7 @@ func (p *DockerStackProvider) convertSpecToDBConfig(spec provider.StartSpec) *sv
 
 		case provider.EngineRedis:
 			key = "redis"
+			db.Enabled = true
 			db.Type = "redis"
 			db.Password = spec.Secrets["redis_pass"]
 			db.Host = "127.0.0.1"
@@ -139,6 +144,7 @@ func (p *DockerStackProvider) convertSpecToDBConfig(spec provider.StartSpec) *sv
 
 		case provider.EngineRabbit:
 			key = "rabbitmq"
+			db.Enabled = true
 			db.Type = "rabbitmq"
 			db.Username = "admin"
 			db.Password = spec.Secrets["rabbit_pass"]
@@ -158,8 +164,8 @@ func (p *DockerStackProvider) convertSpecToDBConfig(spec provider.StartSpec) *sv
 	return dbConfig
 }
 
-// extractEndpoints converts legacy DBConfig to new Endpoint format
-func (p *DockerStackProvider) extractEndpoints(cfg *svc.DBConfig) (map[string]provider.Endpoint, error) {
+// ExtractEndpoints converts legacy DBConfig to new Endpoint format
+func (p *DockerStackProvider) ExtractEndpoints(cfg *svc.DBConfig) (map[string]provider.Endpoint, error) {
 	endpoints := make(map[string]provider.Endpoint)
 
 	for _, db := range cfg.Databases {
@@ -229,8 +235,8 @@ func (p *DockerStackProvider) extractEndpoints(cfg *svc.DBConfig) (map[string]pr
 	return endpoints, nil
 }
 
-// runPostgresMigrations executes SQL migrations programmatically
-func (p *DockerStackProvider) runPostgresMigrations(ctx context.Context, dsn string) error {
+// RunPostgresMigrations executes SQL migrations programmatically
+func (p *DockerStackProvider) RunPostgresMigrations(ctx context.Context, dsn string) error {
 	migrationManager := NewMigrationManager(dsn, p.logger)
 
 	// Wait for PostgreSQL to be ready

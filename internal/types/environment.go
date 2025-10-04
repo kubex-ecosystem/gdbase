@@ -20,7 +20,7 @@ import (
 	"time"
 
 	ci "github.com/kubex-ecosystem/gdbase/internal/interfaces"
-	gl "github.com/kubex-ecosystem/gdbase/internal/module/kbx"
+	gl "github.com/kubex-ecosystem/gdbase/internal/module/logger"
 	crp "github.com/kubex-ecosystem/gdbase/internal/security/crypto"
 	sci "github.com/kubex-ecosystem/gdbase/internal/security/interfaces"
 	l "github.com/kubex-ecosystem/logz"

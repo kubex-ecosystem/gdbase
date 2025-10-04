@@ -14,8 +14,8 @@ import (
 	"time"
 
 	"github.com/docker/go-connections/nat"
-	glb "github.com/kubex-ecosystem/gdbase/internal/globals"
-	gl "github.com/kubex-ecosystem/gdbase/internal/module/logger"
+
+	gl "github.com/kubex-ecosystem/gdbase/internal/module/kbx"
 	u "github.com/kubex-ecosystem/gdbase/utils"
 )
 
@@ -153,48 +153,49 @@ func SetupDatabaseServices(ctx context.Context, d IDockerService, config *DBConf
 							// Check if Password is empty, if so, try to retrieve it from keyring
 							// if not found, generate a new one
 							if dbConfig.Password == "" {
-								pgPassKey, pgPassErr := glb.GetOrGenPasswordKeyringPass("pgpass")
+								pgPassKey, pgPassErr := gl.GetOrGenPasswordKeyringPass("pgpass")
 								if pgPassErr != nil {
 									gl.Log("error", fmt.Sprintf("Error generating key: %v", pgPassErr))
 									continue
 								}
 								dbConfig.Password = string(pgPassKey)
 							} else {
-								gl.Log("debug", fmt.Sprintf("Password found in config: %s", dbConfig.Password))
+								gl.Log("debug", fmt.Sprintf("Password found in config: %s", dbConfig.Password[0:2]))
 							}
 							if dbConfig.Volume == "" {
 								dbConfig.Volume = os.ExpandEnv(DefaultPostgresVolume)
 							}
 							pgVolRootDir := os.ExpandEnv(dbConfig.Volume)
 							pgVolInitDir := filepath.Join(pgVolRootDir, "init")
-							initDBSQLs, initDBSQLErr := embed.FS.ReadDir(initDBSQLFiles, "assets")
+							vols := map[string]struct{}{
+								strings.Join([]string{pgVolInitDir, "/docker-entrypoint-initdb.d"}, ":"): {},
+							}
+							initDBSQLs, initDBSQLErr := embed.FS.ReadDir(initDBSQLFiles, "embedded")
 							if initDBSQLErr != nil {
 								gl.Log("error", fmt.Sprintf("❌ Erro ao ler diretório de scripts SQL: %v", initDBSQLErr))
 								continue
-							}
-							for _, initDBSQL := range initDBSQLs {
-								initDBSQLData, initDBSQLErr := embed.FS.ReadFile(initDBSQLFiles, filepath.Join("assets", initDBSQL.Name()))
-								if initDBSQLErr != nil {
-									gl.Log("error", fmt.Sprintf("❌ Erro ao ler script SQL %s: %v", initDBSQL.Name(), initDBSQLErr))
+							} else {
+								for _, initDBSQL := range initDBSQLs {
+									initDBSQLData, initDBSQLErr := embed.FS.ReadFile(initDBSQLFiles, filepath.Join("embedded", initDBSQL.Name()))
+									if initDBSQLErr != nil {
+										gl.Log("error", fmt.Sprintf("❌ Erro ao ler script SQL %s: %v", initDBSQL.Name(), initDBSQLErr))
+										continue
+									}
+									if _, err := WriteInitDBSQL(pgVolInitDir, initDBSQL.Name(), string(initDBSQLData)); err != nil {
+										gl.Log("error", fmt.Sprintf("❌ Erro ao criar diretório do PostgreSQL: %v", err))
+										continue
+									}
+								}
+								if err := d.CreateVolume("gdbase-pg-init", pgVolInitDir); err != nil {
+									gl.Log("error", fmt.Sprintf("❌ Erro ao criar volume do PostgreSQL: %v", err))
 									continue
 								}
-								if _, err := WriteInitDBSQL(pgVolInitDir, initDBSQL.Name(), string(initDBSQLData)); err != nil {
-									gl.Log("error", fmt.Sprintf("❌ Erro ao criar diretório do PostgreSQL: %v", err))
+								pgVolDataDir := filepath.Join(pgVolRootDir, "pgdata")
+								if err := d.CreateVolume("gdbase-pg-data", pgVolDataDir); err != nil {
+									gl.Log("error", fmt.Sprintf("❌ Erro ao criar volume do PostgreSQL: %v", err))
 									continue
 								}
-							}
-							if err := d.CreateVolume("gdbase-pg-init", pgVolInitDir); err != nil {
-								gl.Log("error", fmt.Sprintf("❌ Erro ao criar volume do PostgreSQL: %v", err))
-								continue
-							}
-							pgVolDataDir := filepath.Join(pgVolRootDir, "pgdata")
-							// if err := u.EnsureDir(pgVolDataDir, 0755, []string{}); err != nil {
-							// 	gl.Log("error", fmt.Sprintf("❌ Erro ao criar diretório pgdata do PostgreSQL: %v", err))
-							// 	continue
-							// }
-							if err := d.CreateVolume("gdbase-pg-data", pgVolDataDir); err != nil {
-								gl.Log("error", fmt.Sprintf("❌ Erro ao criar volume do PostgreSQL: %v", err))
-								continue
+								vols[strings.Join([]string{pgVolDataDir, "/var/lib/postgresql/data"}, ":")] = struct{}{}
 							}
 							// Check if the port is already in use and find an available one if necessary
 							if dbConfig.Port == nil || dbConfig.Port == "" {
@@ -242,12 +243,7 @@ func SetupDatabaseServices(ctx context.Context, d IDockerService, config *DBConf
 									"PGSSLMODE=disable",
 								},
 								[]nat.PortMap{portMap},
-								map[string]struct{}{
-									// pgVolInitDir + ":/docker-entrypoint-initdb.d":                            {},
-									// pgVolDataDir + ":/var/lib/postgresql/data":                               {},
-									strings.Join([]string{pgVolInitDir, "/docker-entrypoint-initdb.d"}, ":"): {},
-									strings.Join([]string{pgVolDataDir, "/var/lib/postgresql/data"}, ":"):    {},
-								},
+								vols,
 							)
 							services = append(services, dbConnObj)
 						}
@@ -271,7 +267,7 @@ func SetupDatabaseServices(ctx context.Context, d IDockerService, config *DBConf
 					rabbitUser = "gobe"
 				}
 				if rabbitCfg.Password == "" {
-					rabbitPassKey, rabbitPassErr := glb.GetOrGenPasswordKeyringPass(rabbitCfg.Reference.Name)
+					rabbitPassKey, rabbitPassErr := gl.GetOrGenPasswordKeyringPass(rabbitCfg.Reference.Name)
 					if rabbitPassErr != nil {
 						gl.Log("error", "Skipping RabbitMQ setup due to error generating password")
 						gl.Log("debug", fmt.Sprintf("Error generating key: %v", rabbitPassErr))
@@ -324,7 +320,7 @@ func SetupDatabaseServices(ctx context.Context, d IDockerService, config *DBConf
 				// Then, set the value in the RABBITMQ_ERLANG_COOKIE environment variable.
 				// More info: https://www.rabbitmq.com/clustering.html#erlang-cookie
 				if rabbitCfg.ErlangCookie == "" {
-					rabbitCookieKey, rabbitCookieErr := glb.GetOrGenPasswordKeyringPass("rabbitmq-cookie")
+					rabbitCookieKey, rabbitCookieErr := gl.GetOrGenPasswordKeyringPass("rabbitmq-cookie")
 					if rabbitCookieErr != nil {
 						gl.Log("error", "Skipping RabbitMQ setup due to error generating password")
 						gl.Log("debug", fmt.Sprintf("Error generating key: %v", rabbitCookieErr))

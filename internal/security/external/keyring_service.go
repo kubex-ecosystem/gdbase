@@ -7,9 +7,9 @@ import (
 	"os"
 
 	ci "github.com/kubex-ecosystem/gdbase/internal/interfaces"
-	gl "github.com/kubex-ecosystem/gdbase/internal/module/logger"
+	// gl "github.com/kubex-ecosystem/gdbase/internal/module/logger"
+	svc "github.com/kubex-ecosystem/gdbase/internal/globals"
 	sci "github.com/kubex-ecosystem/gdbase/internal/security/interfaces"
-	t "github.com/kubex-ecosystem/gdbase/internal/types"
 	"github.com/zalando/go-keyring"
 )
 
@@ -20,8 +20,8 @@ type KeyringService struct {
 
 func newKeyringService(service, name string) *KeyringService {
 	return &KeyringService{
-		keyringService: t.NewProperty("keyringService", &service, false, nil),
-		keyringName:    t.NewProperty("keyringName", &name, false, nil),
+		keyringService: svc.NewPropertyType("keyringService", &service, false, nil),
+		keyringName:    svc.NewPropertyType("keyringName", &name, false, nil),
 	}
 }
 func NewKeyringService(service, name string) sci.IKeyringService {
@@ -33,13 +33,13 @@ func NewKeyringServiceType(service, name string) *KeyringService {
 
 func (k *KeyringService) StorePassword(password string) error {
 	if password == "" {
-		gl.Log("error", "key cannot be empty")
+		// gl.Log("error", "key cannot be empty")
 		return fmt.Errorf("key cannot be empty")
 	}
 	if err := keyring.Set(k.keyringService.GetValue(), k.keyringName.GetValue(), password); err != nil {
 		return fmt.Errorf("error storing key: %v", err)
 	}
-	gl.Log("debug", fmt.Sprintf("key stored successfully: %s", k.keyringName.GetValue()))
+	// gl.Log("debug", fmt.Sprintf("key stored successfully: %s", k.keyringName.GetValue()))
 	return nil
 }
 func (k *KeyringService) RetrievePassword() (string, error) {
@@ -47,7 +47,7 @@ func (k *KeyringService) RetrievePassword() (string, error) {
 		if errors.Is(err, keyring.ErrNotFound) {
 			return "", os.ErrNotExist
 		}
-		gl.Log("debug", fmt.Sprintf("error retrieving key: %v", err))
+		// gl.Log("debug", fmt.Sprintf("error retrieving key: %v", err))
 		return "", fmt.Errorf("error retrieving key: %v", err)
 	} else {
 		return password, nil

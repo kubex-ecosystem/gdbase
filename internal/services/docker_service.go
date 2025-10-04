@@ -127,31 +127,7 @@ func newDockerServiceBus(config *DBConfig, logger l.Logger) (IDockerService, err
 }
 func newDockerService(config *DBConfig, logger l.Logger) (IDockerService, error) {
 	EnsureDockerIsRunning()
-
-	if logger == nil {
-		logger = l.GetLogger("DockerService")
-	}
-
-	cli, err := k.NewClientWithOpts(k.FromEnv, k.WithAPIVersionNegotiation())
-	if err != nil {
-		return nil, fmt.Errorf("❌ Error creating Docker client: %v", err)
-	}
-
-	dockerService := &DockerService{
-		Logger:    logger,
-		reference: it.NewReference("DockerService").GetReference(),
-		mutexes:   it.NewMutexesType(),
-		pool:      &sync.Pool{},
-		Cli:       cli,
-		properties: map[string]any{
-			"dbConfig": it.NewProperty[*DBConfig]("dbConfig", &config, false, nil),
-		},
-	}
-	if dockerService.eventBus == nil {
-		dockerService.eventBus = evs.NewEventBus()
-	}
-
-	return dockerService, nil
+	return newDockerServiceBus(config, logger)
 }
 func NewDockerService(config *DBConfig, logger l.Logger) (IDockerService, error) {
 	return newDockerService(config, logger)

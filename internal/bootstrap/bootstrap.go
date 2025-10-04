@@ -3,6 +3,7 @@ package bootstrap
 
 import (
 	"context"
+	"embed"
 	"errors"
 	"os"
 	"sort"
@@ -11,6 +12,9 @@ import (
 
 	"github.com/kubex-ecosystem/gdbase/internal/provider"
 )
+
+//go:embed all:embedded/*.sql
+var MigrationFiles embed.FS
 
 type Config struct {
 	Backends      []string // ordem de preferência; e.g. ["dockerstack"] por enquanto

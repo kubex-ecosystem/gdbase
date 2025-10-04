@@ -4,20 +4,17 @@ package dockerstack
 import (
 	"context"
 	"database/sql"
-	"embed"
 	"fmt"
 	"path/filepath"
 	"strings"
 	"time"
 
+	"github.com/kubex-ecosystem/gdbase/internal/bootstrap"
 	gl "github.com/kubex-ecosystem/gdbase/internal/module/kbx"
 	l "github.com/kubex-ecosystem/logz"
 
 	_ "github.com/lib/pq"
 )
-
-//go:embed assets/*.sql
-var migrationFiles embed.FS
 
 // MigrationResult represents the result of a migration execution
 type MigrationResult struct {
@@ -147,8 +144,8 @@ func (m *MigrationManager) executeSQLFileWithRecovery(ctx context.Context, db *s
 		Errors:   make([]StatementError, 0),
 	}
 
-	// Read file content
-	content, err := migrationFiles.ReadFile(filepath.Join("../../services/assets", filename))
+	// Read file content (embed.FS is already rooted at assets/)
+	content, err := bootstrap.MigrationFiles.ReadFile(filepath.Join("embedded", filename))
 	if err != nil {
 		result.Errors = append(result.Errors, StatementError{
 			Statement: "",

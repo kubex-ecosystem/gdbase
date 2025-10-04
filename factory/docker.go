@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/docker/docker/client"
+	dksk "github.com/kubex-ecosystem/gdbase/internal/backends/dockerstack"
 	dkrs "github.com/kubex-ecosystem/gdbase/internal/services"
 	l "github.com/kubex-ecosystem/logz"
 )
@@ -68,4 +69,22 @@ func NewCloudflaredOpts(mode TunnelMode, networkName, targetDNS string, targetPo
 		TargetPort:  targetPort,
 		Token:       token,
 	}
+}
+
+type DockerStackProvider = dksk.Provider
+type MigrationManager = dksk.MigrationManager
+type MigrationResult = dksk.MigrationResult
+type SQLStatement = dksk.SQLStatement
+type StatementError = dksk.StatementError
+
+func NewDockerStackProvider() *DockerStackProvider {
+	return dksk.New()
+}
+
+func NewMigrationManager(dsn string, logger l.Logger) *MigrationManager {
+	return dksk.NewMigrationManager(dsn, logger)
+}
+
+func CreateMigrationManager(dsn string, logger l.Logger) *MigrationManager {
+	return dksk.NewMigrationManager(dsn, logger)
 }
