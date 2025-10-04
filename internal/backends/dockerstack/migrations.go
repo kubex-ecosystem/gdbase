@@ -201,55 +201,184 @@ type SQLStatement struct {
 
 // parseSQL splits SQL content into individual statements, preserving line numbers
 func (m *MigrationManager) parseSQL(content string) []SQLStatement {
-	lines := strings.Split(content, "\n")
-	statements := make([]SQLStatement, 0)
+	var stmts []SQLStatement
+	var b strings.Builder
+	line := 1
+	stmtStartLine := 1
 
-	var currentStmt strings.Builder
-	var startLine int
-	lineNum := 0
+	// state
+	var inLineComment bool
+	var inBlockComment bool
+	var dollarTag string
 
-	for _, line := range lines {
-		lineNum++
-		trimmed := strings.TrimSpace(line)
+	runes := []rune(content)
+	i := 0
+	for i < len(runes) {
+		r := runes[i]
 
-		// Skip empty lines and comments
-		if trimmed == "" || strings.HasPrefix(trimmed, "--") {
+		// track line numbers
+		if r == '\n' {
+			line++
+		}
+
+		// handle end of line comment
+		if inLineComment {
+			b.WriteRune(r)
+			if r == '\n' {
+				inLineComment = false
+			}
+			i++
 			continue
 		}
 
-		// Start new statement if buffer is empty
-		if currentStmt.Len() == 0 {
-			startLine = lineNum
+		// handle end of block comment
+		if inBlockComment {
+			b.WriteRune(r)
+			if r == '*' && i+1 < len(runes) && runes[i+1] == '/' {
+				b.WriteRune(runes[i+1])
+				i += 2
+				inBlockComment = false
+				continue
+			}
+			i++
+			continue
 		}
 
-		currentStmt.WriteString(line)
-		currentStmt.WriteString("\n")
+		// handle dollar-quote content
+		if dollarTag != "" {
+			b.WriteRune(r)
+			tagRunes := []rune(dollarTag)
+			if r == tagRunes[0] && i+len(tagRunes) <= len(runes) {
+				match := true
+				for k := 0; k < len(tagRunes); k++ {
+					if runes[i+k] != tagRunes[k] {
+						match = false
+						break
+					}
+				}
+				if match {
+					for k := 1; k < len(tagRunes); k++ {
+						b.WriteRune(runes[i+k])
+					}
+					i += len(tagRunes)
+					dollarTag = ""
+					continue
+				}
+			}
+			i++
+			continue
+		}
 
-		// Check if statement ends with semicolon
-		if strings.HasSuffix(trimmed, ";") {
-			stmt := strings.TrimSpace(currentStmt.String())
+		// detect start of line comment --
+		if r == '-' && i+1 < len(runes) && runes[i+1] == '-' {
+			inLineComment = true
+			b.WriteRune(r)
+			b.WriteRune(runes[i+1])
+			i += 2
+			continue
+		}
+
+		// detect start of block comment /*
+		if r == '/' && i+1 < len(runes) && runes[i+1] == '*' {
+			inBlockComment = true
+			b.WriteRune(r)
+			b.WriteRune(runes[i+1])
+			i += 2
+			continue
+		}
+
+		// detect dollar quote start $tag$
+		if r == '$' {
+			j := i + 1
+			for j < len(runes) && runes[j] != '$' && ((runes[j] >= 'a' && runes[j] <= 'z') || (runes[j] >= 'A' && runes[j] <= 'Z') || (runes[j] >= '0' && runes[j] <= '9') || runes[j] == '_') {
+				j++
+			}
+			if j < len(runes) && runes[j] == '$' {
+				tagRunes := runes[i : j+1]
+				dollarTag = string(tagRunes)
+				for k := 0; k < len(tagRunes); k++ {
+					b.WriteRune(tagRunes[k])
+				}
+				i = j + 1
+				continue
+			}
+		}
+
+		// single-quote start
+		if r == '\'' {
+			b.WriteRune(r)
+			i++
+			for i < len(runes) {
+				b.WriteRune(runes[i])
+				if runes[i] == '\'' {
+					if i+1 < len(runes) && runes[i+1] == '\'' {
+						b.WriteRune(runes[i+1])
+						i += 2
+						continue
+					}
+					i++
+					break
+				}
+				i++
+			}
+			continue
+		}
+
+		// double-quote start (identifiers)
+		if r == '"' {
+			b.WriteRune(r)
+			i++
+			for i < len(runes) {
+				b.WriteRune(runes[i])
+				if runes[i] == '"' {
+					if i+1 < len(runes) && runes[i+1] == '"' {
+						b.WriteRune(runes[i+1])
+						i += 2
+						continue
+					}
+					i++
+					break
+				}
+				i++
+			}
+			continue
+		}
+
+		// semicolon at top level -> end statement
+		if r == ';' {
+			b.WriteRune(r)
+			stmt := strings.TrimSpace(b.String())
 			if stmt != "" && stmt != ";" {
-				statements = append(statements, SQLStatement{
+				stmts = append(stmts, SQLStatement{
 					SQL:  stmt,
-					Line: startLine,
+					Line: stmtStartLine,
 				})
 			}
-			currentStmt.Reset()
+			b.Reset()
+			i++
+			for i < len(runes) && runes[i] == '\n' {
+				i++
+				line++
+			}
+			stmtStartLine = line
+			continue
 		}
+
+		if b.Len() == 0 {
+			stmtStartLine = line
+		}
+		b.WriteRune(r)
+		i++
 	}
 
-	// Handle last statement without semicolon
-	if currentStmt.Len() > 0 {
-		stmt := strings.TrimSpace(currentStmt.String())
-		if stmt != "" {
-			statements = append(statements, SQLStatement{
-				SQL:  stmt,
-				Line: startLine,
-			})
-		}
+	if strings.TrimSpace(b.String()) != "" {
+		stmts = append(stmts, SQLStatement{
+			SQL:  strings.TrimSpace(b.String()),
+			Line: stmtStartLine,
+		})
 	}
 
-	return statements
+	return stmts
 }
 
 // SchemaExists checks if the required schema is already initialized

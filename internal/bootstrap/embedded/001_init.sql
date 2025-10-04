@@ -10,18 +10,16 @@ CREATE SCHEMA IF NOT EXISTS public;
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
--- Para gerar UUIDs
+
 CREATE EXTENSION IF NOT EXISTS "pg_trgm";
--- Para buscas de texto eficientes
+
 CREATE EXTENSION IF NOT EXISTS "btree_gist";
--- Para índices GIN em tipos de dados não nativos
+
 CREATE EXTENSION IF NOT EXISTS "fuzzystrmatch";
--- Para comparação de strings
+
 CREATE EXTENSION IF NOT EXISTS "hstore";
--- Para armazenar pares chave-valor
 -- COMMIT;
 
--- Criação de roles e usuários
 CREATE ROLE readonly;
 
 CREATE ROLE readwrite;
@@ -29,7 +27,6 @@ CREATE ROLE readwrite;
 CREATE ROLE admin;
 -- COMMIT;
 
--- Criação de usuários e atribuição de roles
 CREATE USER user_readonly WITH PASSWORD 'readonlypass';
 
 CREATE USER user_readwrite WITH PASSWORD 'readwritepass';
@@ -44,7 +41,6 @@ GRANT readwrite TO user_readwrite;
 GRANT admin TO user_admin;
 -- COMMIT;
 
--- Permissões para roles
 GRANT CONNECT ON DATABASE kubex_db TO readonly, readwrite, admin;
 
 GRANT USAGE ON SCHEMA public TO readonly, readwrite, admin;
@@ -59,7 +55,6 @@ UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO readwrite;
 GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO admin;
 -- COMMIT;
 
--- Enums
 CREATE TYPE inventory_status AS ENUM ('available', 'reserved', 'damaged', 'expired');
 
 CREATE TYPE order_status AS ENUM ('draft', 'pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled');
@@ -88,7 +83,6 @@ CREATE TYPE job_command_type AS ENUM('shell', 'api', 'script');
 
 CREATE TYPE analysis_job_status AS ENUM ('PENDING', 'RUNNING', 'COMPLETED', 'FAILED', 'CANCELLED');
 
--- Bot Integration Enums
 CREATE TYPE bot_platform AS ENUM ('DISCORD', 'TELEGRAM', 'WHATSAPP', 'META', 'UNIFIED');
 
 CREATE TYPE bot_user_type AS ENUM ('BOT', 'USER', 'CHANNEL', 'GROUP', 'SYSTEM', 'BUSINESS');
@@ -112,7 +106,6 @@ CREATE TYPE message_type AS ENUM ('TEXT', 'IMAGE', 'VIDEO', 'AUDIO', 'DOCUMENT',
 CREATE TYPE message_direction AS ENUM ('INBOUND', 'OUTBOUND');
 -- COMMIT;
 
--- Tabela de roles
 CREATE TABLE IF NOT EXISTS roles (
     id uuid PRIMARY KEY DEFAULT uuid_generate_v4 (),
     name varchar(50) NOT NULL UNIQUE,
@@ -235,7 +228,6 @@ CREATE TABLE IF NOT EXISTS job_queue (
     job_timeout INTEGER DEFAULT 0
 );
 
--- Tabela MCP Analysis Jobs
 CREATE TABLE IF NOT EXISTS mcp_analysis_jobs (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4 (),
     project_id UUID,
@@ -243,16 +235,16 @@ CREATE TABLE IF NOT EXISTS mcp_analysis_jobs (
     job_status analysis_job_status NOT NULL DEFAULT 'PENDING',
     source_url TEXT,
     source_type VARCHAR(50),
-    input_data JSONB,
-    output_data JSONB,
+    input_data jsonb DEFAULT '{}',
+    output_data jsonb DEFAULT '{}',
     error_message TEXT,
     progress DECIMAL(5, 2) DEFAULT 0.0,
     started_at TIMESTAMP,
     completed_at TIMESTAMP,
     retry_count INTEGER DEFAULT 0,
     max_retries INTEGER DEFAULT 3,
-    metadata JSONB,
-    user_id UUID,
+    metadata JSONB DEFAULT '{}',
+    user_id UUID NOT NULL REFERENCES users (id),
     created_by UUID,
     updated_by UUID,
     created_at TIMESTAMP DEFAULT NOW(),
@@ -261,7 +253,6 @@ CREATE TABLE IF NOT EXISTS mcp_analysis_jobs (
 
 -- COMMIT;
 
--- Tabela de endereços (abstrata, reutilizável)
 CREATE TABLE IF NOT EXISTS addresses (
     id uuid PRIMARY KEY DEFAULT uuid_generate_v4 (),
     external_id varchar(255),
@@ -290,7 +281,6 @@ CREATE TABLE IF NOT EXISTS addresses (
 );
 -- COMMIT;
 
--- Tabela de logs de auditoria
 CREATE TABLE IF NOT EXISTS audit_logs (
     id uuid PRIMARY KEY DEFAULT uuid_generate_v4 (),
     user_id uuid REFERENCES users (id),
@@ -302,7 +292,6 @@ CREATE TABLE IF NOT EXISTS audit_logs (
 );
 -- COMMIT;
 
--- Tabela de logs de erro
 CREATE TABLE IF NOT EXISTS error_logs (
     id uuid PRIMARY KEY DEFAULT uuid_generate_v4 (),
     error_message text NOT NULL,
@@ -311,7 +300,6 @@ CREATE TABLE IF NOT EXISTS error_logs (
 );
 -- COMMIT;
 
--- Tabela de logs de acesso
 CREATE TABLE IF NOT EXISTS access_logs (
     id uuid PRIMARY KEY DEFAULT uuid_generate_v4 (),
     user_id uuid REFERENCES users (id),
@@ -322,7 +310,6 @@ CREATE TABLE IF NOT EXISTS access_logs (
 );
 -- COMMIT;
 
--- Tabela de categorias de produto
 CREATE TABLE IF NOT EXISTS product_category (
     id uuid PRIMARY KEY DEFAULT uuid_generate_v4 (),
     name varchar(255) NOT NULL,
@@ -331,7 +318,6 @@ CREATE TABLE IF NOT EXISTS product_category (
     updated_at timestamp without time zone NOT NULL DEFAULT now()
 );
 
--- Tabela de produtos
 CREATE TABLE IF NOT EXISTS products (
     id uuid PRIMARY KEY DEFAULT uuid_generate_v4 (),
     external_id varchar(255),
@@ -365,7 +351,6 @@ CREATE TABLE IF NOT EXISTS products (
 
 -- COMMIT;
 
--- Índices para produtos
 CREATE INDEX IF NOT EXISTS idx_product_sku ON products (sku);
 
 CREATE INDEX IF NOT EXISTS idx_product_barcode ON products (barcode);
@@ -379,29 +364,15 @@ CREATE INDEX IF NOT EXISTS idx_product_manufacturer ON products (manufacturer);
 CREATE INDEX IF NOT EXISTS idx_product_search_vector ON products USING GIN (search_vector);
 -- COMMIT;
 
--- Trigger para atualizar o campo search_vector
-CREATE OR REPLACE FUNCTION update_product_search_vector() RETURNS TRIGGER AS $$
-BEGIN
-    NEW.search_vector :=
-        setweight(to_tsvector('portuguese', COALESCE(NEW.name, '')), 'A') ||
-        setweight(to_tsvector('portuguese', COALESCE(NEW.sku, '')), 'A') ||
-        setweight(to_tsvector('portuguese', COALESCE(NEW.barcode, '')), 'A') ||
-        setweight(to_tsvector('portuguese', COALESCE(NEW.description, '')), 'C') ||
-        setweight(to_tsvector('portuguese', COALESCE(NEW.brand, '')), 'B') ||
-        setweight(to_tsvector('portuguese', COALESCE(NEW.manufacturer, '')), 'B');
-    RETURN NEW;
-END
-$$ LANGUAGE plpgsql;
+CREATE OR REPLACE FUNCTION update_product_search_vector() RETURNS TRIGGER AS $$ BEGIN NEW.search_vector := setweight(to_tsvector('portuguese', COALESCE(NEW.name, '')), 'A') || setweight(to_tsvector('portuguese', COALESCE(NEW.sku, '')), 'A') || setweight(to_tsvector('portuguese', COALESCE(NEW.barcode, '')), 'A') || setweight(to_tsvector('portuguese', COALESCE(NEW.description, '')), 'C') || setweight(to_tsvector('portuguese', COALESCE(NEW.brand, '')), 'B') || setweight(to_tsvector('portuguese', COALESCE(NEW.manufacturer, '')), 'B'); RETURN NEW; END $$ LANGUAGE plpgsql;
 -- COMMIT;
 
 DROP TRIGGER IF EXISTS trigger_update_product_search_vector ON products;
 
-CREATE TRIGGER trigger_update_product_search_vector
-    BEFORE INSERT OR UPDATE ON products
-    FOR EACH ROW EXECUTE FUNCTION update_product_search_vector();
+CREATE TRIGGER trigger_update_product_search_vector BEFORE INSERT OR UPDATE ON products
+FOR EACH ROW EXECUTE FUNCTION update_product_search_vector();
 -- COMMIT;
 
--- Tabela de parceiros
 CREATE TABLE IF NOT EXISTS partners (
     id uuid PRIMARY KEY DEFAULT uuid_generate_v4 (),
     external_id varchar(255),
@@ -441,7 +412,6 @@ CREATE TABLE IF NOT EXISTS partners (
     is_active boolean NOT NULL DEFAULT true
 );
 
--- Tabela de contatos do parceiro
 CREATE TABLE IF NOT EXISTS partner_contact (
     id uuid PRIMARY KEY DEFAULT uuid_generate_v4 (),
     partner_id uuid NOT NULL REFERENCES partners (id) ON DELETE CASCADE,
@@ -452,7 +422,6 @@ CREATE TABLE IF NOT EXISTS partner_contact (
     is_primary boolean NOT NULL DEFAULT false
 );
 
--- Tabela de histórico de vendas do parceiro
 CREATE TABLE IF NOT EXISTS partner_sales_history (
     id uuid PRIMARY KEY DEFAULT uuid_generate_v4 (),
     partner_id uuid NOT NULL REFERENCES partners (id) ON DELETE CASCADE,
@@ -464,7 +433,6 @@ CREATE TABLE IF NOT EXISTS partner_sales_history (
 );
 -- COMMIT;
 
--- Tabela de armazéns
 CREATE TABLE IF NOT EXISTS warehouses (
     id uuid PRIMARY KEY DEFAULT uuid_generate_v4 (),
     name varchar(255) NOT NULL,
@@ -487,7 +455,6 @@ CREATE TABLE IF NOT EXISTS warehouses (
     is_active boolean NOT NULL DEFAULT true
 );
 
--- Tabela de estoque
 CREATE TABLE IF NOT EXISTS inventory (
     id uuid PRIMARY KEY DEFAULT uuid_generate_v4 (),
     product_id uuid NOT NULL REFERENCES products (id),
@@ -509,7 +476,6 @@ CREATE TABLE IF NOT EXISTS inventory (
 );
 -- COMMIT;
 
--- Tabela de previsões de estoque
 CREATE TABLE IF NOT EXISTS stock_predictions (
     id uuid PRIMARY KEY DEFAULT uuid_generate_v4 (),
     product_id uuid NOT NULL REFERENCES products (id) ON DELETE CASCADE,
@@ -534,7 +500,6 @@ CREATE TABLE IF NOT EXISTS stock_predictions (
 );
 -- COMMIT;
 
---Tabela de pedidos
 CREATE TABLE IF NOT EXISTS orders (
     id uuid PRIMARY KEY DEFAULT uuid_generate_v4 (),
     external_id varchar(255),
@@ -560,10 +525,8 @@ CREATE TABLE IF NOT EXISTS orders (
     priority integer,
     expected_margin numeric(18, 2)
 );
---prediction_id uuid REFERENCES stock_predictions(id),
 -- COMMIT;
 
--- Tabela de configurações de sincronização
 CREATE TABLE IF NOT EXISTS sync_config (
     id uuid PRIMARY KEY DEFAULT uuid_generate_v4 (),
     entity_name VARCHAR(100) NOT NULL,
@@ -575,7 +538,6 @@ CREATE TABLE IF NOT EXISTS sync_config (
     updated_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
--- Tabela de logs de sincronização
 CREATE TABLE IF NOT EXISTS sync_logs (
     id uuid PRIMARY KEY DEFAULT uuid_generate_v4 (),
     entity_name VARCHAR(100) NOT NULL,
@@ -591,7 +553,6 @@ CREATE TABLE IF NOT EXISTS sync_logs (
 );
 -- COMMIT;
 
--- Tabela de dados de previsão diária (para armazenar séries temporais)
 CREATE TABLE IF NOT EXISTS prediction_daily_data (
     id uuid PRIMARY KEY DEFAULT uuid_generate_v4 (),
     day_date DATE NOT NULL,
@@ -601,11 +562,8 @@ CREATE TABLE IF NOT EXISTS prediction_daily_data (
     upper_bound NUMERIC(18, 3),
     created_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
---prediction_id uuid NOT NULL REFERENCES stock_predictions(id) ON DELETE CASCADE,
--- CONSTRAINT unique_prediction_day UNIQUE (prediction_id, day_date)
 -- COMMIT;
 
--- Tabela de configurações de usuários
 CREATE TABLE IF NOT EXISTS user_preferences (
     id uuid PRIMARY KEY DEFAULT uuid_generate_v4 (),
     user_id uuid NOT NULL REFERENCES users (id) ON DELETE CASCADE,
@@ -631,7 +589,6 @@ CREATE TABLE IF NOT EXISTS user_preferences (
     CONSTRAINT unique_user_preference UNIQUE (user_id, preference_key)
 );
 
--- Tabela de eventos de auditoria
 CREATE TABLE IF NOT EXISTS audit_events (
     id uuid PRIMARY KEY DEFAULT uuid_generate_v4 (),
     entity_type VARCHAR(100) NOT NULL,
@@ -643,7 +600,6 @@ CREATE TABLE IF NOT EXISTS audit_events (
 );
 -- COMMIT;
 
--- Tabela de tokens de sessão
 CREATE TABLE IF NOT EXISTS refresh_tokens (
     id SERIAL PRIMARY KEY,
     user_id uuid NOT NULL REFERENCES users (id) ON DELETE CASCADE,
@@ -654,7 +610,6 @@ CREATE TABLE IF NOT EXISTS refresh_tokens (
 );
 -- COMMIT;
 
--- Índices para tabelas auxiliares
 CREATE INDEX IF NOT EXISTS idx_sync_logs_entity_name ON sync_logs (entity_name);
 
 CREATE INDEX IF NOT EXISTS idx_stock_predictions_product_id ON stock_predictions (product_id);
@@ -674,12 +629,8 @@ CREATE INDEX IF NOT EXISTS idx_audit_events_entity_type_id ON audit_events (enti
 CREATE INDEX IF NOT EXISTS idx_audit_events_created_at ON audit_events (created_at);
 
 CREATE INDEX IF NOT EXISTS idx_audit_events_user_id ON audit_events (user_id);
--- CREATE INDEX IF NOT EXISTS idx_prediction_daily_data_prediction_id ON prediction_daily_data(prediction_id);
 -- COMMIT;
 
------------------------------------------------------------------------------------
-
--- Tabela para LLM Models
 CREATE TABLE IF NOT EXISTS mcp_llm_models (
     id uuid PRIMARY KEY DEFAULT uuid_generate_v4 (),
     enabled boolean DEFAULT true,
@@ -699,7 +650,6 @@ CREATE TABLE IF NOT EXISTS mcp_llm_models (
 );
 -- COMMIT;
 
--- Tabela de preferências (flexível e armazenada em JSONB)
 CREATE TABLE IF NOT EXISTS mcp_user_preferences (
     id uuid PRIMARY KEY DEFAULT uuid_generate_v4 (),
     scope TEXT NOT NULL DEFAULT 'defaults',
@@ -712,7 +662,6 @@ CREATE TABLE IF NOT EXISTS mcp_user_preferences (
 );
 -- COMMIT;
 
--- Tabela para provider_configurations (por ex: GitHub, GitLab, etc.)
 CREATE TABLE IF NOT EXISTS mcp_provider_configs (
     id uuid PRIMARY KEY DEFAULT uuid_generate_v4 (),
     provider TEXT NOT NULL,
@@ -726,7 +675,6 @@ CREATE TABLE IF NOT EXISTS mcp_provider_configs (
 );
 -- COMMIT;
 
--- Tabela para agendamento/sincronização
 CREATE TABLE IF NOT EXISTS mcp_sync_tasks (
     id uuid PRIMARY KEY DEFAULT uuid_generate_v4 (),
     mcp_provider TEXT NOT NULL,
@@ -787,7 +735,6 @@ CREATE TABLE IF NOT EXISTS mcp_sync_tasks (
 );
 -- COMMIT;
 
--- Tabela de jobs de sincronização
 CREATE TABLE IF NOT EXISTS mcp_sync_jobs (
     id uuid PRIMARY KEY DEFAULT uuid_generate_v4 (),
     task_id uuid NOT NULL REFERENCES mcp_sync_tasks (id) ON DELETE CASCADE,
@@ -850,7 +797,6 @@ CREATE TABLE IF NOT EXISTS mcp_sync_jobs (
     )
 );
 
--- Tabela de logs de sincronização
 CREATE TABLE IF NOT EXISTS mcp_sync_logs (
     id uuid PRIMARY KEY DEFAULT uuid_generate_v4 (),
     job_id uuid NOT NULL REFERENCES mcp_sync_jobs (id) ON DELETE CASCADE,
@@ -872,7 +818,6 @@ CREATE TABLE IF NOT EXISTS mcp_sync_logs (
 );
 -- COMMIT;
 
--- Criação da tabela mcp_discord_integrations
 CREATE TABLE IF NOT EXISTS mcp_discord_integrations (
     id uuid PRIMARY KEY DEFAULT uuid_generate_v4 (),
     discord_user_id TEXT NOT NULL,
@@ -915,7 +860,6 @@ CREATE TABLE IF NOT EXISTS mcp_discord_integrations (
 );
 -- COMMIT;
 
--- Índices para performance
 CREATE UNIQUE INDEX IF NOT EXISTS idx_discord_integrations_discord_user_id ON mcp_discord_integrations (discord_user_id);
 
 CREATE INDEX IF NOT EXISTS idx_discord_integrations_user_id ON mcp_discord_integrations (user_id);
@@ -928,24 +872,14 @@ CREATE INDEX IF NOT EXISTS idx_discord_integrations_guild_id ON mcp_discord_inte
 
 CREATE INDEX IF NOT EXISTS idx_discord_integrations_target_task_id ON mcp_discord_integrations (target_task_id);
 
--- Trigger para atualizar updated_at automaticamente
 CREATE OR REPLACE FUNCTION update_discord_integrations_updated_at()
-RETURNS TRIGGER AS $$
-BEGIN
-    NEW.updated_at = NOW();
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
+RETURNS TRIGGER AS $$ BEGIN NEW.updated_at = NOW(); RETURN NEW; END; $$ LANGUAGE plpgsql;
 
 CREATE TRIGGER trigger_update_discord_integrations_updated_at
-    BEFORE UPDATE ON mcp_discord_integrations
-    FOR EACH ROW
-    EXECUTE FUNCTION update_discord_integrations_updated_at();
+BEFORE UPDATE ON mcp_discord_integrations FOR EACH ROW
+EXECUTE FUNCTION update_discord_integrations_updated_at();
 -- COMMIT;
 
------------------------------------------------------------------------------------
-
--- Artefatos básicos iniciais
 INSERT INTO
     product_category (
         id,
@@ -1045,7 +979,6 @@ VALUES (
 ON CONFLICT DO NOTHING;
 -- COMMIT;
 
--- Inserting default roles
 INSERT INTO
     roles (
         id,
@@ -1076,7 +1009,6 @@ VALUES (
         now()
     );
 
--- Inserting default permissions
 INSERT INTO
     permissions (
         id,
@@ -1128,7 +1060,6 @@ VALUES (
         now()
     );
 
--- Associating permissions with roles
 INSERT INTO
     role_permissions (
         id,
@@ -1411,7 +1342,6 @@ VALUES (
         now()
     );
 
--- Criando um usuário de exemplo
 INSERT INTO
     "users" (
         "id",
@@ -1476,12 +1406,7 @@ RETURNING
 
 -- COMMIT;
 
--- =============================
--- BOT INTEGRATION TABLES
--- =============================
-
--- Tabela de integrações Discord
-CREATE TABLE IF NOT EXISTS mcp_discord_integrations (
+CREATE TABLE IF NOT EXISTS mcp_discord_integrations_alt (
     id uuid PRIMARY KEY DEFAULT uuid_generate_v4 (),
     discord_user_id text NOT NULL UNIQUE,
     username text NOT NULL,
@@ -1511,7 +1436,6 @@ CREATE TABLE IF NOT EXISTS mcp_discord_integrations (
     updated_by uuid REFERENCES users (id)
 );
 
--- Tabela de integrações Telegram
 CREATE TABLE IF NOT EXISTS mcp_telegram_integrations (
     id uuid PRIMARY KEY DEFAULT uuid_generate_v4 (),
     telegram_user_id text NOT NULL UNIQUE,
@@ -1541,7 +1465,6 @@ CREATE TABLE IF NOT EXISTS mcp_telegram_integrations (
     updated_by uuid REFERENCES users (id)
 );
 
--- Tabela de integrações WhatsApp
 CREATE TABLE IF NOT EXISTS mcp_whatsapp_integrations (
     id uuid PRIMARY KEY DEFAULT uuid_generate_v4 (),
     whatsapp_business_id text,
@@ -1572,7 +1495,6 @@ CREATE TABLE IF NOT EXISTS mcp_whatsapp_integrations (
     updated_by uuid REFERENCES users (id)
 );
 
--- Tabela de conversas unificadas
 CREATE TABLE IF NOT EXISTS mcp_conversations (
     id uuid PRIMARY KEY DEFAULT uuid_generate_v4 (),
     platform bot_platform NOT NULL,
@@ -1599,7 +1521,6 @@ CREATE TABLE IF NOT EXISTS mcp_conversations (
     )
 );
 
--- Tabela de mensagens unificadas
 CREATE TABLE IF NOT EXISTS mcp_messages (
     id uuid PRIMARY KEY DEFAULT uuid_generate_v4 (),
     conversation_id uuid NOT NULL REFERENCES mcp_conversations (id) ON DELETE CASCADE,
@@ -1627,42 +1548,17 @@ CREATE TABLE IF NOT EXISTS mcp_messages (
     updated_by uuid REFERENCES users (id)
 );
 
--- Tabela de análises de jobs do MCP
-CREATE TABLE IF NOT EXISTS mcp_analysis_jobs (
-    id uuid PRIMARY KEY DEFAULT uuid_generate_v4 (),
-    project_id uuid,
-    job_type varchar(50) NOT NULL,
-    job_status analysis_job_status NOT NULL DEFAULT 'PENDING',
-    source_url text,
-    source_type varchar(50),
-    input_data jsonb DEFAULT '{}',
-    output_data jsonb DEFAULT '{}',
-    error_message text,
-    progress decimal(5, 2) DEFAULT 0.0,
-    started_at timestamp,
-    completed_at timestamp,
-    retry_count integer DEFAULT 0,
-    max_retries integer DEFAULT 3,
-    metadata jsonb DEFAULT '{}',
-    user_id uuid NOT NULL,
-    created_by uuid NOT NULL,
-    updated_by uuid,
-    created_at timestamp DEFAULT now(),
-    updated_at timestamp DEFAULT now()
-);
-
--- Índices para performance
 CREATE INDEX IF NOT EXISTS idx_discord_integrations_user_id ON mcp_discord_integrations (discord_user_id);
 
-CREATE INDEX IF NOT EXISTS idx_discord_integrations_status ON mcp_discord_integrations (integration_status);
+-- CREATE INDEX IF NOT EXISTS idx_discord_integrations_status ON mcp_discord_integrations (integration_status);
 
 CREATE INDEX IF NOT EXISTS idx_telegram_integrations_user_id ON mcp_telegram_integrations (telegram_user_id);
 
-CREATE INDEX IF NOT EXISTS idx_telegram_integrations_status ON mcp_telegram_integrations (integration_status);
+-- CREATE INDEX IF NOT EXISTS idx_telegram_integrations_status ON mcp_telegram_integrations (integration_status);
 
 CREATE INDEX IF NOT EXISTS idx_whatsapp_integrations_phone ON mcp_whatsapp_integrations (phone_number);
 
-CREATE INDEX IF NOT EXISTS idx_whatsapp_integrations_status ON mcp_whatsapp_integrations (integration_status);
+-- CREATE INDEX IF NOT EXISTS idx_whatsapp_integrations_status ON mcp_whatsapp_integrations (integration_status);
 
 CREATE INDEX IF NOT EXISTS idx_conversations_platform ON mcp_conversations (platform);
 
@@ -1680,11 +1576,6 @@ CREATE INDEX IF NOT EXISTS idx_analysis_jobs_status ON mcp_analysis_jobs (job_st
 
 CREATE INDEX IF NOT EXISTS idx_analysis_jobs_user ON mcp_analysis_jobs (user_id);
 
--- =============================
--- NOTIFICATION SYSTEM TABLES
--- =============================
-
--- Notification Enums
 CREATE TYPE notification_rule_status AS ENUM ('ACTIVE', 'INACTIVE', 'PAUSED');
 
 CREATE TYPE notification_rule_condition AS ENUM ('JOB_COMPLETED', 'JOB_FAILED', 'JOB_STARTED', 'JOB_RETRIED', 'SCORE_ALERT', 'TIME_ALERT');
@@ -1703,7 +1594,6 @@ CREATE TYPE notification_history_status AS ENUM ('PENDING', 'SENT', 'DELIVERED',
 
 CREATE TYPE notification_history_platform AS ENUM ('TELEGRAM', 'DISCORD', 'WHATSAPP', 'EMAIL', 'SLACK', 'WEBHOOK');
 
--- Tabela de regras de notificação
 CREATE TABLE IF NOT EXISTS mcp_notification_rules (
     id uuid PRIMARY KEY DEFAULT uuid_generate_v4 (),
     name varchar(255) NOT NULL,
@@ -1730,7 +1620,6 @@ CREATE TABLE IF NOT EXISTS mcp_notification_rules (
     trigger_count bigint DEFAULT 0
 );
 
--- Tabela de templates de notificação
 CREATE TABLE IF NOT EXISTS mcp_notification_templates (
     id uuid PRIMARY KEY DEFAULT uuid_generate_v4 (),
     name varchar(255) NOT NULL,
@@ -1751,7 +1640,6 @@ CREATE TABLE IF NOT EXISTS mcp_notification_templates (
     updated_at timestamp DEFAULT now()
 );
 
--- Tabela de histórico de notificações
 CREATE TABLE IF NOT EXISTS mcp_notification_history (
     id uuid PRIMARY KEY DEFAULT uuid_generate_v4 (),
     rule_id uuid NOT NULL REFERENCES mcp_notification_rules (id),
