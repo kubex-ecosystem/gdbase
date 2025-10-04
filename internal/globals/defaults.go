@@ -9,9 +9,8 @@ import (
 func NewPropertyType[T any](name string, v *T, withMetrics bool, cb func(any) (bool, error)) ci.IProperty[T] {
 	ci := svc.NewProperty(name, v, withMetrics, cb)
 
-	//lint:ignore SA4023 explicação do motivo
-	if ci == nil { //lint:ignore SA4023 explicação do motivo
-		return nil
-	}
+	// if ci == nil {
+	// 	return nil
+	// }
 	return ci.(*svc.Property[T])
 }
