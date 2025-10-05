@@ -15,7 +15,7 @@ type DBService = svc.IDBService
 type IDBService interface {
 	svc.IDBService
 }
-type DBServiceImpl = svc.DBService
+type DBServiceImpl = svc.DBServiceImpl
 
 type DBConfig = svc.IDBConfig
 type IDBConfig interface {
@@ -49,6 +49,8 @@ func GetMigrationFiles() embed.FS {
 }
 
 type Database = it.Database
+type Messagery = it.Messagery
+
 type Environment = ci.IEnvironment
 type EnvironmentType = it.Environment
 
@@ -87,3 +89,20 @@ type JSONBData = it.JSONBData
 type IJSONBData interface{ ci.IJSONB }
 
 func NewJSONBData() IJSONBData { return it.NewJSONBData() }
+
+type JWT = it.JWT
+type JWTImpl = it.JWT
+
+func NewJWT() *JWTImpl {
+	return &it.JWT{}
+}
+
+type Reference = it.Reference
+type IReference interface {
+	ci.IReference
+}
+type ReferenceImpl = it.Reference
+
+func NewReference(name string) IReference {
+	return it.NewReference(name)
+}

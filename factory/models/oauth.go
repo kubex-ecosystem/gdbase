@@ -37,8 +37,8 @@ func NewOAuthClientModel(clientID, clientName string, redirectURIs, scopes []str
 }
 
 // NewOAuthClientRepo creates a new OAuth client repository
-func NewOAuthClientRepo(ctx context.Context, dbService *svc.DBService, dbName string) OAuthClientRepo {
-	return oauth.NewOAuthClientRepo(ctx, dbService, dbName)
+func NewOAuthClientRepo(ctx context.Context, dbService *svc.DBServiceImpl) OAuthClientRepo {
+	return oauth.NewOAuthClientRepo(ctx, dbService)
 }
 
 // NewOAuthClientService creates a new OAuth client service
@@ -59,11 +59,11 @@ func NewAuthCodeModel(code, clientID, userID, redirectURI, codeChallenge, method
 }
 
 // NewAuthCodeRepo creates a new authorization code repository
-func NewAuthCodeRepo(ctx context.Context, dbService *svc.DBService, dbName string) AuthCodeRepo {
+func NewAuthCodeRepo(ctx context.Context, dbService *svc.DBServiceImpl) AuthCodeRepo {
 	if dbService == nil {
 		return nil
 	}
-	db, err := dbService.GetDB(ctx, dbName)
+	db, err := svc.GetDB(ctx, dbService)
 	if err != nil {
 		return nil
 	}

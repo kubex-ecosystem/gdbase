@@ -1,7 +1,11 @@
 package products
 
 import (
+	"context"
 	"fmt"
+
+	gl "github.com/kubex-ecosystem/gdbase/internal/module/kbx"
+	svc "github.com/kubex-ecosystem/gdbase/internal/services"
 
 	"gorm.io/gorm"
 )
@@ -19,8 +23,13 @@ type ProductRepo struct {
 	g *gorm.DB
 }
 
-func NewProductRepo(db *gorm.DB) IProductRepo {
-	if db == nil {
+func NewProductRepo(ctx context.Context, dbService *svc.DBServiceImpl) IProductRepo {
+	if dbService == nil {
+		return nil
+	}
+	db, err := svc.GetDB(ctx, dbService)
+	if err != nil {
+		gl.Log("error", fmt.Sprintf("ProductRepo: failed to get DB: %v", err))
 		return nil
 	}
 	return &ProductRepo{db}
@@ -77,6 +86,7 @@ func (pr *ProductRepo) Delete(id string) error {
 func (pr *ProductRepo) Close() error {
 	sqlDB, err := pr.g.DB()
 	if err != nil {
+		gl.Log("error", fmt.Sprintf("ProductRepo: failed to get DB from gorm.DB: %v", err))
 		return err
 	}
 	return sqlDB.Close()

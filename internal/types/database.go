@@ -2,6 +2,7 @@ package types
 
 type Database struct {
 	Reference        *Reference         `json:"reference" yaml:"reference" xml:"reference" toml:"reference" mapstructure:"reference,squash"`
+	IsDefault        bool               `gorm:"default:false" json:"is_default" yaml:"is_default" xml:"is_default" toml:"is_default" mapstructure:"is_default"`
 	Enabled          bool               `gorm:"default:true" json:"enabled" yaml:"enabled" xml:"enabled" toml:"enabled" mapstructure:"enabled"`
 	FilePath         string             `json:"file_path" yaml:"file_path" xml:"file_path" toml:"file_path" mapstructure:"file_path"`
 	Type             string             `gorm:"not null" json:"type" yaml:"type" xml:"type" toml:"type" mapstructure:"type"`

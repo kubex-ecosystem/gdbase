@@ -1,8 +1,10 @@
 package models
 
 import (
+	"context"
+
 	m "github.com/kubex-ecosystem/gdbase/internal/models/products"
-	"gorm.io/gorm"
+	svc "github.com/kubex-ecosystem/gdbase/internal/services"
 )
 
 type ProductModel = m.Product
@@ -13,6 +15,6 @@ func NewProductService(productRepo ProductRepo) ProductService {
 	return m.NewProductService(productRepo)
 }
 
-func NewProductRepo(db *gorm.DB) ProductRepo {
-	return m.NewProductRepo(db)
+func NewProductRepo(ctx context.Context, dbService *svc.DBServiceImpl) ProductRepo {
+	return m.NewProductRepo(ctx, dbService)
 }

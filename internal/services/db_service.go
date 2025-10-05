@@ -28,19 +28,18 @@ import (
 type IDBService interface {
 	Initialize(ctx context.Context) error
 	InitializeFromEnv(ctx context.Context, env ci.IEnvironment) error
-	GetDB(ctx context.Context, dbName string) (*gorm.DB, error)
-	CloseDBConnection(ctx context.Context, dbName string) error
-	CheckDatabaseHealth(ctx context.Context, dbName string) error
-	GetConnection(ctx context.Context, database string, timeout time.Duration) (*sql.Conn, error)
-	IsConnected(ctx context.Context, dbName string) error
-	Reconnect(ctx context.Context, dbName string) error
-	GetName(ctx context.Context, dbName string) (string, error)
-	GetHost(ctx context.Context, dbName string) (string, error)
+	CloseDBConnection(ctx context.Context) error
+	CheckDatabaseHealth(ctx context.Context) error
+	// GetConnection(ctx context.Context, timeout time.Duration) (*sql.Conn, error)
+	IsConnected(ctx context.Context) error
+	Reconnect(ctx context.Context) error
+	GetName(ctx context.Context) (string, error)
+	GetHost(ctx context.Context) (string, error)
 	GetConfig(ctx context.Context) IDBConfig
-	RunMigrations(ctx context.Context, dbName string, files map[string]string) (int, int, error)
+	RunMigrations(ctx context.Context, files map[string]string) (int, int, error)
 }
 
-type DBService struct {
+type DBServiceImpl struct {
 	Logger    l.Logger
 	reference ci.IReference
 	mutexes   ci.IMutexes
@@ -48,13 +47,14 @@ type DBService struct {
 	db   map[string]*gorm.DB
 	pool *sync.Pool
 
+	// config holds the database configuration
 	config *DBConfig
 
 	// properties are used to store database settings and configurations
 	properties map[string]any
 }
 
-func newDatabaseService(_ context.Context, config *DBConfig, logger l.Logger) (*DBService, error) {
+func newDatabaseService(_ context.Context, config *DBConfig, logger l.Logger) (*DBServiceImpl, error) {
 	if logger == nil {
 		logger = l.GetLogger("GDBase")
 	}
@@ -66,9 +66,9 @@ func newDatabaseService(_ context.Context, config *DBConfig, logger l.Logger) (*
 		return nil, fmt.Errorf("❌ Configuração de banco de dados não pode ser vazia")
 	}
 
-	dbService := &DBService{
+	dbService := &DBServiceImpl{
 		Logger:     logger,
-		reference:  ti.NewReference("DBService"),
+		reference:  ti.NewReference("DBServiceImpl"),
 		mutexes:    ti.NewMutexesType(),
 		properties: make(map[string]any),
 		pool:       &sync.Pool{},
@@ -80,11 +80,11 @@ func newDatabaseService(_ context.Context, config *DBConfig, logger l.Logger) (*
 	return dbService, nil
 }
 
-func NewDatabaseService(ctx context.Context, config *DBConfig, logger l.Logger) (*DBService, error) {
+func NewDatabaseService(ctx context.Context, config *DBConfig, logger l.Logger) (*DBServiceImpl, error) {
 	return newDatabaseService(ctx, config, logger)
 }
 
-func (d *DBService) Initialize(ctx context.Context) error {
+func (d *DBServiceImpl) Initialize(ctx context.Context) error {
 	if d == nil {
 		return fmt.Errorf("❌ Serviço de banco de dados não inicializado")
 	}
@@ -171,7 +171,7 @@ func (d *DBService) Initialize(ctx context.Context) error {
 	return nil
 }
 
-func (d *DBService) InitializeFromEnv(ctx context.Context, env ci.IEnvironment) error {
+func (d *DBServiceImpl) InitializeFromEnv(ctx context.Context, env ci.IEnvironment) error {
 	if d.db != nil {
 		return nil
 	}
@@ -225,49 +225,8 @@ func (d *DBService) InitializeFromEnv(ctx context.Context, env ci.IEnvironment) 
 	return nil
 }
 
-func (d *DBService) GetDB(ctx context.Context, dbName string) (*gorm.DB, error) {
-	if d == nil {
-		return nil, fmt.Errorf("❌ Serviço de banco de dados não inicializado")
-	}
-	if d.db == nil {
-		return nil, fmt.Errorf("❌ Banco de dados não inicializado")
-	}
-	if d.config == nil {
-		return nil, fmt.Errorf("❌ Database Service não configurado")
-	}
-	if dbName == "" {
-		return nil, fmt.Errorf("❌ Nome do banco de dados não pode ser vazio")
-	}
-
-	var err error
-	db, exists := d.db[dbName]
-	if exists && db != nil {
-		return db, nil
-	}
-
-	// Se não existir, tenta conectar
-	var dbConfig *ti.Database
-	for _, cfg := range d.config.Databases {
-		if cfg.Name == dbName && cfg.Enabled {
-			dbConfig = cfg
-			break
-		}
-	}
-	if dbConfig == nil {
-		return nil, fmt.Errorf("❌ Configuração do banco de dados '%s' não encontrada", dbName)
-	}
-	db, _, err = connectDatabase(ctx, dbConfig)
-	if err != nil {
-		return nil, fmt.Errorf("❌ Erro ao conectar ao banco de dados '%s': %v", dbName, err)
-	}
-
-	// Armazena a conexão no cache
-	d.db[dbName] = db
-	return db, nil
-}
-
-func (d *DBService) CloseDBConnection(ctx context.Context, dbName string) error {
-	db, err := d.GetDB(ctx, dbName)
+func (d *DBServiceImpl) CloseDBConnection(ctx context.Context) error {
+	db, err := GetDB(ctx, d)
 	if err != nil {
 		return fmt.Errorf("❌ Erro ao obter banco de dados: %v", err)
 	}
@@ -278,8 +237,8 @@ func (d *DBService) CloseDBConnection(ctx context.Context, dbName string) error 
 	return sqlDB.Close()
 }
 
-func (d *DBService) CheckDatabaseHealth(ctx context.Context, dbName string) error {
-	db, err := d.GetDB(ctx, dbName)
+func (d *DBServiceImpl) CheckDatabaseHealth(ctx context.Context) error {
+	db, err := GetDB(ctx, d)
 	if err != nil {
 		return fmt.Errorf("❌ Erro ao obter banco de dados: %v", err)
 	}
@@ -289,7 +248,7 @@ func (d *DBService) CheckDatabaseHealth(ctx context.Context, dbName string) erro
 	return nil
 }
 
-func (d *DBService) GetConnection(ctx context.Context, database string, timeout time.Duration) (*sql.Conn, error) {
+func (d *DBServiceImpl) GetConnection(ctx context.Context, timeout time.Duration) (*sql.Conn, error) {
 	if d.db == nil {
 		return nil, fmt.Errorf("❌ Banco de dados não inicializado")
 	}
@@ -302,15 +261,19 @@ func (d *DBService) GetConnection(ctx context.Context, database string, timeout 
 	if config == nil {
 		return nil, fmt.Errorf("❌ Erro ao recuperar a configuração do banco de dados")
 	}
+	dbName, ok := d.GetDefaultDBName()
+	if !ok {
+		return nil, fmt.Errorf("❌ Erro ao recuperar o nome do banco de dados padrão")
+	}
 	var dbConfig *ti.Database
 	for _, dbConf := range config.Databases {
-		if dbConf.Name == database && dbConf.Enabled {
+		if dbConf.Name == dbName && dbConf.Enabled {
 			dbConfig = dbConf
 			break
 		}
 	}
 	if dbConfig == nil {
-		return nil, fmt.Errorf("❌ Configuração do banco de dados '%s' não encontrada ou desabilitada", database)
+		return nil, fmt.Errorf("❌ Configuração do banco de dados não encontrada ou desabilitada")
 	}
 
 	// Aguarda o banco de dados ficar pronto e retorna a conexão
@@ -320,13 +283,30 @@ func (d *DBService) GetConnection(ctx context.Context, database string, timeout 
 	}
 	_, conn, err := waitAndConnect(context.Background(), dbConfig, timeout)
 	if err != nil {
-		return nil, fmt.Errorf("❌ Erro ao conectar ao banco de dados '%s': %v", database, err)
+		return nil, fmt.Errorf("❌ Erro ao conectar ao banco de dados: %v", err)
 	}
 	return conn, nil
 }
 
-func (d *DBService) IsConnected(ctx context.Context, dbName string) error {
-	db, err := d.GetDB(ctx, dbName)
+func (d *DBServiceImpl) GetDefaultDBName() (string, bool) {
+	if d == nil {
+		return "", false
+	}
+
+	if len(d.config.Databases) > 0 {
+		for name, dbConfig := range d.config.Databases {
+			if dbConfig.Enabled && dbConfig.IsDefault {
+				return name, true
+			}
+		}
+	}
+
+	return "", false
+}
+
+func (d *DBServiceImpl) IsConnected(ctx context.Context) error {
+
+	db, err := GetDB(ctx, d)
 	if err != nil {
 		return fmt.Errorf("❌ Erro ao obter banco de dados: %v", err)
 	}
@@ -336,9 +316,9 @@ func (d *DBService) IsConnected(ctx context.Context, dbName string) error {
 	return nil
 }
 
-func (d *DBService) Reconnect(ctx context.Context, dbName string) error {
+func (d *DBServiceImpl) Reconnect(ctx context.Context) error {
 	var err error
-	db, err := d.GetDB(ctx, dbName)
+	db, err := GetDB(ctx, d)
 	if err != nil {
 		return fmt.Errorf("❌ Erro ao obter banco de dados: %v", err)
 	}
@@ -350,23 +330,17 @@ func (d *DBService) Reconnect(ctx context.Context, dbName string) error {
 		if err := sqlDB.Close(); err != nil {
 			return fmt.Errorf("❌ Erro ao fechar conexão SQL: %v", err)
 		}
+		if err := sqlDB.PingContext(ctx); err == nil {
+			// A conexão está ativa, não é necessário reconectar
+			return nil
+		}
 	}
-
-	dbConfig := d.config.Databases[dbName]
-	if dbConfig == nil {
-		return fmt.Errorf("❌ Configuração do banco de dados '%s' não encontrada", dbName)
-	}
-
-	db, _, err = waitAndConnect(context.Background(), dbConfig, 1*time.Minute)
-	if err != nil {
-		return fmt.Errorf("❌ Erro ao obter banco de dados: %v", err)
-	}
-
-	d.db[dbName] = db
-	return nil
+	// Limpa conexões antigas e reconecta
+	d.db = make(map[string]*gorm.DB) // Limpa conexões antigas
+	return d.Initialize(ctx)
 }
 
-func (d *DBService) GetName(ctx context.Context, dbName string) (string, error) {
+func (d *DBServiceImpl) GetName(ctx context.Context) (string, error) {
 	if d.db == nil {
 		return "", fmt.Errorf("❌ Banco de dados não inicializado")
 	}
@@ -381,7 +355,7 @@ func (d *DBService) GetName(ctx context.Context, dbName string) (string, error) 
 	return vl, nil
 }
 
-func (d *DBService) GetHost(ctx context.Context, dbName string) (string, error) {
+func (d *DBServiceImpl) GetHost(ctx context.Context) (string, error) {
 	if d.db == nil {
 		return "", fmt.Errorf("❌ Banco de dados não inicializado")
 	}
@@ -396,16 +370,20 @@ func (d *DBService) GetHost(ctx context.Context, dbName string) (string, error) 
 	return vl, nil
 }
 
-func (d *DBService) GetConfig(ctx context.Context) IDBConfig {
+func (d *DBServiceImpl) GetConfig(ctx context.Context) IDBConfig {
 	if d == nil {
 		return nil
 	}
 	return d.config
 }
 
-func (d *DBService) RunMigrations(ctx context.Context, dbName string, files map[string]string) (int, int, error) {
+func (d *DBServiceImpl) RunMigrations(ctx context.Context, files map[string]string) (int, int, error) {
 	if d.db == nil {
 		return 0, 0, fmt.Errorf("❌ Banco de dados não inicializado")
+	}
+	dbName, ok := d.GetDefaultDBName()
+	if !ok {
+		return 0, 0, fmt.Errorf("❌ Banco de dados padrão não encontrado")
 	}
 	sqlDB, err := d.db[dbName].DB()
 	if err != nil {
@@ -421,7 +399,7 @@ func (d *DBService) RunMigrations(ctx context.Context, dbName string, files map[
 
 }
 
-func (d *DBService) GetProperties(ctx context.Context) map[string]any {
+func (d *DBServiceImpl) GetProperties(ctx context.Context) map[string]any {
 	return d.properties
 }
 
@@ -714,4 +692,21 @@ func GetConnectionString(dbConfig *ti.Database) string {
 		)
 	}
 	return ""
+}
+
+func GetDB(ctx context.Context, d *DBServiceImpl) (*gorm.DB, error) {
+	if d == nil {
+		return nil, fmt.Errorf("❌ Serviço de banco de dados não inicializado")
+	}
+	if d.db == nil {
+		return nil, fmt.Errorf("❌ Banco de dados não inicializado")
+	}
+	if d.config == nil {
+		return nil, fmt.Errorf("❌ Database Service não configurado")
+	}
+	dbName, hasDefault := d.GetDefaultDBName()
+	if !hasDefault {
+		return nil, fmt.Errorf("❌ Nenhum banco de dados padrão configurado")
+	}
+	return d.db[dbName], nil
 }

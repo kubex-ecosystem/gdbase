@@ -6,10 +6,12 @@ import (
 	"fmt"
 
 	"github.com/google/uuid"
+
 	gl "github.com/kubex-ecosystem/gdbase/internal/module/logger"
-	is "github.com/kubex-ecosystem/gdbase/internal/services"
+	svc "github.com/kubex-ecosystem/gdbase/internal/services"
 	l "github.com/kubex-ecosystem/logz"
 	xtt "github.com/kubex-ecosystem/xtui/types"
+
 	"gorm.io/gorm"
 )
 
@@ -23,7 +25,7 @@ type IProvidersRepo interface {
 	Delete(id string) error
 	Close() error
 	List(where ...interface{}) (xtt.TableDataHandler, error)
-	GetContextDBService() is.IDBService
+	GetContextDBService() *svc.DBServiceImpl
 }
 
 type ProvidersRepo struct {
@@ -31,9 +33,14 @@ type ProvidersRepo struct {
 	g *gorm.DB
 }
 
-func NewProvidersRepo(db *gorm.DB) IProvidersRepo {
-	if db == nil {
-		gl.Log("error", "ProvidersModel repository: gorm DB is nil")
+func NewProvidersRepo(ctx context.Context, dbService *svc.DBServiceImpl) IProvidersRepo {
+	if dbService == nil {
+		gl.Log("error", "ProvidersModel repository: dbService is nil")
+		return nil
+	}
+	db, err := svc.GetDB(ctx, dbService)
+	if err != nil {
+		gl.Log("error", fmt.Sprintf("ProvidersModel repository: failed to get DB from dbService: %v", err))
 		return nil
 	}
 	return &ProvidersRepo{db}
@@ -166,8 +173,8 @@ func (pr *ProvidersRepo) List(where ...interface{}) (xtt.TableDataHandler, error
 	return xtt.NewTableHandlerFromRows([]string{"#", "ID", "Provider", "Org/Group", "Config Size", "Created At", "Updated At"}, tableHandlerMap), nil
 }
 
-func (pr *ProvidersRepo) GetContextDBService() is.IDBService {
-	dbService, dbServiceErr := is.NewDatabaseService(context.Background(), is.NewDBConfigWithDBConnection(pr.g), l.GetLogger("GdoBase"))
+func (pr *ProvidersRepo) GetContextDBService() *svc.DBServiceImpl {
+	dbService, dbServiceErr := svc.NewDatabaseService(context.Background(), svc.NewDBConfigWithDBConnection(pr.g), l.GetLogger("GdoBase"))
 	if dbServiceErr != nil {
 		gl.Log("error", fmt.Sprintf("ProvidersModel repository: failed to get context DB service: %v", dbServiceErr))
 		return nil

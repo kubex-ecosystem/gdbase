@@ -19,7 +19,7 @@ type IDBService interface {
 	svc.IDBService
 }
 
-type DBService = svc.DBService
+type DBService = svc.DBServiceImpl
 
 type IDockerService = svc.IDockerService
 type DockerService = svc.DockerService

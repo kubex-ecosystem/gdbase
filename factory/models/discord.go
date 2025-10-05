@@ -1,8 +1,10 @@
 package models
 
 import (
+	"context"
+
 	d "github.com/kubex-ecosystem/gdbase/internal/models/discord"
-	"gorm.io/gorm"
+	svc "github.com/kubex-ecosystem/gdbase/internal/services"
 )
 
 type DiscordModel = d.DiscordModel
@@ -37,8 +39,8 @@ func NewDiscordService(discordRepo DiscordRepo) DiscordService {
 	return d.NewDiscordService(discordRepo)
 }
 
-func NewDiscordRepo(db *gorm.DB) DiscordRepo {
-	return d.NewDiscordRepo(db)
+func NewDiscordRepo(ctx context.Context, dbService *svc.DBServiceImpl) DiscordRepo {
+	return d.NewDiscordRepo(ctx, dbService)
 }
 
 func NewDiscordModel() DiscordModelInterface {

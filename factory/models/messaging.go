@@ -1,8 +1,10 @@
 package models
 
 import (
+	"context"
+
 	m "github.com/kubex-ecosystem/gdbase/internal/models/messaging"
-	"gorm.io/gorm"
+	svc "github.com/kubex-ecosystem/gdbase/internal/services"
 )
 
 // Conversation types
@@ -94,8 +96,8 @@ const (
 
 // Conversation functions
 
-func NewConversationRepo(db *gorm.DB) ConversationRepo {
-	return m.NewConversationRepository(db)
+func NewConversationRepo(ctx context.Context, dbService *svc.DBServiceImpl) ConversationRepo {
+	return m.NewConversationRepository(ctx, dbService)
 }
 
 func NewConversationModel() ConversationModelInterface {

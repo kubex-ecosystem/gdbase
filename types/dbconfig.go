@@ -23,7 +23,7 @@ const (
 
 type DBConfig = svc.DBConfig
 type IDBService = s.IDBService
-type DBService = svc.DBService
+type DBService = svc.DBServiceImpl
 type DatabaseType = t.Database
 type EnvironmentType = it.IEnvironment
 type RabbitMQConfig = t.RabbitMQ

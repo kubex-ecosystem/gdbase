@@ -4,8 +4,10 @@ import (
 	"context"
 	"fmt"
 
-	"gorm.io/gorm"
 	gl "github.com/kubex-ecosystem/gdbase/internal/module/logger"
+	svc "github.com/kubex-ecosystem/gdbase/internal/services"
+
+	"gorm.io/gorm"
 )
 
 type ITelegramRepo interface {
@@ -31,7 +33,12 @@ type TelegramRepository struct {
 	db *gorm.DB
 }
 
-func NewTelegramRepository(db *gorm.DB) ITelegramRepo {
+func NewTelegramRepository(ctx context.Context, dbService *svc.DBServiceImpl) ITelegramRepo {
+	db, err := svc.GetDB(ctx, dbService)
+	if err != nil {
+		gl.Log("error", "Failed to get DB from DBService", err)
+		return nil
+	}
 	return &TelegramRepository{db: db}
 }
 

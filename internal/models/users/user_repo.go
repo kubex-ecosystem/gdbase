@@ -6,7 +6,7 @@ import (
 
 	"github.com/google/uuid"
 	gl "github.com/kubex-ecosystem/gdbase/internal/module/logger"
-	is "github.com/kubex-ecosystem/gdbase/internal/services"
+	svc "github.com/kubex-ecosystem/gdbase/internal/services"
 	l "github.com/kubex-ecosystem/logz"
 	xtt "github.com/kubex-ecosystem/xtui/types"
 	"gorm.io/gorm"
@@ -22,7 +22,7 @@ type IUserRepo interface {
 	Delete(id string) error
 	Close() error
 	List(where ...interface{}) (xtt.TableDataHandler, error)
-	GetContextDBService() *is.DBService
+	GetContextDBService() *svc.DBServiceImpl
 }
 
 type UserRepo struct {
@@ -30,12 +30,17 @@ type UserRepo struct {
 	g *gorm.DB
 }
 
-func NewUserRepo(db *gorm.DB) IUserRepo {
-	if db == nil {
-		gl.Log("error", "UserModel repository: gorm DB is nil")
+func NewUserRepo(ctx context.Context, dbService *svc.DBServiceImpl) IUserRepo {
+	if dbService == nil {
+		gl.Log("error", "UserModel repository: dbService is nil")
 		return nil
 	}
-	return &UserRepo{db}
+	db, err := svc.GetDB(ctx, dbService)
+	if err != nil {
+		gl.Log("error", fmt.Sprintf("UserModel repository: failed to get DB from dbService: %v", err))
+		return nil
+	}
+	return &UserRepo{g: db}
 }
 
 func (ur *UserRepo) TableName() string {
@@ -133,8 +138,8 @@ func (ur *UserRepo) List(where ...interface{}) (xtt.TableDataHandler, error) {
 
 	return xtt.NewTableHandlerFromRows([]string{"#", "ID", "Name", "Username", "Email", "Phone", "Active"}, tableHandlerMap), nil
 }
-func (ur *UserRepo) GetContextDBService() *is.DBService {
-	dbService, dbServiceErr := is.NewDatabaseService(context.Background(), is.NewDBConfigWithDBConnection(ur.g), l.GetLogger("GDBase"))
+func (ur *UserRepo) GetContextDBService() *svc.DBServiceImpl {
+	dbService, dbServiceErr := svc.NewDatabaseService(context.Background(), svc.NewDBConfigWithDBConnection(ur.g), l.GetLogger("GDBase"))
 	if dbServiceErr != nil {
 		gl.Log("error", fmt.Sprintf("UserModel repository: failed to get context DB service (%s)", dbServiceErr))
 		return nil

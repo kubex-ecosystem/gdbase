@@ -28,12 +28,12 @@ type OAuthClientRepo struct {
 }
 
 // NewOAuthClientRepo creates a new OAuth client repository
-func NewOAuthClientRepo(ctx context.Context, dbService *svc.DBService, dbName string) IOAuthClientRepo {
+func NewOAuthClientRepo(ctx context.Context, dbService *svc.DBServiceImpl) IOAuthClientRepo {
 	if dbService == nil {
 		gl.Log("error", "OAuthClientRepo: dbService is nil")
 		return nil
 	}
-	db, err := dbService.GetDB(ctx, dbName)
+	db, err := svc.GetDB(ctx, dbService)
 	if err != nil {
 		gl.Log("error", fmt.Sprintf("OAuthClientRepo: failed to get db: %v", err))
 		return nil

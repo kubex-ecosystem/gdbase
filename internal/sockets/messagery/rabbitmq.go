@@ -12,7 +12,7 @@ import (
 	amqp "github.com/rabbitmq/amqp091-go"
 
 	gl "github.com/kubex-ecosystem/gdbase/internal/module/kbx"
-	is "github.com/kubex-ecosystem/gdbase/internal/services"
+	svc "github.com/kubex-ecosystem/gdbase/internal/services"
 )
 
 type AMQP struct {
@@ -320,13 +320,13 @@ func (a *AMQP) Publish(exchange, key string, body []byte) error {
 	})
 }
 
-func GetRabbitMQURL(dbService is.DBService) string {
+func GetRabbitMQURL(dbService svc.DBServiceImpl) string {
 	var host = ""
 	var port = ""
 	var username = ""
 	var password = ""
 	properties := dbService.GetProperties(context.Background())
-	dbConfig := properties["dbconfig"].(*is.DBConfig)
+	dbConfig := properties["dbconfig"].(*svc.DBConfig)
 	if dbConfig == nil {
 		gl.Log("error", "DBConfig is nil, cannot get RabbitMQ URL")
 		return ""
@@ -355,7 +355,7 @@ func GetRabbitMQURL(dbService is.DBService) string {
 	if dbConfig.Messagery.RabbitMQ.Password != "" {
 		password = dbConfig.Messagery.RabbitMQ.Password
 	} else {
-		rabbitPassKey, rabbitPassErr := is.GetOrGenPasswordKeyringPass("rabbitmq")
+		rabbitPassKey, rabbitPassErr := svc.GetOrGenPasswordKeyringPass("rabbitmq")
 		if rabbitPassErr != nil {
 			gl.Log("error", "Skipping RabbitMQ setup due to error generating password")
 			gl.Log("debug", fmt.Sprintf("Error generating key: %v", rabbitPassErr))

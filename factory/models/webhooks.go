@@ -1,8 +1,10 @@
 package models
 
 import (
+	"context"
+
 	m "github.com/kubex-ecosystem/gdbase/internal/models/webhooks"
-	"gorm.io/gorm"
+	svc "github.com/kubex-ecosystem/gdbase/internal/services"
 )
 
 type Webhook = m.IWebhook
@@ -31,8 +33,8 @@ func NewWebhookService(webhookRepo WebhookRepo) WebhookService {
 	return m.NewWebhookService(webhookRepo)
 }
 
-func NewWebhookRepo(db *gorm.DB) WebhookRepo {
-	return m.NewWebhookRepo(db)
+func NewWebhookRepo(ctx context.Context, dbService *svc.DBServiceImpl) WebhookRepo {
+	return m.NewWebhookRepo(ctx, dbService)
 }
 
 func NewWebhookModel(fullURL, event, status string) Webhook {

@@ -2,9 +2,14 @@ package cron
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/google/uuid"
+
+	gl "github.com/kubex-ecosystem/gdbase/internal/module/logger"
+	svc "github.com/kubex-ecosystem/gdbase/internal/services"
+
 	"gorm.io/gorm"
 )
 
@@ -20,7 +25,12 @@ type CronJobRepo struct {
 	DB *gorm.DB
 }
 
-func NewCronJobRepo(ctx context.Context, db *gorm.DB) ICronJobRepo {
+func NewCronJobRepo(ctx context.Context, dbService *svc.DBServiceImpl) ICronJobRepo {
+	db, err := svc.GetDB(ctx, dbService)
+	if err != nil {
+		gl.Log("error", fmt.Sprintf("CronJobRepo: failed to get DB: %v", err))
+		return nil
+	}
 	return &CronJobRepo{DB: db}
 }
 

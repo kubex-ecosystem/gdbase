@@ -84,7 +84,7 @@ type DBConfig struct {
 	AutoMigrate bool `json:"auto_migrate,omitempty" yaml:"auto_migrate,omitempty" xml:"auto_migrate,omitempty" toml:"auto_migrate,omitempty" mapstructure:"auto_migrate,omitempty"`
 
 	// JWT is used to configure the JWT token settings
-	JWT ti.JWT `json:"jwt,omitempty" yaml:"jwt,omitempty" xml:"jwt,omitempty" toml:"jwt,omitempty" mapstructure:"jwt,omitempty"`
+	JWT *ti.JWT `json:"jwt,omitempty" yaml:"jwt,omitempty" xml:"jwt,omitempty" toml:"jwt,omitempty" mapstructure:"jwt,omitempty"`
 
 	// Reference is used to configure the reference of the database
 	*ti.Reference `json:"reference,omitempty" yaml:"reference,omitempty" xml:"reference,omitempty" toml:"reference,omitempty" mapstructure:"reference,squash,omitempty"`
@@ -93,7 +93,7 @@ type DBConfig struct {
 	Enabled bool `json:"enabled,omitempty" yaml:"enabled,omitempty" xml:"enabled,omitempty" toml:"enabled,omitempty" mapstructure:"enabled,omitempty"`
 
 	// MongoDB is used to configure the MongoDB database
-	MongoDB ti.MongoDB `json:"mongodb,omitempty" yaml:"mongodb,omitempty" xml:"mongodb,omitempty" toml:"mongodb,omitempty" mapstructure:"mongodb,omitempty"`
+	MongoDB *ti.MongoDB `json:"mongodb,omitempty" yaml:"mongodb,omitempty" xml:"mongodb,omitempty" toml:"mongodb,omitempty" mapstructure:"mongodb,omitempty"`
 
 	// Databases is used to configure the databases (Postgres, MySQL, SQLite, SQLServer, Oracle)
 	Databases map[string]*ti.Database `json:"databases,omitempty" yaml:"databases,omitempty" xml:"databases,omitempty" toml:"databases,omitempty" mapstructure:"databases,omitempty"`
@@ -378,7 +378,7 @@ func (d *DBConfig) GetMongoDBConfig() *ti.MongoDB {
 	if d == nil {
 		return nil
 	}
-	return &d.MongoDB
+	return d.MongoDB
 }
 func (d *DBConfig) GetRedisConfig() *ti.Redis {
 	if d == nil {

@@ -17,7 +17,7 @@ type IPreferencesService interface {
 	GetPreferencesByScope(scope string) (IPreferencesModel, error)
 	GetPreferencesByUserID(userID string) ([]IPreferencesModel, error)
 	UpsertPreferencesByScope(scope string, config t.JSONB, userID string) (IPreferencesModel, error)
-	GetContextDBService() *is.DBService
+	GetContextDBService() *is.DBServiceImpl
 }
 
 type PreferencesService struct {
@@ -125,6 +125,6 @@ func (ps *PreferencesService) UpsertPreferencesByScope(scope string, config t.JS
 	return ps.UpdatePreferences(existing)
 }
 
-func (ps *PreferencesService) GetContextDBService() *is.DBService {
-	return ps.repo.GetContextDBService().(*is.DBService)
+func (ps *PreferencesService) GetContextDBService() *is.DBServiceImpl {
+	return ps.repo.GetContextDBService()
 }

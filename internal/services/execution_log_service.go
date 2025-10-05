@@ -1,8 +1,6 @@
 package services
 
-import (
-	jobqueue "github.com/kubex-ecosystem/gdbase/internal/models/job_queue"
-)
+// /jobqueue "github.com/kubex-ecosystem/gdbase/internal/models/job_queue"
 
 // ExecutionLogService implements the IExecutionLogService interface.
 type ExecutionLogService struct {
@@ -10,7 +8,7 @@ type ExecutionLogService struct {
 }
 
 // CreateLog creates a new execution log entry.
-func (s *ExecutionLogService) CreateLog(log jobqueue.ExecutionLog) error {
+func (s *ExecutionLogService) CreateLog(log any) error {
 	// Implement the logic to save the log to the database.
 	return nil
 }

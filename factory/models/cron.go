@@ -5,7 +5,7 @@ import (
 	"errors"
 
 	m "github.com/kubex-ecosystem/gdbase/internal/models/cron"
-	"gorm.io/gorm"
+	svc "github.com/kubex-ecosystem/gdbase/internal/services"
 )
 
 type CronJobType = m.CronJob
@@ -16,8 +16,8 @@ type CronJobRepo = m.ICronJobRepo
 func NewCronJobService(cronJobRepo CronJobRepo) CronJobService {
 	return m.NewCronJobService(cronJobRepo)
 }
-func NewCronJobRepo(ctx context.Context, db *gorm.DB) CronJobRepo {
-	return m.NewCronJobRepo(ctx, db)
+func NewCronJobRepo(ctx context.Context, dbService *svc.DBServiceImpl) CronJobRepo {
+	return m.NewCronJobRepo(ctx, dbService)
 }
 func NewCronJob(ctx context.Context, cron *CronJobModel, restrict bool) (*CronJobModel, error) {
 	if cn, ok := m.NewCronJob(ctx, cron, restrict).(*CronJobModel); ok {

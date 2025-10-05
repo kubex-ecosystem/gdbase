@@ -1,12 +1,13 @@
 package mcp
 
 import (
+	"context"
 	"time"
 
 	"github.com/google/uuid"
 	m "github.com/kubex-ecosystem/gdbase/internal/models/mcp/tasks"
+	svc "github.com/kubex-ecosystem/gdbase/internal/services"
 	tp "github.com/kubex-ecosystem/gdbase/internal/types"
-	"gorm.io/gorm"
 )
 
 type TaskSearchOptions = m.TaskSearchOptions
@@ -24,8 +25,8 @@ func NewTasksService(tasksRepo TasksRepo) TasksService {
 	return m.NewTasksService(tasksRepo)
 }
 
-func NewTasksRepo(db *gorm.DB) TasksRepo {
-	return m.NewTasksRepo(db)
+func NewTasksRepo(ctx context.Context, dbService *svc.DBServiceImpl) TasksRepo {
+	return m.NewTasksRepo(ctx, dbService)
 }
 
 func NewTasksModel(

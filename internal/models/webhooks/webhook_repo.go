@@ -1,12 +1,14 @@
 package webhooks
 
 import (
+	"context"
 	"errors"
 	"time"
 
 	"github.com/google/uuid"
+
+	svc "github.com/kubex-ecosystem/gdbase/internal/services"
 	t "github.com/kubex-ecosystem/gdbase/internal/types"
-	"gorm.io/gorm"
 )
 
 type IWebhookRepo interface {
@@ -18,14 +20,17 @@ type IWebhookRepo interface {
 
 type WebhookRepo struct {
 	*t.Mutexes
-	webhooks []IWebhook
-	nextID   int
+	webhooks  []IWebhook
+	nextID    int
+	dbService *svc.DBServiceImpl
 }
 
-func NewWebhookRepo(db *gorm.DB) IWebhookRepo {
+func NewWebhookRepo(ctx context.Context, dbService *svc.DBServiceImpl) IWebhookRepo {
 	return &WebhookRepo{
-		webhooks: make([]IWebhook, 0),
-		nextID:   1,
+		webhooks:  make([]IWebhook, 0),
+		nextID:    1,
+		Mutexes:   &t.Mutexes{},
+		dbService: dbService,
 	}
 }
 

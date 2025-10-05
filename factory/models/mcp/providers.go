@@ -1,12 +1,13 @@
 package mcp
 
 import (
+	"context"
 	"time"
 
 	"github.com/google/uuid"
 	m "github.com/kubex-ecosystem/gdbase/internal/models/mcp/providers"
+	svc "github.com/kubex-ecosystem/gdbase/internal/services"
 	t "github.com/kubex-ecosystem/gdbase/internal/types"
-	"gorm.io/gorm"
 )
 
 type ProvidersModelType = m.ProvidersModel
@@ -18,8 +19,8 @@ func NewProvidersService(providersRepo ProvidersRepo) ProvidersService {
 	return m.NewProvidersService(providersRepo)
 }
 
-func NewProvidersRepo(db *gorm.DB) ProvidersRepo {
-	return m.NewProvidersRepo(db)
+func NewProvidersRepo(ctx context.Context, dbService *svc.DBServiceImpl) ProvidersRepo {
+	return m.NewProvidersRepo(ctx, dbService)
 }
 
 func NewProvidersModel(

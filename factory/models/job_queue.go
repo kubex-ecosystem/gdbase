@@ -1,8 +1,10 @@
 package models
 
 import (
+	"context"
+
 	m "github.com/kubex-ecosystem/gdbase/internal/models/job_queue"
-	"gorm.io/gorm"
+	svc "github.com/kubex-ecosystem/gdbase/internal/services"
 )
 
 type JobQueue = m.JobQueue
@@ -14,8 +16,8 @@ func NewJobQueueService(jobQueueRepo JobQueueRepo) JobQueueService {
 	return m.NewJobQueueService(jobQueueRepo)
 }
 
-func NewJobQueueRepo(db *gorm.DB) JobQueueRepo {
-	return m.NewJobQueueRepository(db)
+func NewJobQueueRepo(ctx context.Context, dbService *svc.DBServiceImpl) JobQueueRepo {
+	return m.NewJobQueueRepository(ctx, dbService)
 }
 
 func NewJobQueueModel() JobQueueModel {

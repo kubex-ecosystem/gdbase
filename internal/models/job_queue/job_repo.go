@@ -3,7 +3,11 @@ package jobqueue
 import (
 	"context"
 	"errors"
+	"fmt"
 	"time"
+
+	gl "github.com/kubex-ecosystem/gdbase/internal/module/kbx"
+	svc "github.com/kubex-ecosystem/gdbase/internal/services"
 
 	"github.com/google/uuid"
 	"gorm.io/gorm"
@@ -51,7 +55,12 @@ type JobQueueRepository struct {
 	db *gorm.DB
 }
 
-func NewJobQueueRepository(db *gorm.DB) IJobQueueRepo {
+func NewJobQueueRepository(ctx context.Context, dbService *svc.DBServiceImpl) IJobQueueRepo {
+	db, err := svc.GetDB(ctx, dbService)
+	if err != nil {
+		gl.Log("error", fmt.Sprintf("JobQueueRepository: failed to get DB: %v", err))
+		return nil
+	}
 	return &JobQueueRepository{db: db}
 }
 

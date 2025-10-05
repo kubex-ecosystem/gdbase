@@ -4,8 +4,10 @@ import (
 	"context"
 	"fmt"
 
-	"gorm.io/gorm"
 	gl "github.com/kubex-ecosystem/gdbase/internal/module/logger"
+	svc "github.com/kubex-ecosystem/gdbase/internal/services"
+
+	"gorm.io/gorm"
 )
 
 type IWhatsAppRepo interface {
@@ -34,7 +36,12 @@ type WhatsAppRepository struct {
 	db *gorm.DB
 }
 
-func NewWhatsAppRepository(db *gorm.DB) IWhatsAppRepo {
+func NewWhatsAppRepository(ctx context.Context, dbService *svc.DBServiceImpl) IWhatsAppRepo {
+	db, err := svc.GetDB(ctx, dbService)
+	if err != nil {
+		gl.Log("error", "Failed to get DB from DBService", err)
+		return nil
+	}
 	return &WhatsAppRepository{db: db}
 }
 
