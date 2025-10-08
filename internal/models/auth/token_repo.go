@@ -43,13 +43,13 @@ func NewTokenRepo(ctx context.Context, dbService *svc.DBServiceImpl) ITokenRepo 
 		return nil
 	}
 
-	// Auto-migrate the refresh_tokens table
-	// Note: We ignore migration errors since the table might already exist
-	if err := db.AutoMigrate(&RefreshTokenModel{}); err != nil {
-		gl.Log("warn", fmt.Sprintf("TokenRepo: auto-migrate warning (table may already exist): %v", err))
-		// Don't return nil - continue even if migration has issues
-		// The table probably exists from previous runs
-	}
+	// // Auto-migrate the refresh_tokens table
+	// // Note: We ignore migration errors since the table might already exist
+	// if err := db.AutoMigrate(&RefreshTokenModel{}); err != nil {
+	// 	gl.Log("warn", fmt.Sprintf("TokenRepo: auto-migrate warning (table may already exist): %v", err))
+	// 	// Don't return nil - continue even if migration has issues
+	// 	// The table probably exists from previous runs
+	// }
 
 	return &TokenRepoImpl{db: db}
 }
