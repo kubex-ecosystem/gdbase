@@ -32,6 +32,7 @@ type IDBService interface {
 	CheckDatabaseHealth(ctx context.Context) error
 	// GetConnection(ctx context.Context, timeout time.Duration) (*sql.Conn, error)
 	IsConnected(ctx context.Context) error
+	IsReady(ctx context.Context) bool
 	Reconnect(ctx context.Context) error
 	GetName(ctx context.Context) (string, error)
 	GetHost(ctx context.Context) (string, error)
@@ -314,6 +315,89 @@ func (d *DBServiceImpl) IsConnected(ctx context.Context) error {
 		return fmt.Errorf("❌ Banco de dados offline: %v", err)
 	}
 	return nil
+}
+
+// IsReady checks if the database service is fully initialized and ready for use
+// Returns true only if all prerequisites are met:
+// - DBService is not nil
+// - Database map is initialized
+// - Configuration is loaded
+// - At least one database connection exists
+// - Default database is configured and connected
+func (d *DBServiceImpl) IsReady(ctx context.Context) bool {
+	// Check basic prerequisites
+	if d == nil {
+		gl.Log("info", "IsReady: DBService is nil")
+		return false
+	}
+	if d.db == nil {
+		gl.Log("info", "IsReady: Database map is nil")
+		return false
+	}
+	if d.config == nil {
+		gl.Log("info", "IsReady: Config is nil")
+		return false
+	}
+
+	// Check if we have a default database configured
+	dbName, hasDefault := d.GetDefaultDBName()
+
+	// Check if the configured default actually exists in the map
+	if hasDefault {
+		if _, exists := d.db[dbName]; !exists {
+			gl.Log("info", fmt.Sprintf("IsReady: Configured default '%s' not found in map, will use fallback", dbName))
+			hasDefault = false
+		}
+	}
+
+	if !hasDefault {
+		gl.Log("info", "IsReady: No default database configured, checking if any database exists")
+		// Fallback: if there's only one database, use it
+		if len(d.db) == 1 {
+			for name := range d.db {
+				dbName = name
+				hasDefault = true
+				gl.Log("info", fmt.Sprintf("IsReady: Using single available database '%s' as default", dbName))
+				break
+			}
+		}
+		if !hasDefault {
+			gl.Log("info", "IsReady: No database available")
+			return false
+		}
+	}
+
+	// Check if the default database connection exists
+	db, exists := d.db[dbName]
+	if !exists {
+		// Debug: show what keys are available
+		keys := make([]string, 0, len(d.db))
+		for k := range d.db {
+			keys = append(keys, k)
+		}
+		gl.Log("info", fmt.Sprintf("IsReady: Database '%s' not found. Available databases: %v", dbName, keys))
+		return false
+	}
+	if db == nil {
+		gl.Log("info", fmt.Sprintf("IsReady: Database '%s' connection is nil", dbName))
+		return false
+	}
+
+	// Optional: Verify connection is actually alive
+	sqlDB, err := db.DB()
+	if err != nil {
+		gl.Log("info", fmt.Sprintf("IsReady: Failed to get SQL DB: %v", err))
+		return false
+	}
+
+	// Quick ping to ensure connection is live
+	if err := sqlDB.PingContext(ctx); err != nil {
+		gl.Log("info", fmt.Sprintf("IsReady: Ping failed: %v", err))
+		return false
+	}
+
+	gl.Log("info", fmt.Sprintf("IsReady: ✅ Database '%s' is ready", dbName))
+	return true
 }
 
 func (d *DBServiceImpl) Reconnect(ctx context.Context) error {
@@ -705,8 +789,32 @@ func GetDB(ctx context.Context, d *DBServiceImpl) (*gorm.DB, error) {
 		return nil, fmt.Errorf("❌ Database Service não configurado")
 	}
 	dbName, hasDefault := d.GetDefaultDBName()
-	if !hasDefault {
-		return nil, fmt.Errorf("❌ Nenhum banco de dados padrão configurado")
+
+	// Check if the configured default actually exists in the map
+	if hasDefault {
+		if _, exists := d.db[dbName]; !exists {
+			hasDefault = false
+		}
 	}
-	return d.db[dbName], nil
+
+	if !hasDefault {
+		// Fallback: if there's only one database, use it
+		if len(d.db) == 1 {
+			for name := range d.db {
+				dbName = name
+				hasDefault = true
+				break
+			}
+		}
+		if !hasDefault {
+			return nil, fmt.Errorf("❌ Nenhum banco de dados padrão configurado")
+		}
+	}
+
+	db := d.db[dbName]
+	if db == nil {
+		return nil, fmt.Errorf("❌ Conexão do banco de dados '%s' está nula", dbName)
+	}
+
+	return db, nil
 }
