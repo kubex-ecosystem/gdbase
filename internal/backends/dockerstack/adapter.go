@@ -102,7 +102,7 @@ func (p *DockerStackProvider) ConvertSpecToDBConfig(spec provider.StartSpec) *sv
 		var key string
 		switch svc.Engine {
 		case provider.EnginePostgres:
-			key = "postgresql"
+			key = "kubex_db"
 			db.Enabled = true
 			db.Volume = gl.GetEnvOrDefault("GOBE_POSTGRES_VOLUME", os.ExpandEnv(gl.DefaultPostgresVolume))
 			db.Type = "postgresql"
@@ -177,8 +177,8 @@ func (p *DockerStackProvider) ExtractEndpoints(cfg *svc.DBConfig) (map[string]pr
 		var name string
 
 		switch db.Type {
-		case "postgresql":
-			name = "pg"
+		case "postgresql", "postgres":
+			name = "kubex_db"
 			port := db.Port
 			if portInt, ok := port.(int); ok {
 				ep.Port = portInt

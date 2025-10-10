@@ -799,21 +799,55 @@ func GetDB(ctx context.Context, d *DBServiceImpl) (*gorm.DB, error) {
 
 	if !hasDefault {
 		// Fallback: if there's only one database, use it
-		if len(d.db) == 1 {
-			for name := range d.db {
-				dbName = name
-				hasDefault = true
-				break
+		dbLength := len(d.db)
+		if dbLength == 0 {
+			d.Initialize(ctx)
+			dbLength = len(d.db)
+		}
+		// If there's exactly one DB, use it as default
+		if dbLength > 0 {
+			if dbLength == 1 {
+				gl.Log("notice", "No default DB configured, using the only available one")
+				for name := range d.db {
+					dbName = name
+					hasDefault = true
+					break
+				}
+			} else {
+				gl.Log("error", "No default DB configured and multiple DBs available, cannot decide which to use")
+				return nil, fmt.Errorf("❌ No default DB configured and multiple DBs available (%d), cannot decide which to use", dbLength)
+			}
+		} else {
+			if len(d.config.Databases) > 0 {
+				for _, dbConf := range d.config.Databases {
+					if dbConf.Enabled {
+						gl.Log("notice", fmt.Sprintf("No DB connections available, attempting to connect to '%s'", dbConf.Name))
+						db, _, err := connectDatabase(ctx, dbConf)
+						if err != nil {
+							gl.Log("error", fmt.Sprintf("Error connecting to DB '%s': %v", dbConf.Name, err))
+							continue
+						}
+						d.db[dbConf.Name] = db
+						dbName = dbConf.Name
+						hasDefault = true
+						break
+					}
+				}
 			}
 		}
+
 		if !hasDefault {
-			return nil, fmt.Errorf("❌ Nenhum banco de dados padrão configurado")
+			return nil, fmt.Errorf("%s", fmt.Sprintf("❌ No default DB configured (%d available)", dbLength))
 		}
 	}
 
 	db := d.db[dbName]
 	if db == nil {
-		return nil, fmt.Errorf("❌ Conexão do banco de dados '%s' está nula", dbName)
+		d.Reconnect(ctx)
+		db = d.db[dbName]
+		if db == nil {
+			return nil, fmt.Errorf("❌ Default DB connection is down")
+		}
 	}
 
 	return db, nil

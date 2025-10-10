@@ -57,7 +57,7 @@ type IDBConfig interface {
 
 type DBConfig struct {
 	// Name is used to configure the name of the database
-	Name string `json:"name,omitempty" yaml:"name,omitempty" xml:"name,omitempty" toml:"name,omitempty" mapstructure:"name,omitempty"`
+	Name string `json:"name" yaml:"name" xml:"name" toml:"name" mapstructure:"name"`
 
 	// FilePath is used to configure the file path of the database
 	FilePath string `json:"file_path" yaml:"file_path" xml:"file_path" toml:"file_path" mapstructure:"file_path"`
@@ -90,13 +90,13 @@ type DBConfig struct {
 	*ti.Reference `json:"reference,omitempty" yaml:"reference,omitempty" xml:"reference,omitempty" toml:"reference,omitempty" mapstructure:"reference,squash,omitempty"`
 
 	// Enabled is used to enable or disable the database
-	Enabled bool `json:"enabled,omitempty" yaml:"enabled,omitempty" xml:"enabled,omitempty" toml:"enabled,omitempty" mapstructure:"enabled,omitempty"`
+	Enabled bool `json:"enabled" yaml:"enabled" xml:"enabled" toml:"enabled" mapstructure:"enabled"`
 
 	// MongoDB is used to configure the MongoDB database
 	MongoDB *ti.MongoDB `json:"mongodb,omitempty" yaml:"mongodb,omitempty" xml:"mongodb,omitempty" toml:"mongodb,omitempty" mapstructure:"mongodb,omitempty"`
 
 	// Databases is used to configure the databases (Postgres, MySQL, SQLite, SQLServer, Oracle)
-	Databases map[string]*ti.Database `json:"databases,omitempty" yaml:"databases,omitempty" xml:"databases,omitempty" toml:"databases,omitempty" mapstructure:"databases,omitempty"`
+	Databases map[string]*ti.Database `json:"databases" yaml:"databases" xml:"databases" toml:"databases" mapstructure:"databases"`
 
 	// Messagery is used to configure the messagery database
 	Messagery *ti.Messagery `json:"messagery,omitempty" yaml:"messagery,omitempty" xml:"messagery,omitempty" toml:"messagery,omitempty" mapstructure:"messagery,omitempty"`
@@ -115,14 +115,14 @@ func newDBConfig(name, filePath string, enabled bool, logger l.Logger, debug boo
 	}
 
 	if name == "" {
-		name = "default"
+		name = "kubex_db"
 	}
 	if filePath == "" {
 		filePath = os.ExpandEnv(DefaultGDBaseConfigPath)
 	}
 
 	dbConfig := &DBConfig{FilePath: filePath}
-	mapper := ti.NewMapper[*DBConfig](&dbConfig, filePath)
+	mapper := ti.NewMapper(&dbConfig, filePath)
 	obj, err := mapper.DeserializeFromFile("json")
 	if err != nil {
 		gl.Log("warn", fmt.Sprintf("Error deserializing file: %v", err))
@@ -150,7 +150,7 @@ func newDBConfig(name, filePath string, enabled bool, logger l.Logger, debug boo
 			)
 			dbConfigDefault := &DBConfig{
 				Databases: map[string]*ti.Database{
-					"postgresql": {
+					"kubex_db": {
 						Enabled:          (gl.GetEnvOrDefault("GDBASE_POSTGRES_ENABLED", "true") != "false"),
 						Reference:        ti.NewReference(name).GetReference(),
 						Type:             "postgresql",
@@ -164,6 +164,7 @@ func newDBConfig(name, filePath string, enabled bool, logger l.Logger, debug boo
 						Password:         gl.GetEnvOrDefault("GDBASE_POSTGRES_PASSWORD", pgPass),
 						Volume:           gl.GetEnvOrDefault("GDBASE_POSTGRES_VOLUME", os.ExpandEnv(DefaultPostgresVolume)),
 						Name:             gl.GetEnvOrDefault("GDBASE_POSTGRES_NAME", "kubex_db"),
+						IsDefault:        gl.GetEnvOrDefault("GDBASE_POSTGRES_IS_DEFAULT", "true") != "false",
 					},
 				},
 				Messagery: &ti.Messagery{
@@ -347,7 +348,7 @@ func (d *DBConfig) GetPostgresConfig() *ti.Database {
 	if d == nil {
 		return nil
 	}
-	postgres, ok := d.Databases["postgresql"]
+	postgres, ok := d.Databases["kubex_db"]
 	if !ok {
 		return nil
 	}
