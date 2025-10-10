@@ -110,8 +110,12 @@ func (c *CronJob) GetLastExecutedBy() uuid.UUID                { return c.LastEx
 func (c *CronJob) SetLastExecutedBy(lastExecutedBy uuid.UUID)  { c.LastExecutedBy = lastExecutedBy }
 func (c *CronJob) GetUserID() uuid.UUID                        { return c.UserID }
 func (c *CronJob) SetUserID(userID uuid.UUID)                  { c.UserID = userID }
+func (c *CronJob) GetScheduledCronJobs() []CronJob {
+	return []CronJob{*c}
+}
 
 // Add a method to enqueue a job into the JobQueue
+
 func (c *CronJob) EnqueueJob(ctx context.Context, jobQueueService jobqueue.IJobQueueService) error {
 	job := &jobqueue.JobQueue{
 		CronJobID:      c.ID,
@@ -157,3 +161,38 @@ func (c *CronJob) PrepareForSave(ctx context.Context, defaultUserID uuid.UUID) {
 }
 
 func (c *CronJob) CronJobObject() *CronJob { return c }
+
+type Job interface {
+	Mu() *t.Mutexes
+	Ref() *t.Reference
+	GetUserID() uuid.UUID
+	Run() error
+	Retry() error
+	Cancel() error
+}
+
+func (c *CronJob) Mu() *t.Mutexes {
+	return &t.Mutexes{}
+}
+
+func (c *CronJob) Ref() *t.Reference {
+	return t.NewReference("cron_jobs").GetReference()
+}
+
+func (c *CronJob) Run() error {
+	// Implementar a lógica de execução do cron job
+	gl.Log("info", "Executing cron job: "+c.Name)
+	return nil
+}
+
+func (c *CronJob) Retry() error {
+	// Implementar a lógica de retry do cron job
+	gl.Log("info", "Retrying cron job: "+c.Name)
+	return nil
+}
+
+func (c *CronJob) Cancel() error {
+	// Implementar a lógica de cancelamento do cron job
+	gl.Log("info", "Cancelling cron job: "+c.Name)
+	return nil
+}

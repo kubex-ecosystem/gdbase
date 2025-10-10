@@ -25,13 +25,16 @@ type CronJobRepo struct {
 	DB *gorm.DB
 }
 
-func NewCronJobRepo(ctx context.Context, dbService *svc.DBServiceImpl) ICronJobRepo {
+func NewCronJobRepoImpl(ctx context.Context, dbService *svc.DBServiceImpl) *CronJobRepo {
 	db, err := svc.GetDB(ctx, dbService)
 	if err != nil {
 		gl.Log("error", fmt.Sprintf("CronJobRepo: failed to get DB: %v", err))
 		return nil
 	}
 	return &CronJobRepo{DB: db}
+}
+func NewCronJobRepo(ctx context.Context, dbService *svc.DBServiceImpl) ICronJobRepo {
+	return NewCronJobRepoImpl(ctx, dbService)
 }
 
 func (r *CronJobRepo) Create(ctx context.Context, job *CronJob) (*CronJob, error) {
@@ -91,4 +94,12 @@ func (r *CronJobRepo) Delete(ctx context.Context, id uuid.UUID) error {
 		return err
 	}
 	return nil
+}
+
+func (r *CronJobRepo) GetScheduledCronJobs(ctx context.Context) ([]*CronJob, error) {
+	var jobs []*CronJob
+	if err := r.DB.WithContext(ctx).Where("is_active = ?", true).Find(&jobs).Error; err != nil {
+		return nil, err
+	}
+	return jobs, nil
 }

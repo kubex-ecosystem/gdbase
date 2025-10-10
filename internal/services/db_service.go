@@ -40,6 +40,17 @@ type IDBService interface {
 	RunMigrations(ctx context.Context, files map[string]string) (int, int, error)
 }
 
+type DirectDatabase interface {
+	Query(query string, args ...interface{}) (Rows, error)
+}
+
+type Rows interface {
+	Next() bool
+	Scan(dest ...interface{}) error
+	Close() error
+	Err() error
+}
+
 type DBServiceImpl struct {
 	Logger    l.Logger
 	reference ci.IReference
@@ -485,6 +496,25 @@ func (d *DBServiceImpl) RunMigrations(ctx context.Context, files map[string]stri
 
 func (d *DBServiceImpl) GetProperties(ctx context.Context) map[string]any {
 	return d.properties
+}
+
+func (d *DBServiceImpl) Query(ctx context.Context, query string, args ...interface{}) (any, error) {
+	db, err := GetDB(ctx, d)
+	if err != nil {
+		return nil, fmt.Errorf("❌ Erro ao obter banco de dados: %v", err)
+	}
+	if db == nil {
+		return nil, fmt.Errorf("❌ Banco de dados não inicializado")
+	}
+	dbSQL, err := db.DB()
+	if err != nil {
+		return nil, fmt.Errorf("❌ Erro ao executar consulta: %v", err)
+	}
+	rows, err := dbSQL.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, fmt.Errorf("❌ Erro ao executar consulta: %v", err)
+	}
+	return rows, nil
 }
 
 // connectDatabase conecta ao banco de dados e retorna a instância do GORM

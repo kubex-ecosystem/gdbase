@@ -31,6 +31,7 @@ type ICronJobService interface {
 	GetJobQueue(ctx context.Context) ([]jobqueue.JobQueue, error)
 	ReprocessFailedJobs(ctx context.Context) error
 	GetExecutionLogs(ctx context.Context, cronJobID uuid.UUID) ([]jobqueue.ExecutionLog, error)
+	GetScheduledCronJobs(ctx context.Context) ([]Job, error)
 }
 
 var (
@@ -41,8 +42,16 @@ type CronJobService struct {
 	Repo ICronJobRepo
 }
 
-func NewCronJobService(repo ICronJobRepo) ICronJobService {
+func NewCronJobServiceImpl(repo *CronJobRepo) *CronJobService {
 	return &CronJobService{Repo: repo}
+}
+func NewCronJobService(repo ICronJobRepo) ICronJobService {
+	if rp, ok := repo.(*CronJobRepo); !ok {
+		gl.Log("error", "Invalid repository type provided to NewCronJobService")
+		return nil
+	} else {
+		return NewCronJobServiceImpl(rp)
+	}
 }
 
 func (s *CronJobService) publishToRabbitMQ(ctx context.Context, queueName string, message string) error {
@@ -233,6 +242,11 @@ func (s *CronJobService) ValidateCronExpression(ctx context.Context, expression 
 	// For example, you can use a library like "github.com/robfig/cron/v3" to validate the expression.
 	// _, err := cron.ParseStandard(expression)
 	return fmt.Errorf("cron expression '%s' is not valid", expression)
+}
+
+func (s *CronJobService) GetScheduledCronJobs(ctx context.Context) ([]Job, error) {
+	// Implement logic to fetch scheduled cron jobs from the repository.
+	return nil, errors.New("not implemented")
 }
 
 // GetJobQueue retrieves the current state of the job queue.

@@ -15,6 +15,16 @@ type DBService = svc.IDBService
 type IDBService interface {
 	svc.IDBService
 }
+type Rows interface {
+	Next() bool
+	Scan(dest ...interface{}) error
+	Close() error
+	Err() error
+}
+type DirectDatabase interface {
+	Query(context.Context, string, ...interface{}) (any, error)
+}
+
 type DBServiceImpl = svc.DBServiceImpl
 
 type DBConfig = svc.IDBConfig
