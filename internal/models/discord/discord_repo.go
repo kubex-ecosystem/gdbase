@@ -183,5 +183,5 @@ func (dr *DiscordRepo) GetContextDBService() *svc.DBServiceImpl {
 		gl.Log("error", "DiscordModel repository: error creating database service: "+dbServiceErr.Error())
 		return nil
 	}
-	return dbService
+	return dbService.(*svc.DBServiceImpl)
 }

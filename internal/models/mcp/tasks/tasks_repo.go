@@ -198,5 +198,5 @@ func (tr *TasksRepo) GetContextDBService() *svc.DBServiceImpl {
 		gl.Log("error", fmt.Sprintf("TasksModel repository: failed to get context DB service: %v", dbServiceErr))
 		return nil
 	}
-	return dbService
+	return dbService.(*svc.DBServiceImpl)
 }

@@ -25,7 +25,7 @@ func NewPreferencesRepo(ctx context.Context, dbService *svc.DBServiceImpl) Prefe
 
 func NewPreferencesModel(
 	scope string,
-	config t.JSONB,
+	config t.JSONBImpl,
 ) PreferencesModel {
 	return &m.PreferencesModel{
 		ID:        uuid.New().String(),

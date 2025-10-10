@@ -14,8 +14,8 @@ type IPreferencesModel interface {
 	SetID(id string)
 	GetScope() string
 	SetScope(scope string)
-	GetConfig() t.JSONB
-	SetConfig(config t.JSONB)
+	GetConfig() t.JSONBImpl
+	SetConfig(config t.JSONBImpl)
 	GetCreatedAt() time.Time
 	SetCreatedAt(createdAt time.Time)
 	GetUpdatedAt() time.Time
@@ -29,32 +29,32 @@ type IPreferencesModel interface {
 }
 
 type PreferencesModel struct {
-	ID        string  `gorm:"type:uuid;primaryKey" json:"id"`
-	Scope     string  `gorm:"type:text;not null;default:'defaults';uniqueIndex" json:"scope" example:"defaults"`
-	Config    t.JSONB `json:"config" binding:"omitempty"`
-	CreatedAt string  `gorm:"type:timestamp;default:now()" json:"created_at,omitempty" example:"2024-01-01T00:00:00Z"`
-	UpdatedAt string  `gorm:"type:timestamp;default:now()" json:"updated_at,omitempty" example:"2024-01-01T00:00:00Z"`
-	CreatedBy string  `gorm:"type:uuid;references:users(id)" json:"created_by,omitempty" example:"123e4567-e89b-12d3-a456-426614174001"`
-	UpdatedBy string  `gorm:"type:uuid;references:users(id)" json:"updated_by,omitempty" example:"123e4567-e89b-12d3-a456-426614174002"`
+	ID        string      `gorm:"type:uuid;primaryKey" json:"id"`
+	Scope     string      `gorm:"type:text;not null;default:'defaults';uniqueIndex" json:"scope" example:"defaults"`
+	Config    t.JSONBImpl `json:"config" binding:"omitempty"`
+	CreatedAt string      `gorm:"type:timestamp;default:now()" json:"created_at,omitempty" example:"2024-01-01T00:00:00Z"`
+	UpdatedAt string      `gorm:"type:timestamp;default:now()" json:"updated_at,omitempty" example:"2024-01-01T00:00:00Z"`
+	CreatedBy string      `gorm:"type:uuid;references:users(id)" json:"created_by,omitempty" example:"123e4567-e89b-12d3-a456-426614174001"`
+	UpdatedBy string      `gorm:"type:uuid;references:users(id)" json:"updated_by,omitempty" example:"123e4567-e89b-12d3-a456-426614174002"`
 }
 
 func NewPreferencesModel() *PreferencesModel {
 	return &PreferencesModel{
 		ID:        "",
 		Scope:     "defaults",
-		Config:    make(t.JSONB),
+		Config:    make(t.JSONBImpl),
 		CreatedAt: time.Now().Format(time.RFC3339),
 		UpdatedAt: time.Now().Format(time.RFC3339),
 	}
 }
 
-func (p *PreferencesModel) TableName() string        { return "mcp_user_preferences" }
-func (p *PreferencesModel) GetID() string            { return p.ID }
-func (p *PreferencesModel) SetID(id string)          { p.ID = id }
-func (p *PreferencesModel) GetScope() string         { return p.Scope }
-func (p *PreferencesModel) SetScope(scope string)    { p.Scope = scope }
-func (p *PreferencesModel) GetConfig() t.JSONB       { return p.Config }
-func (p *PreferencesModel) SetConfig(config t.JSONB) { p.Config = config }
+func (p *PreferencesModel) TableName() string            { return "mcp_user_preferences" }
+func (p *PreferencesModel) GetID() string                { return p.ID }
+func (p *PreferencesModel) SetID(id string)              { p.ID = id }
+func (p *PreferencesModel) GetScope() string             { return p.Scope }
+func (p *PreferencesModel) SetScope(scope string)        { p.Scope = scope }
+func (p *PreferencesModel) GetConfig() t.JSONBImpl       { return p.Config }
+func (p *PreferencesModel) SetConfig(config t.JSONBImpl) { p.Config = config }
 func (p *PreferencesModel) GetCreatedAt() time.Time {
 	createdAt, _ := time.Parse(time.RFC3339, p.CreatedAt)
 	return createdAt
@@ -79,7 +79,7 @@ func (p *PreferencesModel) Validate() error {
 		return fmt.Errorf("scope cannot be empty")
 	}
 	if p.Config.IsNil() {
-		p.Config = make(t.JSONB) // Initialize if nil
+		p.Config = make(t.JSONBImpl) // Initialize if nil
 	}
 	return nil
 }

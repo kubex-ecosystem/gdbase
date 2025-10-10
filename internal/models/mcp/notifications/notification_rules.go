@@ -73,12 +73,12 @@ type INotificationRule interface {
 	SetPriority(priority NotificationRulePriority)
 	GetStatus() NotificationRuleStatus
 	SetStatus(status NotificationRuleStatus)
-	GetTriggerConfig() t.JSONB
-	SetTriggerConfig(config t.JSONB)
-	GetTargetConfig() t.JSONB
-	SetTargetConfig(config t.JSONB)
-	GetScheduleConfig() t.JSONB
-	SetScheduleConfig(config t.JSONB)
+	GetTriggerConfig() t.JSONBImpl
+	SetTriggerConfig(config t.JSONBImpl)
+	GetTargetConfig() t.JSONBImpl
+	SetTargetConfig(config t.JSONBImpl)
+	GetScheduleConfig() t.JSONBImpl
+	SetScheduleConfig(config t.JSONBImpl)
 	GetTemplateID() *uuid.UUID
 	SetTemplateID(templateID *uuid.UUID)
 	GetCooldownMinutes() int
@@ -116,15 +116,15 @@ type NotificationRule struct {
 	Name                    string                    `json:"name" xml:"name" yaml:"name" gorm:"column:name;not null;type:VARCHAR(255)"`
 	Description             string                    `json:"description" xml:"description" yaml:"description" gorm:"column:description;type:TEXT"`
 	Condition               NotificationRuleCondition `json:"condition" xml:"condition" yaml:"condition" gorm:"column:condition;not null;type:notification_rule_condition"`
-	Platforms               t.JSONB                   `json:"platforms" xml:"platforms" yaml:"platforms" gorm:"column:platforms;type:jsonb"`         // Array de NotificationRulePlatform
-	JobTypes                t.JSONB                   `json:"job_types" xml:"job_types" yaml:"job_types" gorm:"column:job_types;type:jsonb"`         // Array de strings
-	UserIDs                 t.JSONB                   `json:"user_ids" xml:"user_ids" yaml:"user_ids" gorm:"column:user_ids;type:jsonb"`             // Array de UUIDs
-	ProjectIDs              t.JSONB                   `json:"project_ids" xml:"project_ids" yaml:"project_ids" gorm:"column:project_ids;type:jsonb"` // Array de UUIDs
+	Platforms               t.JSONBImpl               `json:"platforms" xml:"platforms" yaml:"platforms" gorm:"column:platforms;type:jsonb"`         // Array de NotificationRulePlatform
+	JobTypes                t.JSONBImpl               `json:"job_types" xml:"job_types" yaml:"job_types" gorm:"column:job_types;type:jsonb"`         // Array de strings
+	UserIDs                 t.JSONBImpl               `json:"user_ids" xml:"user_ids" yaml:"user_ids" gorm:"column:user_ids;type:jsonb"`             // Array de UUIDs
+	ProjectIDs              t.JSONBImpl               `json:"project_ids" xml:"project_ids" yaml:"project_ids" gorm:"column:project_ids;type:jsonb"` // Array de UUIDs
 	Priority                NotificationRulePriority  `json:"priority" xml:"priority" yaml:"priority" gorm:"column:priority;default:'MEDIUM';type:notification_rule_priority"`
 	Status                  NotificationRuleStatus    `json:"status" xml:"status" yaml:"status" gorm:"column:status;default:'ACTIVE';type:notification_rule_status"`
-	TriggerConfig           t.JSONB                   `json:"trigger_config" xml:"trigger_config" yaml:"trigger_config" gorm:"column:trigger_config;type:jsonb"`     // Configurações específicas para disparo (ex: score_threshold, time_threshold)
-	TargetConfig            t.JSONB                   `json:"target_config" xml:"target_config" yaml:"target_config" gorm:"column:target_config;type:jsonb"`         // Configurações de destino (chat_ids, channels, emails)
-	ScheduleConfig          t.JSONB                   `json:"schedule_config" xml:"schedule_config" yaml:"schedule_config" gorm:"column:schedule_config;type:jsonb"` // Configurações de agendamento (horários, dias da semana)
+	TriggerConfig           t.JSONBImpl               `json:"trigger_config" xml:"trigger_config" yaml:"trigger_config" gorm:"column:trigger_config;type:jsonb"`     // Configurações específicas para disparo (ex: score_threshold, time_threshold)
+	TargetConfig            t.JSONBImpl               `json:"target_config" xml:"target_config" yaml:"target_config" gorm:"column:target_config;type:jsonb"`         // Configurações de destino (chat_ids, channels, emails)
+	ScheduleConfig          t.JSONBImpl               `json:"schedule_config" xml:"schedule_config" yaml:"schedule_config" gorm:"column:schedule_config;type:jsonb"` // Configurações de agendamento (horários, dias da semana)
 	TemplateID              *uuid.UUID                `json:"template_id" xml:"template_id" yaml:"template_id" gorm:"column:template_id;type:uuid"`
 	CooldownMinutes         int                       `json:"cooldown_minutes" xml:"cooldown_minutes" yaml:"cooldown_minutes" gorm:"column:cooldown_minutes;default:0"`
 	MaxNotificationsPerHour int                       `json:"max_notifications_per_hour" xml:"max_notifications_per_hour" yaml:"max_notifications_per_hour" gorm:"column:max_notifications_per_hour;default:10"`
@@ -140,13 +140,13 @@ type NotificationRule struct {
 // NewNotificationRuleModel cria uma nova instância de regra de notificação
 func NewNotificationRuleModel() INotificationRule {
 	return &NotificationRule{
-		Platforms:      make(t.JSONB),
-		JobTypes:       make(t.JSONB),
-		UserIDs:        make(t.JSONB),
-		ProjectIDs:     make(t.JSONB),
-		TriggerConfig:  make(t.JSONB),
-		TargetConfig:   make(t.JSONB),
-		ScheduleConfig: make(t.JSONB),
+		Platforms:      make(t.JSONBImpl),
+		JobTypes:       make(t.JSONBImpl),
+		UserIDs:        make(t.JSONBImpl),
+		ProjectIDs:     make(t.JSONBImpl),
+		TriggerConfig:  make(t.JSONBImpl),
+		TargetConfig:   make(t.JSONBImpl),
+		ScheduleConfig: make(t.JSONBImpl),
 		CreatedAt:      time.Now(),
 		UpdatedAt:      time.Now(),
 	}
@@ -171,12 +171,12 @@ func (n *NotificationRule) GetPriority() NotificationRulePriority            { r
 func (n *NotificationRule) SetPriority(priority NotificationRulePriority)    { n.Priority = priority }
 func (n *NotificationRule) GetStatus() NotificationRuleStatus                { return n.Status }
 func (n *NotificationRule) SetStatus(status NotificationRuleStatus)          { n.Status = status }
-func (n *NotificationRule) GetTriggerConfig() t.JSONB                        { return n.TriggerConfig }
-func (n *NotificationRule) SetTriggerConfig(config t.JSONB)                  { n.TriggerConfig = config }
-func (n *NotificationRule) GetTargetConfig() t.JSONB                         { return n.TargetConfig }
-func (n *NotificationRule) SetTargetConfig(config t.JSONB)                   { n.TargetConfig = config }
-func (n *NotificationRule) GetScheduleConfig() t.JSONB                       { return n.ScheduleConfig }
-func (n *NotificationRule) SetScheduleConfig(config t.JSONB)                 { n.ScheduleConfig = config }
+func (n *NotificationRule) GetTriggerConfig() t.JSONBImpl                    { return n.TriggerConfig }
+func (n *NotificationRule) SetTriggerConfig(config t.JSONBImpl)              { n.TriggerConfig = config }
+func (n *NotificationRule) GetTargetConfig() t.JSONBImpl                     { return n.TargetConfig }
+func (n *NotificationRule) SetTargetConfig(config t.JSONBImpl)               { n.TargetConfig = config }
+func (n *NotificationRule) GetScheduleConfig() t.JSONBImpl                   { return n.ScheduleConfig }
+func (n *NotificationRule) SetScheduleConfig(config t.JSONBImpl)             { n.ScheduleConfig = config }
 func (n *NotificationRule) GetTemplateID() *uuid.UUID                        { return n.TemplateID }
 func (n *NotificationRule) SetTemplateID(templateID *uuid.UUID)              { n.TemplateID = templateID }
 func (n *NotificationRule) GetCooldownMinutes() int                          { return n.CooldownMinutes }

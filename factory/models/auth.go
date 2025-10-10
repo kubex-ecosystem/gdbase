@@ -15,6 +15,7 @@ type AuthRequestDTO struct {
 }
 
 // Token type aliases for external use
+
 type RefreshTokenModel = auth.RefreshTokenModel
 type IRefreshToken = auth.IRefreshToken
 type ITokenRepo = auth.ITokenRepo
@@ -26,7 +27,7 @@ func NewTokenService(tokenRepo ITokenRepo) ITokenService {
 }
 
 // NewTokenRepo creates a new token repository using the provided DBService
-func NewTokenRepo(ctx context.Context, dbService *svc.DBServiceImpl) ITokenRepo {
+func NewTokenRepo(ctx context.Context, dbService svc.DBService) ITokenRepo {
 	return auth.NewTokenRepo(ctx, dbService)
 }
 

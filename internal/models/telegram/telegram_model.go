@@ -77,10 +77,10 @@ type ITelegramModel interface {
 	SetWebhookURL(webhookURL string)
 	GetAPIKey() string
 	SetAPIKey(apiKey string)
-	GetBotPermissions() t.JSONB
-	SetBotPermissions(permissions t.JSONB)
-	GetConfig() t.JSONB
-	SetConfig(config t.JSONB)
+	GetBotPermissions() t.JSONBImpl
+	SetBotPermissions(permissions t.JSONBImpl)
+	GetConfig() t.JSONBImpl
+	SetConfig(config t.JSONBImpl)
 	GetLastActivity() time.Time
 	SetLastActivity(lastActivity time.Time)
 	GetUserID() string
@@ -118,8 +118,8 @@ type TelegramModel struct {
 	BotToken        string                  `gorm:"type:text" json:"bot_token,omitempty"`
 	WebhookURL      string                  `gorm:"type:text" json:"webhook_url,omitempty"`
 	APIKey          string                  `gorm:"type:text" json:"api_key,omitempty"`
-	BotPermissions  t.JSONB                 `json:"bot_permissions,omitempty"`
-	Config          t.JSONB                 `json:"config" binding:"omitempty"`
+	BotPermissions  t.JSONBImpl             `json:"bot_permissions,omitempty"`
+	Config          t.JSONBImpl             `json:"config" binding:"omitempty"`
 	LastActivity    string                  `gorm:"type:timestamp;default:now()" json:"last_activity,omitempty" example:"2024-01-01T00:00:00Z"`
 	UserID          string                  `gorm:"type:uuid;references:users(id)" json:"user_id,omitempty" example:"123e4567-e89b-12d3-a456-426614174001"`
 	TargetTaskID    string                  `gorm:"type:uuid;references:mcp_sync_tasks(id)" json:"target_task_id,omitempty" example:"123e4567-e89b-12d3-a456-426614174002"`
@@ -148,8 +148,8 @@ func NewTelegramModel() *TelegramModel {
 		BotToken:        "",
 		WebhookURL:      "",
 		APIKey:          "",
-		BotPermissions:  t.JSONB{},
-		Config:          t.JSONB{},
+		BotPermissions:  t.JSONBImpl{},
+		Config:          t.JSONBImpl{},
 		LastActivity:    time.Now().Format(time.RFC3339),
 		UserID:          "",
 		TargetTaskID:    "",
@@ -194,22 +194,22 @@ func (t *TelegramModel) SetIntegrationType(integrationType TelegramIntegrationTy
 
 // Telegram-specific getters and setters
 
-func (t *TelegramModel) GetChatID() string                     { return t.ChatID }
-func (t *TelegramModel) SetChatID(chatID string)               { t.ChatID = chatID }
-func (t *TelegramModel) GetChannelID() string                  { return t.ChannelID }
-func (t *TelegramModel) SetChannelID(channelID string)         { t.ChannelID = channelID }
-func (t *TelegramModel) GetGroupID() string                    { return t.GroupID }
-func (t *TelegramModel) SetGroupID(groupID string)             { t.GroupID = groupID }
-func (t *TelegramModel) GetBotToken() string                   { return t.BotToken }
-func (t *TelegramModel) SetBotToken(botToken string)           { t.BotToken = botToken }
-func (t *TelegramModel) GetWebhookURL() string                 { return t.WebhookURL }
-func (t *TelegramModel) SetWebhookURL(webhookURL string)       { t.WebhookURL = webhookURL }
-func (t *TelegramModel) GetAPIKey() string                     { return t.APIKey }
-func (t *TelegramModel) SetAPIKey(apiKey string)               { t.APIKey = apiKey }
-func (t *TelegramModel) GetBotPermissions() t.JSONB            { return t.BotPermissions }
-func (t *TelegramModel) SetBotPermissions(permissions t.JSONB) { t.BotPermissions = permissions }
-func (t *TelegramModel) GetConfig() t.JSONB                    { return t.Config }
-func (t *TelegramModel) SetConfig(config t.JSONB)              { t.Config = config }
+func (t *TelegramModel) GetChatID() string                         { return t.ChatID }
+func (t *TelegramModel) SetChatID(chatID string)                   { t.ChatID = chatID }
+func (t *TelegramModel) GetChannelID() string                      { return t.ChannelID }
+func (t *TelegramModel) SetChannelID(channelID string)             { t.ChannelID = channelID }
+func (t *TelegramModel) GetGroupID() string                        { return t.GroupID }
+func (t *TelegramModel) SetGroupID(groupID string)                 { t.GroupID = groupID }
+func (t *TelegramModel) GetBotToken() string                       { return t.BotToken }
+func (t *TelegramModel) SetBotToken(botToken string)               { t.BotToken = botToken }
+func (t *TelegramModel) GetWebhookURL() string                     { return t.WebhookURL }
+func (t *TelegramModel) SetWebhookURL(webhookURL string)           { t.WebhookURL = webhookURL }
+func (t *TelegramModel) GetAPIKey() string                         { return t.APIKey }
+func (t *TelegramModel) SetAPIKey(apiKey string)                   { t.APIKey = apiKey }
+func (t *TelegramModel) GetBotPermissions() t.JSONBImpl            { return t.BotPermissions }
+func (t *TelegramModel) SetBotPermissions(permissions t.JSONBImpl) { t.BotPermissions = permissions }
+func (t *TelegramModel) GetConfig() t.JSONBImpl                    { return t.Config }
+func (t *TelegramModel) SetConfig(config t.JSONBImpl)              { t.Config = config }
 
 func (t *TelegramModel) GetLastActivity() time.Time {
 	lastActivity, _ := time.Parse(time.RFC3339, t.LastActivity)

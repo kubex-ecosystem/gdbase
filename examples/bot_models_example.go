@@ -62,11 +62,16 @@ func setupDatabase() (*svc.DBServiceImpl, error) {
 
 	fmt.Println("   ✅ Database setup complete")
 
-	return svc.NewDatabaseService(
+	dbService, err := svc.NewDatabaseService(
 		context.Background(),
 		&svc.DBConfig{},
 		l.GetLogger("bot_models_example"),
 	)
+	if err != nil {
+		log.Fatal("❌ Failed to create database service:", err)
+	}
+
+	return dbService.(*svc.DBServiceImpl), nil
 }
 
 func initializeServices(dbService *svc.DBServiceImpl) *BotServices {

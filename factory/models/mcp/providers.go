@@ -26,7 +26,7 @@ func NewProvidersRepo(ctx context.Context, dbService *svc.DBServiceImpl) Provide
 func NewProvidersModel(
 	provider string,
 	orgOrGroup string,
-	config t.JSONB,
+	config t.JSONBImpl,
 ) ProvidersModel {
 	return &m.ProvidersModel{
 		ID:         uuid.New().String(),

@@ -25,7 +25,17 @@ import (
 	"gorm.io/gorm"
 )
 
-type IDBService interface {
+type DirectDatabase interface {
+	Query(query string, args ...interface{}) (Rows, error)
+}
+type Rows interface {
+	Next() bool
+	Scan(dest ...interface{}) error
+	Close() error
+	Err() error
+}
+
+type DBService interface {
 	Initialize(ctx context.Context) error
 	InitializeFromEnv(ctx context.Context, env ci.IEnvironment) error
 	CloseDBConnection(ctx context.Context) error
@@ -39,18 +49,6 @@ type IDBService interface {
 	GetConfig(ctx context.Context) IDBConfig
 	RunMigrations(ctx context.Context, files map[string]string) (int, int, error)
 }
-
-type DirectDatabase interface {
-	Query(query string, args ...interface{}) (Rows, error)
-}
-
-type Rows interface {
-	Next() bool
-	Scan(dest ...interface{}) error
-	Close() error
-	Err() error
-}
-
 type DBServiceImpl struct {
 	Logger    l.Logger
 	reference ci.IReference
@@ -66,7 +64,7 @@ type DBServiceImpl struct {
 	properties map[string]any
 }
 
-func newDatabaseService(_ context.Context, config *DBConfig, logger l.Logger) (*DBServiceImpl, error) {
+func NewDatabaseServiceImpl(_ context.Context, config *DBConfig, logger l.Logger) (*DBServiceImpl, error) {
 	if logger == nil {
 		logger = l.GetLogger("GDBase")
 	}
@@ -92,8 +90,8 @@ func newDatabaseService(_ context.Context, config *DBConfig, logger l.Logger) (*
 	return dbService, nil
 }
 
-func NewDatabaseService(ctx context.Context, config *DBConfig, logger l.Logger) (*DBServiceImpl, error) {
-	return newDatabaseService(ctx, config, logger)
+func NewDatabaseService(ctx context.Context, config *DBConfig, logger l.Logger) (DBService, error) {
+	return NewDatabaseServiceImpl(ctx, config, logger)
 }
 
 func (d *DBServiceImpl) Initialize(ctx context.Context) error {

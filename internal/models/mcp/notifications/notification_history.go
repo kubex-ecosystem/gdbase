@@ -56,10 +56,10 @@ type INotificationHistory interface {
 	SetTargetID(targetID string)
 	GetTargetName() string
 	SetTargetName(targetName string)
-	GetPlatformConfig() t.JSONB
-	SetPlatformConfig(config t.JSONB)
-	GetResponse() t.JSONB
-	SetResponse(response t.JSONB)
+	GetPlatformConfig() t.JSONBImpl
+	SetPlatformConfig(config t.JSONBImpl)
+	GetResponse() t.JSONBImpl
+	SetResponse(response t.JSONBImpl)
 	GetErrorMessage() string
 	SetErrorMessage(errorMessage string)
 	GetRetryCount() int
@@ -78,8 +78,8 @@ type INotificationHistory interface {
 	SetReadAt(readAt *time.Time)
 	GetExpiresAt() *time.Time
 	SetExpiresAt(expiresAt *time.Time)
-	GetMetadata() t.JSONB
-	SetMetadata(metadata t.JSONB)
+	GetMetadata() t.JSONBImpl
+	SetMetadata(metadata t.JSONBImpl)
 	GetCreatedAt() time.Time
 	SetCreatedAt(createdAt time.Time)
 	GetUpdatedAt() time.Time
@@ -110,8 +110,8 @@ type NotificationHistory struct {
 	Message        string                      `json:"message" xml:"message" yaml:"message" gorm:"column:message;not null;type:TEXT"`
 	TargetID       string                      `json:"target_id" xml:"target_id" yaml:"target_id" gorm:"column:target_id;not null;type:VARCHAR(255);index"` // chat_id, channel_id, email, etc.
 	TargetName     string                      `json:"target_name" xml:"target_name" yaml:"target_name" gorm:"column:target_name;type:VARCHAR(255)"`
-	PlatformConfig t.JSONB                     `json:"platform_config" xml:"platform_config" yaml:"platform_config" gorm:"column:platform_config;type:jsonb"` // Configurações específicas da plataforma
-	Response       t.JSONB                     `json:"response" xml:"response" yaml:"response" gorm:"column:response;type:jsonb"`                             // Resposta da API da plataforma
+	PlatformConfig t.JSONBImpl                 `json:"platform_config" xml:"platform_config" yaml:"platform_config" gorm:"column:platform_config;type:jsonb"` // Configurações específicas da plataforma
+	Response       t.JSONBImpl                 `json:"response" xml:"response" yaml:"response" gorm:"column:response;type:jsonb"`                             // Resposta da API da plataforma
 	ErrorMessage   string                      `json:"error_message" xml:"error_message" yaml:"error_message" gorm:"column:error_message;type:TEXT"`
 	RetryCount     int                         `json:"retry_count" xml:"retry_count" yaml:"retry_count" gorm:"column:retry_count;default:0"`
 	MaxRetries     int                         `json:"max_retries" xml:"max_retries" yaml:"max_retries" gorm:"column:max_retries;default:3"`
@@ -121,7 +121,7 @@ type NotificationHistory struct {
 	DeliveredAt    *time.Time                  `json:"delivered_at" xml:"delivered_at" yaml:"delivered_at" gorm:"column:delivered_at;type:timestamp"`
 	ReadAt         *time.Time                  `json:"read_at" xml:"read_at" yaml:"read_at" gorm:"column:read_at;type:timestamp"`
 	ExpiresAt      *time.Time                  `json:"expires_at" xml:"expires_at" yaml:"expires_at" gorm:"column:expires_at;type:timestamp;index"`
-	Metadata       t.JSONB                     `json:"metadata" xml:"metadata" yaml:"metadata" gorm:"column:metadata;type:jsonb"`
+	Metadata       t.JSONBImpl                 `json:"metadata" xml:"metadata" yaml:"metadata" gorm:"column:metadata;type:jsonb"`
 	CreatedAt      time.Time                   `json:"created_at" xml:"created_at" yaml:"created_at" gorm:"column:created_at;default:now();index"`
 	UpdatedAt      time.Time                   `json:"updated_at" xml:"updated_at" yaml:"updated_at" gorm:"column:updated_at;default:now()"`
 }
@@ -129,9 +129,9 @@ type NotificationHistory struct {
 // NewNotificationHistoryModel cria uma nova instância de histórico de notificação
 func NewNotificationHistoryModel() INotificationHistory {
 	return &NotificationHistory{
-		PlatformConfig: make(t.JSONB),
-		Response:       make(t.JSONB),
-		Metadata:       make(t.JSONB),
+		PlatformConfig: make(t.JSONBImpl),
+		Response:       make(t.JSONBImpl),
+		Metadata:       make(t.JSONBImpl),
 		CreatedAt:      time.Now(),
 		UpdatedAt:      time.Now(),
 	}
@@ -168,10 +168,10 @@ func (n *NotificationHistory) GetTargetID() string                           { r
 func (n *NotificationHistory) SetTargetID(targetID string)                   { n.TargetID = targetID }
 func (n *NotificationHistory) GetTargetName() string                         { return n.TargetName }
 func (n *NotificationHistory) SetTargetName(targetName string)               { n.TargetName = targetName }
-func (n *NotificationHistory) GetPlatformConfig() t.JSONB                    { return n.PlatformConfig }
-func (n *NotificationHistory) SetPlatformConfig(config t.JSONB)              { n.PlatformConfig = config }
-func (n *NotificationHistory) GetResponse() t.JSONB                          { return n.Response }
-func (n *NotificationHistory) SetResponse(response t.JSONB)                  { n.Response = response }
+func (n *NotificationHistory) GetPlatformConfig() t.JSONBImpl                { return n.PlatformConfig }
+func (n *NotificationHistory) SetPlatformConfig(config t.JSONBImpl)          { n.PlatformConfig = config }
+func (n *NotificationHistory) GetResponse() t.JSONBImpl                      { return n.Response }
+func (n *NotificationHistory) SetResponse(response t.JSONBImpl)              { n.Response = response }
 func (n *NotificationHistory) GetErrorMessage() string                       { return n.ErrorMessage }
 func (n *NotificationHistory) SetErrorMessage(errorMessage string)           { n.ErrorMessage = errorMessage }
 func (n *NotificationHistory) GetRetryCount() int                            { return n.RetryCount }
@@ -190,8 +190,8 @@ func (n *NotificationHistory) GetReadAt() *time.Time                         { r
 func (n *NotificationHistory) SetReadAt(readAt *time.Time)                   { n.ReadAt = readAt }
 func (n *NotificationHistory) GetExpiresAt() *time.Time                      { return n.ExpiresAt }
 func (n *NotificationHistory) SetExpiresAt(expiresAt *time.Time)             { n.ExpiresAt = expiresAt }
-func (n *NotificationHistory) GetMetadata() t.JSONB                          { return n.Metadata }
-func (n *NotificationHistory) SetMetadata(metadata t.JSONB)                  { n.Metadata = metadata }
+func (n *NotificationHistory) GetMetadata() t.JSONBImpl                      { return n.Metadata }
+func (n *NotificationHistory) SetMetadata(metadata t.JSONBImpl)              { n.Metadata = metadata }
 func (n *NotificationHistory) GetCreatedAt() time.Time                       { return n.CreatedAt }
 func (n *NotificationHistory) SetCreatedAt(createdAt time.Time)              { n.CreatedAt = createdAt }
 func (n *NotificationHistory) GetUpdatedAt() time.Time                       { return n.UpdatedAt }

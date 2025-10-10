@@ -16,7 +16,7 @@ type ILLMService interface {
 	GetLLMModelByProvider(provider string) ([]ILLMModel, error)
 	GetLLMModelByProviderAndModel(provider, model string) (ILLMModel, error)
 	GetEnabledLLMModels() ([]ILLMModel, error)
-	GetContextDBService() t.IDBService
+	GetContextDBService() t.DBService
 }
 
 type LLMService struct {
@@ -105,6 +105,6 @@ func (ls *LLMService) GetEnabledLLMModels() ([]ILLMModel, error) {
 	return models, nil
 }
 
-func (ls *LLMService) GetContextDBService() t.IDBService {
+func (ls *LLMService) GetContextDBService() t.DBService {
 	return ls.repo.GetContextDBService()
 }

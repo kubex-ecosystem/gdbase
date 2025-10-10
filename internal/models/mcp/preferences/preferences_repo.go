@@ -25,7 +25,7 @@ type IPreferencesRepo interface {
 	Delete(id string) error
 	Close() error
 	List(where ...interface{}) (xtt.TableDataHandler, error)
-	GetContextDBService() *t.DBService
+	GetContextDBService() *t.DBServiceImpl
 }
 
 type PreferencesRepo struct {
@@ -172,11 +172,11 @@ func (pr *PreferencesRepo) List(where ...interface{}) (xtt.TableDataHandler, err
 	return xtt.NewTableHandlerFromRows([]string{"#", "ID", "Scope", "Config Size", "Created At", "Updated At"}, tableHandlerMap), nil
 }
 
-func (pr *PreferencesRepo) GetContextDBService() *t.DBService {
+func (pr *PreferencesRepo) GetContextDBService() *t.DBServiceImpl {
 	dbService, dbServiceErr := svc.NewDatabaseService(context.Background(), svc.NewDBConfigWithDBConnection(pr.g), l.GetLogger("GdoBase"))
 	if dbServiceErr != nil {
 		gl.Log("error", fmt.Sprintf("PreferencesModel repository: failed to get context DB service: %v", dbServiceErr))
 		return nil
 	}
-	return dbService
+	return dbService.(*t.DBServiceImpl)
 }

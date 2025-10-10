@@ -25,30 +25,32 @@ type JSONBData interface {
 	Clear()
 }
 
-// JSONB é uma implementação concreta da interface JSONBData, representando um objeto JSONB.
+// JSONBImpl é uma implementação concreta da interface JSONBData, representando um objeto JSONBImpl.
 // Internamente, é um map[string]any que pode ser manipulado diretamente. Ela também implementa
 // os métodos necessários para serialização e desserialização com o GORM (interface IJSONB).
-type JSONB map[string]any
+type JSONBImpl map[string]any
 
-// newJSONB cria uma nova instância de JSONB inicializada como um map vazio.
-func newJSONB() *JSONB {
+type JSONB = JSONBImpl
+
+// NewJSONBImpl cria uma nova instância de JSONB inicializada como um map vazio.
+func NewJSONBImpl() *JSONBImpl {
 	m := make(map[string]any)
-	j := JSONB(m)
+	j := JSONBImpl(m)
 	return &j
 }
 
 // NewJSONBData cria uma nova instância de JSONBData.
-func NewJSONBData() JSONBData { return newJSONB() }
+func NewJSONBData() JSONBData { return NewJSONBImpl() }
 
 // Value is a Serializer manual para o GORM
-func (m JSONB) Value() (driver.Value, error) {
+func (m JSONBImpl) Value() (driver.Value, error) {
 	return json.Marshal(m)
 }
 
 // Scan is a Deserializer manual para o GORM
-func (m *JSONB) Scan(vl any) error {
+func (m *JSONBImpl) Scan(vl any) error {
 	if vl == nil {
-		*m = JSONB{}
+		*m = JSONBImpl{}
 		return nil
 	}
 	return json.Unmarshal(vl.([]byte), m)
@@ -56,50 +58,50 @@ func (m *JSONB) Scan(vl any) error {
 
 // Métodos adicionais para manipulação de dados JSONB
 
-func (m JSONB) ToMap() map[string]any {
+func (m JSONBImpl) ToMap() map[string]any {
 	if m == nil {
 		return make(map[string]any)
 	}
 	return map[string]any(m)
 }
-func (m JSONB) ToInterface() any {
+func (m JSONBImpl) ToInterface() any {
 	if m == nil {
 		return map[string]any{}
 	}
 	return any(m)
 }
-func (m JSONB) IsNil() bool {
+func (m JSONBImpl) IsNil() bool {
 	return m == nil
 }
-func (m JSONB) IsEmpty() bool {
+func (m JSONBImpl) IsEmpty() bool {
 	return len(m) == 0
 }
-func (m JSONB) Get(key string) any {
+func (m JSONBImpl) Get(key string) any {
 	if m == nil {
 		return nil
 	}
 	return m[key]
 }
-func (m *JSONB) Set(key string, value any) {
+func (m *JSONBImpl) Set(key string, value any) {
 	if *m == nil {
 		*m = make(map[string]any) // Cria o map no valor apontado
 	}
 	(*m)[key] = value // Acessa e modifica o map subjacente
 }
-func (m JSONB) Delete(key string) {
+func (m JSONBImpl) Delete(key string) {
 	if m == nil {
 		return
 	}
 	delete(m, key)
 }
-func (m JSONB) Has(key string) bool {
+func (m JSONBImpl) Has(key string) bool {
 	if m == nil {
 		return false
 	}
 	_, ok := m[key]
 	return ok
 }
-func (m JSONB) Keys() []string {
+func (m JSONBImpl) Keys() []string {
 	if m == nil {
 		return []string{}
 	}
@@ -109,7 +111,7 @@ func (m JSONB) Keys() []string {
 	}
 	return keys
 }
-func (m JSONB) Values() []any {
+func (m JSONBImpl) Values() []any {
 	if m == nil {
 		return []any{}
 	}
@@ -119,25 +121,25 @@ func (m JSONB) Values() []any {
 	}
 	return values
 }
-func (m JSONB) Len() int {
+func (m JSONBImpl) Len() int {
 	if m == nil {
 		return 0
 	}
 	return len(m)
 }
-func (m *JSONB) Clear() {
+func (m *JSONBImpl) Clear() {
 	if *m == nil {
 		return
 	}
 	*m = make(map[string]any) // Zera o map na instância original
 }
 
-func JSONBFromMap(m map[string]any) JSONB {
-	return JSONB(m)
+func JSONBFromMap(m map[string]any) JSONBImpl {
+	return JSONBImpl(m)
 }
-func JSONBFromInterface(v any) JSONB {
+func JSONBFromInterface(v any) JSONBImpl {
 	if v == nil {
-		return JSONB{}
+		return JSONBImpl{}
 	}
-	return JSONB(v.(map[string]any))
+	return JSONBImpl(v.(map[string]any))
 }

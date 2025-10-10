@@ -11,10 +11,19 @@ import (
 	l "github.com/kubex-ecosystem/logz"
 )
 
-type DBService = svc.IDBService
-type IDBService interface {
-	svc.IDBService
+var migrationFiles embed.FS
+
+type DBService = svc.DBService
+type IDBService interface{ svc.DBService }
+type DBServiceImpl = svc.DBServiceImpl
+
+func NewDatabaseServiceImpl(ctx context.Context, config *DBConfigImpl, logger l.Logger) (*DBServiceImpl, error) {
+	return svc.NewDatabaseServiceImpl(ctx, config, logger)
 }
+func NewDatabaseService(ctx context.Context, config *DBConfigImpl, logger l.Logger) (DBService, error) {
+	return svc.NewDatabaseService(ctx, config, logger)
+}
+
 type Rows interface {
 	Next() bool
 	Scan(dest ...interface{}) error
@@ -25,21 +34,11 @@ type DirectDatabase interface {
 	Query(context.Context, string, ...interface{}) (any, error)
 }
 
-type DBServiceImpl = svc.DBServiceImpl
-
 type DBConfig = svc.IDBConfig
 type IDBConfig interface {
 	svc.IDBConfig
 }
 type DBConfigImpl = svc.DBConfig
-
-func NewDatabaseService(ctx context.Context, config *DBConfigImpl, logger l.Logger) (*DBServiceImpl, error) {
-	return svc.NewDatabaseService(ctx, config, logger)
-}
-
-func SetupDatabaseServices(ctx context.Context, d svc.IDockerService, config *DBConfigImpl) error {
-	return svc.SetupDatabaseServices(ctx, d, config)
-}
 
 func NewDBConfigWithArgs(ctx context.Context, dbName, dbConfigFilePath string, autoMigrate bool, logger l.Logger, debug bool) *DBConfigImpl {
 	return svc.NewDBConfigWithArgs(ctx, dbName, dbConfigFilePath, autoMigrate, logger, debug)
@@ -47,13 +46,13 @@ func NewDBConfigWithArgs(ctx context.Context, dbName, dbConfigFilePath string, a
 func NewDBConfigFromFile(ctx context.Context, dbConfigFilePath string, autoMigrate bool, logger l.Logger, debug bool) (*DBConfigImpl, error) {
 	return svc.NewDBConfigFromFile(ctx, dbConfigFilePath, autoMigrate, logger, debug)
 }
-
-var migrationFiles embed.FS
+func SetupDatabaseServices(ctx context.Context, d svc.IDockerService, config *DBConfigImpl) error {
+	return svc.SetupDatabaseServices(ctx, d, config)
+}
 
 func SetMigrationFiles(mf embed.FS) {
 	migrationFiles = mf
 }
-
 func GetMigrationFiles() embed.FS {
 	return migrationFiles
 }
@@ -72,8 +71,6 @@ type MongoDB = it.MongoDB
 type Redis = it.Redis
 type RabbitMQ = it.RabbitMQ
 
-// type IDBService = dbAbs.IDBService
-
 type IDockerService = svc.IDockerService
 type DockerService = svc.DockerService
 
@@ -89,16 +86,16 @@ type JSONB = ci.IJSONB
 type IJSONB interface {
 	ci.IJSONB
 }
-type JSONBImpl = it.JSONB
+type JSONBImpl = it.JSONBImpl
 
 func NewJSONB() IJSONB {
-	return &it.JSONB{}
+	return &it.JSONBImpl{}
 }
 
 type JSONBData = it.JSONBData
 type IJSONBData interface{ ci.IJSONB }
 
-func NewJSONBData() IJSONBData { return it.NewJSONBData() }
+func NewJSONBData() JSONBData { return it.NewJSONBData() }
 
 type JWT = it.JWT
 type JWTImpl = it.JWT

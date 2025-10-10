@@ -179,5 +179,5 @@ func (pr *ProvidersRepo) GetContextDBService() *svc.DBServiceImpl {
 		gl.Log("error", fmt.Sprintf("ProvidersModel repository: failed to get context DB service: %v", dbServiceErr))
 		return nil
 	}
-	return dbService
+	return dbService.(*svc.DBServiceImpl)
 }

@@ -75,10 +75,10 @@ type IMessageModel interface {
 	SetRecipientName(recipientName string)
 	GetContent() string
 	SetContent(content string)
-	GetAttachments() t.JSONB
-	SetAttachments(attachments t.JSONB)
-	GetMetadata() t.JSONB
-	SetMetadata(metadata t.JSONB)
+	GetAttachments() t.JSONBImpl
+	SetAttachments(attachments t.JSONBImpl)
+	GetMetadata() t.JSONBImpl
+	SetMetadata(metadata t.JSONBImpl)
 	GetReplyToMessageID() string
 	SetReplyToMessageID(replyToMessageID string)
 	GetThreadID() string
@@ -117,8 +117,8 @@ type MessageModel struct {
 	RecipientID       string           `gorm:"type:text;index" json:"recipient_id,omitempty" example:"987654321"`
 	RecipientName     string           `gorm:"type:text" json:"recipient_name,omitempty" example:"Bot Support"`
 	Content           string           `gorm:"type:text" json:"content,omitempty" example:"Hello, I need help with my order"`
-	Attachments       t.JSONB          `json:"attachments,omitempty"`
-	Metadata          t.JSONB          `json:"metadata,omitempty"`
+	Attachments       t.JSONBImpl      `json:"attachments,omitempty"`
+	Metadata          t.JSONBImpl      `json:"metadata,omitempty"`
 	ReplyToMessageID  string           `gorm:"type:uuid;index" json:"reply_to_message_id,omitempty"`
 	ThreadID          string           `gorm:"type:text;index" json:"thread_id,omitempty"`
 	Timestamp         string           `gorm:"type:timestamp;not null;default:now()" json:"timestamp" example:"2024-01-01T00:00:00Z"`
@@ -145,8 +145,8 @@ func NewMessageModel() *MessageModel {
 		RecipientID:       "",
 		RecipientName:     "",
 		Content:           "",
-		Attachments:       t.JSONB{},
-		Metadata:          t.JSONB{},
+		Attachments:       t.JSONBImpl{},
+		Metadata:          t.JSONBImpl{},
 		ReplyToMessageID:  "",
 		ThreadID:          "",
 		Timestamp:         time.Now().Format(time.RFC3339),
@@ -190,10 +190,10 @@ func (m *MessageModel) GetRecipientName() string                { return m.Recip
 func (m *MessageModel) SetRecipientName(recipientName string)   { m.RecipientName = recipientName }
 func (m *MessageModel) GetContent() string                      { return m.Content }
 func (m *MessageModel) SetContent(content string)               { m.Content = content }
-func (m *MessageModel) GetAttachments() t.JSONB                 { return m.Attachments }
-func (m *MessageModel) SetAttachments(attachments t.JSONB)      { m.Attachments = attachments }
-func (m *MessageModel) GetMetadata() t.JSONB                    { return m.Metadata }
-func (m *MessageModel) SetMetadata(metadata t.JSONB)            { m.Metadata = metadata }
+func (m *MessageModel) GetAttachments() t.JSONBImpl             { return m.Attachments }
+func (m *MessageModel) SetAttachments(attachments t.JSONBImpl)  { m.Attachments = attachments }
+func (m *MessageModel) GetMetadata() t.JSONBImpl                { return m.Metadata }
+func (m *MessageModel) SetMetadata(metadata t.JSONBImpl)        { m.Metadata = metadata }
 func (m *MessageModel) GetReplyToMessageID() string             { return m.ReplyToMessageID }
 func (m *MessageModel) SetReplyToMessageID(replyToMessageID string) {
 	m.ReplyToMessageID = replyToMessageID

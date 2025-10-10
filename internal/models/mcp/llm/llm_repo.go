@@ -24,7 +24,7 @@ type ILLMRepo interface {
 	Delete(id string) error
 	Close() error
 	List(where ...interface{}) (xtt.TableDataHandler, error)
-	GetContextDBService() is.IDBService
+	GetContextDBService() is.DBService
 }
 
 type LLMRepo struct {
@@ -164,7 +164,7 @@ func (lr *LLMRepo) List(where ...interface{}) (xtt.TableDataHandler, error) {
 	return xtt.NewTableHandlerFromRows([]string{"#", "ID", "Provider", "Model", "Temperature", "Max Tokens", "Top P", "Enabled"}, tableHandlerMap), nil
 }
 
-func (lr *LLMRepo) GetContextDBService() is.IDBService {
+func (lr *LLMRepo) GetContextDBService() is.DBService {
 	dbService, dbServiceErr := is.NewDatabaseService(context.Background(), is.NewDBConfigWithDBConnection(lr.g), l.GetLogger("GdoBase"))
 	if dbServiceErr != nil {
 		gl.Log("error", fmt.Sprintf("LLMModel repository: failed to get context DB service: %v", dbServiceErr))

@@ -26,13 +26,12 @@ type TokenRepoImpl struct {
 }
 
 // NewTokenRepo creates a new token repository instance
-func NewTokenRepo(ctx context.Context, dbService *svc.DBServiceImpl) ITokenRepo {
+func NewTokenRepo(ctx context.Context, dbService svc.DBService) ITokenRepo {
 	if dbService == nil {
 		gl.Log("error", "TokenRepo: DBService cannot be nil")
 		return nil
 	}
-
-	db, err := svc.GetDB(ctx, dbService)
+	db, err := svc.GetDB(ctx, dbService.(*svc.DBServiceImpl))
 	if err != nil {
 		gl.Log("error", fmt.Sprintf("TokenRepo: failed to get DB: %v", err))
 		return nil

@@ -33,7 +33,7 @@ func NewWebhookService(webhookRepo WebhookRepo) WebhookService {
 	return m.NewWebhookService(webhookRepo)
 }
 
-func NewWebhookRepo(ctx context.Context, dbService *svc.DBServiceImpl) WebhookRepo {
+func NewWebhookRepo(ctx context.Context, dbService svc.DBService) WebhookRepo {
 	return m.NewWebhookRepo(ctx, dbService)
 }
 

@@ -38,8 +38,8 @@ func NewTasksModel(
 	taskCommandType string,
 	taskMethod HTTPMethod,
 	taskAPIEndpoint string,
-	taskPayload tp.JSONB,
-	taskHeaders tp.JSONB,
+	taskPayload tp.JSONBImpl,
+	taskHeaders tp.JSONBImpl,
 	taskRetries int,
 	taskTimeout int,
 	taskStatus TaskStatus,
@@ -49,7 +49,7 @@ func NewTasksModel(
 	taskLastRunMessage string,
 	taskCommand string,
 	taskActivated bool,
-	taskConfig tp.JSONB,
+	taskConfig tp.JSONBImpl,
 	taskTags []string,
 	taskPriority int,
 	taskNotes string,
@@ -59,7 +59,7 @@ func NewTasksModel(
 	taskUpdatedBy string,
 	taskLastExecutedBy string,
 	taskLastExecutedAt *time.Time,
-	config tp.JSONB,
+	config tp.JSONBImpl,
 	active bool,
 ) TasksModel {
 	return &m.TasksModel{

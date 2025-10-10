@@ -144,5 +144,5 @@ func (ur *UserRepo) GetContextDBService() *svc.DBServiceImpl {
 		gl.Log("error", fmt.Sprintf("UserModel repository: failed to get context DB service (%s)", dbServiceErr))
 		return nil
 	}
-	return dbService
+	return dbService.(*svc.DBServiceImpl)
 }

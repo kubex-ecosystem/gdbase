@@ -25,12 +25,21 @@ type WebhookRepo struct {
 	dbService *svc.DBServiceImpl
 }
 
-func NewWebhookRepo(ctx context.Context, dbService *svc.DBServiceImpl) IWebhookRepo {
+func NewWebhookRepo(ctx context.Context, dbService svc.DBService) IWebhookRepo {
+	var dbServiceImpl *svc.DBServiceImpl
+	if dbService != nil {
+		var ok bool
+		dbServiceImpl, ok = dbService.(*svc.DBServiceImpl)
+		if !ok {
+			dbServiceImpl = nil
+		}
+	}
+
 	return &WebhookRepo{
 		webhooks:  make([]IWebhook, 0),
 		nextID:    1,
 		Mutexes:   &t.Mutexes{},
-		dbService: dbService,
+		dbService: dbServiceImpl,
 	}
 }
 

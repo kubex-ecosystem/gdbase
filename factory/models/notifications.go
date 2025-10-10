@@ -364,7 +364,7 @@ type NotificationTargetConfig struct {
 
 // Helper function to create target configuration for rules
 
-func CreateTargetConfig(targets []NotificationTargetConfig) t.JSONB {
+func CreateTargetConfig(targets []NotificationTargetConfig) t.JSONBImpl {
 	config := make(map[string]interface{})
 
 	for _, target := range targets {

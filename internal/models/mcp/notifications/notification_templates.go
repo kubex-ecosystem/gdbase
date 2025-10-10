@@ -60,16 +60,16 @@ type INotificationTemplate interface {
 	SetSubjectTemplate(subject string)
 	GetBodyTemplate() string
 	SetBodyTemplate(body string)
-	GetPlatformConfigs() t.JSONB
-	SetPlatformConfigs(configs t.JSONB)
-	GetVariables() t.JSONB
-	SetVariables(variables t.JSONB)
+	GetPlatformConfigs() t.JSONBImpl
+	SetPlatformConfigs(configs t.JSONBImpl)
+	GetVariables() t.JSONBImpl
+	SetVariables(variables t.JSONBImpl)
 	GetIsDefault() bool
 	SetIsDefault(isDefault bool)
 	GetLanguage() string
 	SetLanguage(language string)
-	GetTags() t.JSONB
-	SetTags(tags t.JSONB)
+	GetTags() t.JSONBImpl
+	SetTags(tags t.JSONBImpl)
 	GetCreatedBy() uuid.UUID
 	SetCreatedBy(createdBy uuid.UUID)
 	GetUpdatedBy() *uuid.UUID
@@ -98,11 +98,11 @@ type NotificationTemplate struct {
 	Status          NotificationTemplateStatus `json:"status" xml:"status" yaml:"status" gorm:"column:status;default:'ACTIVE';type:notification_template_status"`
 	SubjectTemplate string                     `json:"subject_template" xml:"subject_template" yaml:"subject_template" gorm:"column:subject_template;type:TEXT"`
 	BodyTemplate    string                     `json:"body_template" xml:"body_template" yaml:"body_template" gorm:"column:body_template;not null;type:TEXT"`
-	PlatformConfigs t.JSONB                    `json:"platform_configs" xml:"platform_configs" yaml:"platform_configs" gorm:"column:platform_configs;type:jsonb"` // Configurações específicas por plataforma
-	Variables       t.JSONB                    `json:"variables" xml:"variables" yaml:"variables" gorm:"column:variables;type:jsonb"`                             // Definição de variáveis disponíveis
+	PlatformConfigs t.JSONBImpl                `json:"platform_configs" xml:"platform_configs" yaml:"platform_configs" gorm:"column:platform_configs;type:jsonb"` // Configurações específicas por plataforma
+	Variables       t.JSONBImpl                `json:"variables" xml:"variables" yaml:"variables" gorm:"column:variables;type:jsonb"`                             // Definição de variáveis disponíveis
 	IsDefault       bool                       `json:"is_default" xml:"is_default" yaml:"is_default" gorm:"column:is_default;default:false"`
 	Language        string                     `json:"language" xml:"language" yaml:"language" gorm:"column:language;default:'pt-BR';type:VARCHAR(10)"`
-	Tags            t.JSONB                    `json:"tags" xml:"tags" yaml:"tags" gorm:"column:tags;type:jsonb"` // Tags para organização
+	Tags            t.JSONBImpl                `json:"tags" xml:"tags" yaml:"tags" gorm:"column:tags;type:jsonb"` // Tags para organização
 	CreatedBy       uuid.UUID                  `json:"created_by" xml:"created_by" yaml:"created_by" gorm:"column:created_by;type:uuid"`
 	UpdatedBy       *uuid.UUID                 `json:"updated_by" xml:"updated_by" yaml:"updated_by" gorm:"column:updated_by;type:uuid"`
 	CreatedAt       time.Time                  `json:"created_at" xml:"created_at" yaml:"created_at" gorm:"column:created_at;default:now()"`
@@ -112,9 +112,9 @@ type NotificationTemplate struct {
 // NewNotificationTemplateModel cria uma nova instância de template de notificação
 func NewNotificationTemplateModel() INotificationTemplate {
 	return &NotificationTemplate{
-		PlatformConfigs: make(t.JSONB),
-		Variables:       make(t.JSONB),
-		Tags:            make(t.JSONB),
+		PlatformConfigs: make(t.JSONBImpl),
+		Variables:       make(t.JSONBImpl),
+		Tags:            make(t.JSONBImpl),
 		CreatedAt:       time.Now(),
 		UpdatedAt:       time.Now(),
 	}
@@ -145,16 +145,16 @@ func (n *NotificationTemplate) GetSubjectTemplate() string                  { re
 func (n *NotificationTemplate) SetSubjectTemplate(subject string)           { n.SubjectTemplate = subject }
 func (n *NotificationTemplate) GetBodyTemplate() string                     { return n.BodyTemplate }
 func (n *NotificationTemplate) SetBodyTemplate(body string)                 { n.BodyTemplate = body }
-func (n *NotificationTemplate) GetPlatformConfigs() t.JSONB                 { return n.PlatformConfigs }
-func (n *NotificationTemplate) SetPlatformConfigs(configs t.JSONB)          { n.PlatformConfigs = configs }
-func (n *NotificationTemplate) GetVariables() t.JSONB                       { return n.Variables }
-func (n *NotificationTemplate) SetVariables(variables t.JSONB)              { n.Variables = variables }
+func (n *NotificationTemplate) GetPlatformConfigs() t.JSONBImpl             { return n.PlatformConfigs }
+func (n *NotificationTemplate) SetPlatformConfigs(configs t.JSONBImpl)      { n.PlatformConfigs = configs }
+func (n *NotificationTemplate) GetVariables() t.JSONBImpl                   { return n.Variables }
+func (n *NotificationTemplate) SetVariables(variables t.JSONBImpl)          { n.Variables = variables }
 func (n *NotificationTemplate) GetIsDefault() bool                          { return n.IsDefault }
 func (n *NotificationTemplate) SetIsDefault(isDefault bool)                 { n.IsDefault = isDefault }
 func (n *NotificationTemplate) GetLanguage() string                         { return n.Language }
 func (n *NotificationTemplate) SetLanguage(language string)                 { n.Language = language }
-func (n *NotificationTemplate) GetTags() t.JSONB                            { return n.Tags }
-func (n *NotificationTemplate) SetTags(tags t.JSONB)                        { n.Tags = tags }
+func (n *NotificationTemplate) GetTags() t.JSONBImpl                        { return n.Tags }
+func (n *NotificationTemplate) SetTags(tags t.JSONBImpl)                    { n.Tags = tags }
 func (n *NotificationTemplate) GetCreatedBy() uuid.UUID                     { return n.CreatedBy }
 func (n *NotificationTemplate) SetCreatedBy(createdBy uuid.UUID)            { n.CreatedBy = createdBy }
 func (n *NotificationTemplate) GetUpdatedBy() *uuid.UUID                    { return n.UpdatedBy }

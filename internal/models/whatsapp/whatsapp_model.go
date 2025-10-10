@@ -93,12 +93,12 @@ type IWhatsAppModel interface {
 	SetAppID(appID string)
 	GetAppSecret() string
 	SetAppSecret(appSecret string)
-	GetBusinessConfig() t.JSONB
-	SetBusinessConfig(config t.JSONB)
+	GetBusinessConfig() t.JSONBImpl
+	SetBusinessConfig(config t.JSONBImpl)
 	GetSupportedMessageTypes() []string
 	SetSupportedMessageTypes(types []string)
-	GetConfig() t.JSONB
-	SetConfig(config t.JSONB)
+	GetConfig() t.JSONBImpl
+	SetConfig(config t.JSONBImpl)
 	GetLastActivity() time.Time
 	SetLastActivity(lastActivity time.Time)
 	GetUserID() string
@@ -136,9 +136,9 @@ type WhatsAppModel struct {
 	WebhookVerifyToken    string                  `gorm:"type:text" json:"webhook_verify_token,omitempty"`
 	AppID                 string                  `gorm:"type:text" json:"app_id,omitempty" example:"1234567890123456"`
 	AppSecret             string                  `gorm:"type:text" json:"app_secret,omitempty"`
-	BusinessConfig        t.JSONB                 `json:"business_config,omitempty"`
+	BusinessConfig        t.JSONBImpl             `json:"business_config,omitempty"`
 	SupportedMessageTypes []string                `gorm:"type:text[]" json:"supported_message_types,omitempty" example:"[\"text\", \"image\", \"document\"]"`
-	Config                t.JSONB                 `json:"config" binding:"omitempty"`
+	Config                t.JSONBImpl             `json:"config" binding:"omitempty"`
 	LastActivity          string                  `gorm:"type:timestamp;default:now()" json:"last_activity,omitempty" example:"2024-01-01T00:00:00Z"`
 	UserID                string                  `gorm:"type:uuid;references:users(id)" json:"user_id,omitempty" example:"123e4567-e89b-12d3-a456-426614174001"`
 	TargetTaskID          string                  `gorm:"type:uuid;references:mcp_sync_tasks(id)" json:"target_task_id,omitempty" example:"123e4567-e89b-12d3-a456-426614174002"`
@@ -167,9 +167,9 @@ func NewWhatsAppModel() *WhatsAppModel {
 		WebhookVerifyToken:    "",
 		AppID:                 "",
 		AppSecret:             "",
-		BusinessConfig:        t.JSONB{},
+		BusinessConfig:        t.JSONBImpl{},
 		SupportedMessageTypes: []string{"text", "image", "document"},
-		Config:                t.JSONB{},
+		Config:                t.JSONBImpl{},
 		LastActivity:          time.Now().Format(time.RFC3339),
 		UserID:                "",
 		TargetTaskID:          "",
@@ -233,12 +233,12 @@ func (w *WhatsAppModel) GetAppID() string                         { return w.App
 func (w *WhatsAppModel) SetAppID(appID string)                    { w.AppID = appID }
 func (w *WhatsAppModel) GetAppSecret() string                     { return w.AppSecret }
 func (w *WhatsAppModel) SetAppSecret(appSecret string)            { w.AppSecret = appSecret }
-func (w *WhatsAppModel) GetBusinessConfig() t.JSONB               { return w.BusinessConfig }
-func (w *WhatsAppModel) SetBusinessConfig(config t.JSONB)         { w.BusinessConfig = config }
+func (w *WhatsAppModel) GetBusinessConfig() t.JSONBImpl           { return w.BusinessConfig }
+func (w *WhatsAppModel) SetBusinessConfig(config t.JSONBImpl)     { w.BusinessConfig = config }
 func (w *WhatsAppModel) GetSupportedMessageTypes() []string       { return w.SupportedMessageTypes }
 func (w *WhatsAppModel) SetSupportedMessageTypes(types []string)  { w.SupportedMessageTypes = types }
-func (w *WhatsAppModel) GetConfig() t.JSONB                       { return w.Config }
-func (w *WhatsAppModel) SetConfig(config t.JSONB)                 { w.Config = config }
+func (w *WhatsAppModel) GetConfig() t.JSONBImpl                   { return w.Config }
+func (w *WhatsAppModel) SetConfig(config t.JSONBImpl)             { w.Config = config }
 
 func (w *WhatsAppModel) GetLastActivity() time.Time {
 	lastActivity, _ := time.Parse(time.RFC3339, w.LastActivity)

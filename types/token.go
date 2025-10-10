@@ -20,7 +20,7 @@ type TSConfig struct {
 	RefreshExpirationSecs int64
 	KeyringPass           string
 	TokenClient           TokenClient
-	DBService             is.IDBService
+	DBService             is.DBService
 	KeyringService        *sci.KeyringService
 }
 type TokenPair struct {

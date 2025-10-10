@@ -69,10 +69,10 @@ type CronJob struct {
 	UpdatedAt      *time.Time `json:"updated_at" gorm:"default:now()" binding:"omitempty"`
 	LastExecutedAt *time.Time `json:"last_executed_at" binding:"omitempty"`
 
-	Payload t.JSONB `json:"payload" binding:"omitempty"`
-	Headers t.JSONB `json:"headers" binding:"omitempty"`
+	Payload t.JSONBImpl `json:"payload" binding:"omitempty"`
+	Headers t.JSONBImpl `json:"headers" binding:"omitempty"`
 
-	Metadata t.JSONB `json:"metadata" binding:"omitempty"`
+	Metadata t.JSONBImpl `json:"metadata" binding:"omitempty"`
 }
 
 func NewCronJob(ctx context.Context, cron *CronJob, restrict bool) ICronJobModel {

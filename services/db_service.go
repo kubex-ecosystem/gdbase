@@ -15,16 +15,14 @@ type IDBConfig interface {
 	svc.DBConfig
 }
 
-type IDBService interface {
-	svc.IDBService
-}
-
-type DBService = svc.DBServiceImpl
+type IDBService interface{ svc.DBService }
+type DBServiceImpl = svc.DBServiceImpl
+type DBService = svc.DBService
 
 type IDockerService = svc.IDockerService
 type DockerService = svc.DockerService
 
-func NewDatabaseService(ctx context.Context, config *svc.DBConfig, logger l.Logger) (svc.IDBService, error) {
+func NewDatabaseService(ctx context.Context, config *svc.DBConfig, logger l.Logger) (svc.DBService, error) {
 	return svc.NewDatabaseService(ctx, config, logger)
 }
 
@@ -87,4 +85,4 @@ type IJSONB interface {
 	ci.IJSONB
 }
 type JSONBObj = ci.IJSONB
-type JSONBImpl = t.JSONB
+type JSONBImpl = t.JSONBImpl

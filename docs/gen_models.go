@@ -90,7 +90,7 @@ func initDB() (*gorm.DB, *sql.DB, error) {
 		gl.Log("fatal", fmt.Sprintf("Error initializing database service: %v", err))
 		return nil, nil, err
 	}
-	db, err := svc.GetDB(context.Background(), dbService)
+	db, err := svc.GetDB(context.Background(), dbService.(*svc.DBServiceImpl))
 	if err != nil {
 		gl.Log("fatal", fmt.Sprintf("Error getting database instance: %v", err))
 		return nil, nil, err
