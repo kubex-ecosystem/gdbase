@@ -1,3 +1,4 @@
+// Package jobqueue provides the service for managing job queues in the MCP system.
 package jobqueue
 
 import (

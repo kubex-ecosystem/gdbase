@@ -1,8 +1,10 @@
 package models
 
 import (
+	"context"
+
+	svc "github.com/kubex-ecosystem/gdbase/factory"
 	m "github.com/kubex-ecosystem/gdbase/internal/models/users"
-	"gorm.io/gorm"
 )
 
 type UserModelType = m.UserModel
@@ -14,8 +16,8 @@ func NewUserService(userRepo UserRepo) UserService {
 	return m.NewUserService(userRepo)
 }
 
-func NewUserRepo(db *gorm.DB) UserRepo {
-	return m.NewUserRepo(db)
+func NewUserRepo(ctx context.Context, dbService *svc.DBServiceImpl) UserRepo {
+	return m.NewUserRepo(ctx, dbService)
 }
 
 func NewUserModel(username, name, email string) UserModel {

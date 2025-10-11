@@ -2,14 +2,16 @@
 package discord
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/google/uuid"
+
 	gl "github.com/kubex-ecosystem/gdbase/internal/module/logger"
-	is "github.com/kubex-ecosystem/gdbase/internal/services"
-	t "github.com/kubex-ecosystem/gdbase/types"
+	svc "github.com/kubex-ecosystem/gdbase/internal/services"
 	l "github.com/kubex-ecosystem/logz"
 	xtt "github.com/kubex-ecosystem/xtui/types"
+
 	"gorm.io/gorm"
 )
 
@@ -23,7 +25,7 @@ type IDiscordRepo interface {
 	Delete(id string) error
 	Close() error
 	List(where ...interface{}) (xtt.TableDataHandler, error)
-	GetContextDBService() t.IDBService
+	GetContextDBService() *svc.DBServiceImpl
 }
 
 type DiscordRepo struct {
@@ -31,12 +33,17 @@ type DiscordRepo struct {
 	g *gorm.DB
 }
 
-func NewDiscordRepo(db *gorm.DB) IDiscordRepo {
-	if db == nil {
+func NewDiscordRepo(ctx context.Context, dbService *svc.DBServiceImpl) IDiscordRepo {
+	if dbService == nil {
 		gl.Log("error", "DiscordModel repository: gorm DB is nil")
 		return nil
 	}
-	return &DiscordRepo{db}
+	db, err := svc.GetDB(ctx, dbService)
+	if err != nil {
+		gl.Log("error", "DiscordModel repository: error getting gorm DB: "+err.Error())
+		return nil
+	}
+	return &DiscordRepo{g: db}
 }
 
 func (dr *DiscordRepo) TableName() string {
@@ -170,11 +177,11 @@ func (dr *DiscordRepo) List(where ...interface{}) (xtt.TableDataHandler, error) 
 	}, tableHandlerMap), nil
 }
 
-func (dr *DiscordRepo) GetContextDBService() t.IDBService {
-	dbService, dbServiceErr := is.NewDatabaseService(t.NewDBConfigWithDBConnection(dr.g), l.GetLogger("GdoBase"))
+func (dr *DiscordRepo) GetContextDBService() *svc.DBServiceImpl {
+	dbService, dbServiceErr := svc.NewDatabaseService(context.Background(), svc.NewDBConfigWithDBConnection(dr.g), l.GetLogger("GdoBase"))
 	if dbServiceErr != nil {
 		gl.Log("error", "DiscordModel repository: error creating database service: "+dbServiceErr.Error())
 		return nil
 	}
-	return dbService
+	return dbService.(*svc.DBServiceImpl)
 }

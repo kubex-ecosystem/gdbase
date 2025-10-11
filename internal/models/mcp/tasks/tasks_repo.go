@@ -1,12 +1,12 @@
 package tasks
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/google/uuid"
 	gl "github.com/kubex-ecosystem/gdbase/internal/module/logger"
-	is "github.com/kubex-ecosystem/gdbase/internal/services"
-	t "github.com/kubex-ecosystem/gdbase/types"
+	svc "github.com/kubex-ecosystem/gdbase/internal/services"
 	l "github.com/kubex-ecosystem/logz"
 	xtt "github.com/kubex-ecosystem/xtui/types"
 	"gorm.io/gorm"
@@ -22,7 +22,7 @@ type ITasksRepo interface {
 	Delete(id string) error
 	Close() error
 	List(where ...any) (xtt.TableDataHandler, error)
-	GetContextDBService() t.IDBService
+	GetContextDBService() *svc.DBServiceImpl
 }
 
 type TasksRepo struct {
@@ -30,12 +30,17 @@ type TasksRepo struct {
 	g *gorm.DB
 }
 
-func NewTasksRepo(db *gorm.DB) ITasksRepo {
-	if db == nil {
-		gl.Log("error", "TasksModel repository: gorm DB is nil")
+func NewTasksRepo(ctx context.Context, dbService *svc.DBServiceImpl) *TasksRepo {
+	if dbService == nil {
+		gl.Log("error", "TasksModel repository: dbService is nil")
 		return nil
 	}
-	return &TasksRepo{db}
+	db, err := svc.GetDB(ctx, dbService)
+	if err != nil {
+		gl.Log("error", fmt.Sprintf("TasksModel repository: failed to get DB from dbService: %v", err))
+		return nil
+	}
+	return &TasksRepo{g: db}
 }
 
 func (tr *TasksRepo) TableName() string {
@@ -187,11 +192,11 @@ func (tr *TasksRepo) List(where ...any) (xtt.TableDataHandler, error) {
 	return xtt.NewTableHandlerFromRows([]string{"#", "ID", "Provider", "Target", "Type", "Cron", "Status", "Active", "Next Run", "Last Run", "Last Status"}, tableHandlerMap), nil
 }
 
-func (tr *TasksRepo) GetContextDBService() t.IDBService {
-	dbService, dbServiceErr := is.NewDatabaseService(t.NewDBConfigWithDBConnection(tr.g), l.GetLogger("GdoBase"))
+func (tr *TasksRepo) GetContextDBService() *svc.DBServiceImpl {
+	dbService, dbServiceErr := svc.NewDatabaseService(context.Background(), svc.NewDBConfigWithDBConnection(tr.g), l.GetLogger("GdoBase"))
 	if dbServiceErr != nil {
 		gl.Log("error", fmt.Sprintf("TasksModel repository: failed to get context DB service: %v", dbServiceErr))
 		return nil
 	}
-	return dbService
+	return dbService.(*svc.DBServiceImpl)
 }

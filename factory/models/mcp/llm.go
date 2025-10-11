@@ -2,11 +2,13 @@
 package mcp
 
 import (
+	"context"
 	"time"
 
 	"github.com/google/uuid"
+
 	m "github.com/kubex-ecosystem/gdbase/internal/models/mcp/llm"
-	"gorm.io/gorm"
+	svc "github.com/kubex-ecosystem/gdbase/internal/services"
 )
 
 type LLMModelType = m.LLMModel
@@ -18,7 +20,11 @@ func NewLLMService(llmRepo LLMRepo) LLMService {
 	return m.NewLLMService(llmRepo)
 }
 
-func NewLLMRepo(db *gorm.DB) LLMRepo {
+func NewLLMRepo(ctx context.Context, dbService *svc.DBServiceImpl) LLMRepo {
+	db, err := svc.GetDB(ctx, dbService)
+	if err != nil {
+		return nil
+	}
 	return m.NewLLMRepo(db)
 }
 

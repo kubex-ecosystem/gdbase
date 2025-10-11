@@ -69,3 +69,5 @@ dist/*
 .claude/
 CLAUDE.md
 supabase/
+.venv-hooks/
+.venv-hooks/

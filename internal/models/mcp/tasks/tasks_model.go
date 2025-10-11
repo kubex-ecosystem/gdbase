@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	tp "github.com/kubex-ecosystem/gdbase/types"
+	tp "github.com/kubex-ecosystem/gdbase/internal/types"
 )
 
 // TaskStatus represents the possible states of a task
@@ -67,12 +67,12 @@ type ITasksModel interface {
 	SetTaskAPIEndpoint(endpoint string)
 	GetTaskMethod() HTTPMethod
 	SetTaskMethod(method HTTPMethod)
-	GetTaskPayload() tp.JSONB
-	SetTaskPayload(payload tp.JSONB)
-	GetTaskHeaders() tp.JSONB
-	SetTaskHeaders(headers tp.JSONB)
-	GetTaskConfig() tp.JSONB
-	SetTaskConfig(config tp.JSONB)
+	GetTaskPayload() tp.JSONBImpl
+	SetTaskPayload(payload tp.JSONBImpl)
+	GetTaskHeaders() tp.JSONBImpl
+	SetTaskHeaders(headers tp.JSONBImpl)
+	GetTaskConfig() tp.JSONBImpl
+	SetTaskConfig(config tp.JSONBImpl)
 	GetActive() bool
 	SetActive(active bool)
 	GetCreatedAt() time.Time
@@ -106,8 +106,8 @@ type TasksModel struct {
 	TaskCommandType    string          `gorm:"type:text;default:'api'" json:"task_command_type" example:"api"`
 	TaskMethod         HTTPMethod      `gorm:"type:text;default:'POST'" json:"task_method" example:"POST"`
 	TaskAPIEndpoint    string          `gorm:"type:text" json:"task_api_endpoint,omitempty" example:"/api/v1/sync"`
-	TaskPayload        tp.JSONB        `json:"task_payload" binding:"omitempty"`
-	TaskHeaders        tp.JSONB        `json:"task_headers" binding:"omitempty"`
+	TaskPayload        tp.JSONBImpl    `json:"task_payload" binding:"omitempty"`
+	TaskHeaders        tp.JSONBImpl    `json:"task_headers" binding:"omitempty"`
 	TaskRetries        int             `gorm:"type:integer;default:0" json:"task_retries" example:"3"`
 	TaskTimeout        int             `gorm:"type:integer;default:0" json:"task_timeout" example:"300"`
 	TaskStatus         TaskStatus      `gorm:"type:text;default:'PENDING'" json:"task_status" example:"PENDING"`
@@ -117,7 +117,7 @@ type TasksModel struct {
 	TaskLastRunMessage string          `gorm:"type:text;default:'pending'" json:"task_last_run_message" example:"Task completed successfully"`
 	TaskCommand        string          `gorm:"type:text" json:"task_command,omitempty" example:"curl -X POST ..."`
 	TaskActivated      bool            `gorm:"type:boolean;default:true" json:"task_activated" example:"true"`
-	TaskConfig         tp.JSONB        `json:"task_config" binding:"omitempty"`
+	TaskConfig         tp.JSONBImpl    `json:"task_config" binding:"omitempty"`
 	TaskTags           []string        `gorm:"type:text[]" json:"task_tags,omitempty" example:"[\"sync\",\"github\"]"`
 	TaskPriority       int             `gorm:"type:integer;default:0" json:"task_priority" example:"1"`
 	TaskNotes          string          `gorm:"type:text" json:"task_notes,omitempty" example:"Daily sync with GitHub"`
@@ -127,7 +127,7 @@ type TasksModel struct {
 	TaskUpdatedBy      string          `gorm:"type:uuid;references:users(id)" json:"task_updated_by,omitempty"`
 	TaskLastExecutedBy string          `gorm:"type:uuid;references:users(id)" json:"task_last_executed_by,omitempty"`
 	TaskLastExecutedAt *time.Time      `gorm:"type:timestamp" json:"task_last_executed_at,omitempty"`
-	Config             tp.JSONB        `json:"config" binding:"omitempty"`
+	Config             tp.JSONBImpl    `json:"config" binding:"omitempty"`
 	Active             bool            `gorm:"type:boolean;default:true" json:"active" example:"true"`
 }
 
@@ -161,10 +161,10 @@ func NewTasksModel() *TasksModel {
 		TaskStatus:         TaskStatusPending,
 		TaskActivated:      true,
 		TaskPriority:       0,
-		TaskPayload:        make(tp.JSONB),
-		TaskHeaders:        make(tp.JSONB),
-		TaskConfig:         make(tp.JSONB),
-		Config:             make(tp.JSONB),
+		TaskPayload:        make(tp.JSONBImpl),
+		TaskHeaders:        make(tp.JSONBImpl),
+		TaskConfig:         make(tp.JSONBImpl),
+		Config:             make(tp.JSONBImpl),
 		Active:             true,
 		CreatedAt:          time.Now().Format(time.RFC3339),
 		UpdatedAt:          time.Now().Format(time.RFC3339),
@@ -190,12 +190,12 @@ func (t *TasksModel) GetTaskAPIEndpoint() string          { return t.TaskAPIEndp
 func (t *TasksModel) SetTaskAPIEndpoint(endpoint string)  { t.TaskAPIEndpoint = endpoint }
 func (t *TasksModel) GetTaskMethod() HTTPMethod           { return t.TaskMethod }
 func (t *TasksModel) SetTaskMethod(method HTTPMethod)     { t.TaskMethod = method }
-func (t *TasksModel) GetTaskPayload() tp.JSONB            { return t.TaskPayload }
-func (t *TasksModel) SetTaskPayload(payload tp.JSONB)     { t.TaskPayload = payload }
-func (t *TasksModel) GetTaskHeaders() tp.JSONB            { return t.TaskHeaders }
-func (t *TasksModel) SetTaskHeaders(headers tp.JSONB)     { t.TaskHeaders = headers }
-func (t *TasksModel) GetTaskConfig() tp.JSONB             { return t.TaskConfig }
-func (t *TasksModel) SetTaskConfig(config tp.JSONB)       { t.TaskConfig = config }
+func (t *TasksModel) GetTaskPayload() tp.JSONBImpl        { return t.TaskPayload }
+func (t *TasksModel) SetTaskPayload(payload tp.JSONBImpl) { t.TaskPayload = payload }
+func (t *TasksModel) GetTaskHeaders() tp.JSONBImpl        { return t.TaskHeaders }
+func (t *TasksModel) SetTaskHeaders(headers tp.JSONBImpl) { t.TaskHeaders = headers }
+func (t *TasksModel) GetTaskConfig() tp.JSONBImpl         { return t.TaskConfig }
+func (t *TasksModel) SetTaskConfig(config tp.JSONBImpl)   { t.TaskConfig = config }
 func (t *TasksModel) GetActive() bool                     { return t.Active }
 func (t *TasksModel) SetActive(active bool)               { t.Active = active }
 func (t *TasksModel) GetCreatedAt() time.Time {
@@ -303,14 +303,14 @@ func (t *TasksModel) FromCronJob(cronJob *CronJobIntegration) error {
 
 	// Parse JSONB fields
 	if cronJob.Payload != "" && cronJob.Payload != "{}" {
-		var payload tp.JSONB
+		var payload tp.JSONBImpl
 		if err := json.Unmarshal([]byte(cronJob.Payload), &payload); err == nil {
 			t.TaskPayload = payload
 		}
 	}
 
 	if cronJob.Headers != "" && cronJob.Headers != "{}" {
-		var headers tp.JSONB
+		var headers tp.JSONBImpl
 		if err := json.Unmarshal([]byte(cronJob.Headers), &headers); err == nil {
 			t.TaskHeaders = headers
 		}

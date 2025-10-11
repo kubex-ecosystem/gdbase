@@ -1,8 +1,10 @@
 package models
 
 import (
+	"context"
+
 	m "github.com/kubex-ecosystem/gdbase/internal/models/clients"
-	"gorm.io/gorm"
+	svc "github.com/kubex-ecosystem/gdbase/internal/services"
 )
 
 type ClientModel = m.ClientDetailed
@@ -13,6 +15,6 @@ func NewClientService(clientRepo ClientRepo) ClientService {
 	return m.NewClientService(clientRepo)
 }
 
-func NewClientRepo(db *gorm.DB) ClientRepo {
-	return m.NewClientRepo(db)
+func NewClientRepo(ctx context.Context, dbService *svc.DBServiceImpl) ClientRepo {
+	return m.NewClientRepo(ctx, dbService)
 }

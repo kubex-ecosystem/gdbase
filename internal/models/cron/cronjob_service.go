@@ -12,7 +12,7 @@ import (
 	"github.com/google/uuid"
 	jobqueue "github.com/kubex-ecosystem/gdbase/internal/models/job_queue"
 	gl "github.com/kubex-ecosystem/gdbase/internal/module/logger"
-	t "github.com/kubex-ecosystem/gdbase/types"
+	svc "github.com/kubex-ecosystem/gdbase/internal/services"
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 
@@ -31,22 +31,31 @@ type ICronJobService interface {
 	GetJobQueue(ctx context.Context) ([]jobqueue.JobQueue, error)
 	ReprocessFailedJobs(ctx context.Context) error
 	GetExecutionLogs(ctx context.Context, cronJobID uuid.UUID) ([]jobqueue.ExecutionLog, error)
+	GetScheduledCronJobs(ctx context.Context) ([]Job, error)
 }
 
 var (
-	dbConfig *t.DBConfig
+	dbConfig *svc.DBConfig
 )
 
 type CronJobService struct {
 	Repo ICronJobRepo
 }
 
-func NewCronJobService(repo ICronJobRepo) ICronJobService {
+func NewCronJobServiceImpl(repo *CronJobRepo) *CronJobService {
 	return &CronJobService{Repo: repo}
+}
+func NewCronJobService(repo ICronJobRepo) ICronJobService {
+	if rp, ok := repo.(*CronJobRepo); !ok {
+		gl.Log("error", "Invalid repository type provided to NewCronJobService")
+		return nil
+	} else {
+		return NewCronJobServiceImpl(rp)
+	}
 }
 
 func (s *CronJobService) publishToRabbitMQ(ctx context.Context, queueName string, message string) error {
-	iDBConfig := t.NewDBConfig(dbConfig)
+	iDBConfig := svc.NewDBConfig(dbConfig)
 	if iDBConfig == nil {
 		gl.Log("error", "Failed to create database config")
 		return errors.New("failed to create database config")
@@ -235,6 +244,11 @@ func (s *CronJobService) ValidateCronExpression(ctx context.Context, expression 
 	return fmt.Errorf("cron expression '%s' is not valid", expression)
 }
 
+func (s *CronJobService) GetScheduledCronJobs(ctx context.Context) ([]Job, error) {
+	// Implement logic to fetch scheduled cron jobs from the repository.
+	return nil, errors.New("not implemented")
+}
+
 // GetJobQueue retrieves the current state of the job queue.
 func (s *CronJobService) GetJobQueue(ctx context.Context) ([]jobqueue.JobQueue, error) {
 	// Implement logic to fetch the job queue from the repository.
@@ -263,7 +277,7 @@ func (s *CronJobService) SaveCronJob(ctx context.Context, job *CronJob, defaultU
 	return err
 }
 
-func getRabbitMQURL(dbConfig *t.DBConfig) string {
+func getRabbitMQURL(dbConfig *svc.DBConfig) string {
 	if dbConfig != nil {
 		if dbConfig.Messagery != nil {
 			if dbConfig.Messagery.RabbitMQ != nil {

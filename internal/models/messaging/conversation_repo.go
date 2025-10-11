@@ -4,8 +4,10 @@ import (
 	"context"
 	"fmt"
 
-	"gorm.io/gorm"
 	gl "github.com/kubex-ecosystem/gdbase/internal/module/logger"
+	svc "github.com/kubex-ecosystem/gdbase/internal/services"
+
+	"gorm.io/gorm"
 )
 
 type IConversationRepo interface {
@@ -33,7 +35,16 @@ type ConversationRepository struct {
 	db *gorm.DB
 }
 
-func NewConversationRepository(db *gorm.DB) IConversationRepo {
+func NewConversationRepository(ctx context.Context, dbService *svc.DBServiceImpl) IConversationRepo {
+	if dbService == nil {
+		gl.Log("error", "Conversation repository: dbService is nil")
+		return nil
+	}
+	db, err := svc.GetDB(ctx, dbService)
+	if err != nil {
+		gl.Log("error", fmt.Sprintf("Conversation repository: failed to get DB from dbService: %v", err))
+		return nil
+	}
 	return &ConversationRepository{db: db}
 }
 

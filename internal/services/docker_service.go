@@ -16,12 +16,11 @@ import (
 	v "github.com/docker/docker/api/types/volume"
 	k "github.com/docker/docker/client"
 	nl "github.com/docker/docker/libnetwork/netlabel"
-	gbm "github.com/kubex-ecosystem/gdbase"
+
 	evs "github.com/kubex-ecosystem/gdbase/internal/events"
 	ci "github.com/kubex-ecosystem/gdbase/internal/interfaces"
 	gl "github.com/kubex-ecosystem/gdbase/internal/module/logger"
 	it "github.com/kubex-ecosystem/gdbase/internal/types"
-	t "github.com/kubex-ecosystem/gdbase/types"
 	l "github.com/kubex-ecosystem/logz"
 
 	_ "embed"
@@ -77,8 +76,8 @@ type DockerService struct {
 	*DockerUtils
 
 	Logger    l.Logger
-	reference gbm.Reference
-	mutexes   gbm.Mutexes
+	reference *it.Reference
+	mutexes   *it.Mutexes
 
 	services map[string]any
 
@@ -89,16 +88,16 @@ type DockerService struct {
 	eventBus   *evs.EventBus
 }
 
-func newDockerServiceBus(config *t.DBConfig, logger l.Logger) (IDockerService, error) {
+func newDockerServiceBus(config *DBConfig, logger l.Logger) (IDockerService, error) {
 	EnsureDockerIsRunning()
 
 	if logger == nil {
 		logger = l.GetLogger("DockerService")
 	}
 
-	var propDBConfig ci.IProperty[*t.DBConfig]
+	var propDBConfig ci.IProperty[*DBConfig]
 	if config != nil {
-		propDBConfig = it.NewProperty[*t.DBConfig]("dbConfig", &config, false, nil)
+		propDBConfig = it.NewProperty[*DBConfig]("dbConfig", &config, false, nil)
 	}
 
 	cli, err := k.NewClientWithOpts(k.FromEnv, k.WithAPIVersionNegotiation())
@@ -107,8 +106,8 @@ func newDockerServiceBus(config *t.DBConfig, logger l.Logger) (IDockerService, e
 	}
 	dockerService := &DockerService{
 		Logger:     logger,
-		reference:  gbm.NewReference("DockerService"),
-		mutexes:    gbm.NewMutexesType(),
+		reference:  it.NewReference("DockerService").GetReference(),
+		mutexes:    it.NewMutexesType(),
 		pool:       &sync.Pool{},
 		Cli:        cli,
 		properties: nil,
@@ -126,35 +125,11 @@ func newDockerServiceBus(config *t.DBConfig, logger l.Logger) (IDockerService, e
 	}
 	return dockerService, nil
 }
-func newDockerService(config *t.DBConfig, logger l.Logger) (IDockerService, error) {
+func newDockerService(config *DBConfig, logger l.Logger) (IDockerService, error) {
 	EnsureDockerIsRunning()
-
-	if logger == nil {
-		logger = l.GetLogger("DockerService")
-	}
-
-	cli, err := k.NewClientWithOpts(k.FromEnv, k.WithAPIVersionNegotiation())
-	if err != nil {
-		return nil, fmt.Errorf("❌ Error creating Docker client: %v", err)
-	}
-
-	dockerService := &DockerService{
-		Logger:    logger,
-		reference: gbm.NewReference("DockerService"),
-		mutexes:   gbm.NewMutexesType(),
-		pool:      &sync.Pool{},
-		Cli:       cli,
-		properties: map[string]any{
-			"dbConfig": it.NewProperty[*t.DBConfig]("dbConfig", &config, false, nil),
-		},
-	}
-	if dockerService.eventBus == nil {
-		dockerService.eventBus = evs.NewEventBus()
-	}
-
-	return dockerService, nil
+	return newDockerServiceBus(config, logger)
 }
-func NewDockerService(config *t.DBConfig, logger l.Logger) (IDockerService, error) {
+func NewDockerService(config *DBConfig, logger l.Logger) (IDockerService, error) {
 	return newDockerService(config, logger)
 }
 
@@ -190,11 +165,11 @@ func (d *DockerService) Initialize() error {
 	if d.properties != nil {
 		dbServiceConfigT, exists := d.properties["dbConfig"]
 		if exists {
-			if dbServiceConfig, ok := dbServiceConfigT.(*it.Property[*t.DBConfig]); !ok {
+			if dbServiceConfig, ok := dbServiceConfigT.(*it.Property[*DBConfig]); !ok {
 				return fmt.Errorf("❌ Error converting database configuration")
 			} else {
 				dbSrvCfg := dbServiceConfig.GetValue()
-				if err := SetupDatabaseServices(d, dbSrvCfg); err != nil {
+				if err := SetupDatabaseServices(context.Background(), d, dbSrvCfg); err != nil {
 					return fmt.Errorf("❌ Error setting up database services: %v", err)
 				}
 				d.properties["dbConfig"] = dbServiceConfig
@@ -391,7 +366,7 @@ func (d *DockerService) GetProperty(name string) any {
 }
 func (d *DockerService) On(name string, event string, callback func(...any)) {
 	if d.mutexes == nil {
-		d.mutexes = gbm.NewMutexesType()
+		d.mutexes = it.NewMutexesType()
 	}
 	if d.pool == nil {
 		d.pool = &sync.Pool{}
@@ -404,7 +379,7 @@ func (d *DockerService) On(name string, event string, callback func(...any)) {
 }
 func (d *DockerService) Off(name string, event string) {
 	if d.mutexes == nil {
-		d.mutexes = gbm.NewMutexesType()
+		d.mutexes = it.NewMutexesType()
 	}
 	if d.pool == nil {
 		d.pool = &sync.Pool{}
