@@ -63,7 +63,7 @@ type DBConfig struct {
 	FilePath string `json:"file_path" yaml:"file_path" xml:"file_path" toml:"file_path" mapstructure:"file_path"`
 
 	// Logger is used to configure the logger
-	Logger l.Logger `json:"logger,omitempty" yaml:"logger,omitempty" xml:"logger,omitempty" toml:"logger,omitempty" mapstructure:"logger,omitempty"`
+	Logger l.Logger `json:"-" yaml:"-" xml:"-" toml:"-" mapstructure:"-"`
 
 	// Mutexes is used to configure the mutexes, not serialized
 	*ti.Mutexes `json:"-" yaml:"-" xml:"-" toml:"-" mapstructure:"-"`
@@ -239,7 +239,7 @@ func NewDBConfig(dbConfig *DBConfig) *DBConfig {
 	if dbConfig.Mapper == nil {
 		dbConfig.Mapper = ti.NewMapperType(&dbConfig, dbConfig.FilePath)
 		if _, statErr := os.Stat(dbConfig.FilePath); os.IsNotExist(statErr) {
-			if err := os.MkdirAll(dbConfig.FilePath, os.ModePerm); err != nil {
+			if err := os.MkdirAll(filepath.Dir(dbConfig.FilePath), os.ModePerm); err != nil {
 				gl.Log("error", fmt.Sprintf("Error creating directory: %v", err))
 			} else {
 				willWrite = true

@@ -9,8 +9,9 @@ import (
 	"strings"
 	"text/template"
 
-	gl "github.com/kubex-ecosystem/gdbase/internal/module/logger"
+	gl "github.com/kubex-ecosystem/gdbase/internal/module/kbx"
 	svc "github.com/kubex-ecosystem/gdbase/internal/services"
+	tp "github.com/kubex-ecosystem/gdbase/internal/types"
 	l "github.com/kubex-ecosystem/logz"
 
 	_ "gorm.io/driver/mysql"
@@ -25,7 +26,7 @@ type Column struct {
 }
 
 // Main GenerateModels generates user models from database
-func Main() {
+func main() {
 	// Initialize database
 	_, dbSQL, err := initDB()
 	if err != nil {
@@ -72,11 +73,59 @@ func titleCase(s string) string {
 }
 
 func initDB() (*gorm.DB, *sql.DB, error) {
-	dbConfig := svc.NewDBConfigWithFilePath("GoBE-DB", "/home/user/.kubex/gdbase/config/config.json")
+	configPath := os.Getenv("GDBASE_CONFIGFILE")
+	if configPath == "" {
+		homeDir, err := os.UserHomeDir()
+		if err != nil {
+			gl.Log("fatal", fmt.Sprintf("Error getting user home directory: %v", err))
+			return nil, nil, err
+		}
+		configPath = fmt.Sprintf("%s/.kubex/gdbase/config/config.json", homeDir)
+	}
+	var dbConfig *svc.DBConfig
+	// Load configuration
+	if _, err := os.Stat(configPath); err != nil && !os.IsNotExist(err) {
+		gl.Log("fatal", fmt.Sprintf("Config file not found at %s", configPath))
+		return nil, nil, fmt.Errorf("config file not found at %s", configPath)
+	} else if os.IsNotExist(err) {
+		dbConfig = svc.NewDBConfig(&svc.DBConfig{})
+	} else {
+		dbConfig = svc.NewDBConfigWithFilePath("GoBE-DB", configPath)
+	}
+
 	if dbConfig == nil {
 		gl.Log("fatal", "Error loading database configuration")
 		return nil, nil, fmt.Errorf("error loading database configuration")
 	}
+	if len(os.Args) > 1 {
+		database := &tp.Database{
+			Enabled:   true,
+			IsDefault: true,
+			Type:      os.Args[1],
+		}
+		if strings.Contains(database.Type, "://") {
+			database.Dsn = database.Type
+			dsnArray := strings.Split(database.Dsn, "/")
+			database.Type = strings.TrimSuffix(dsnArray[0], ":")
+			database.Name = dsnArray[len(dsnArray)-1]
+		} else {
+			// Set your DB config here if needed
+			switch database.Type {
+			case "mysql", "mariadb":
+				database.Type = "mysql"
+			case "postgres", "postgresql":
+				database.Type = "postgresql"
+			case "sqlserver", "mssql":
+				database.Type = "sqlserver"
+			default:
+				database.Type = "sqlite"
+			}
+		}
+		dbConfig.Databases = map[string]*tp.Database{
+			"GoBE-DB": database,
+		}
+	}
+
 	// Initialize database
 	// Create database service
 	dbService, err := svc.NewDatabaseService(context.Background(), dbConfig, l.GetLogger("gen_models"))

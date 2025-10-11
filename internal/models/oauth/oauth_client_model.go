@@ -46,8 +46,8 @@ type OAuthClientModel struct {
 	UpdatedAt    time.Time `gorm:"type:timestamp;default:now()" json:"updated_at"`
 
 	// Cached parsed values (not stored in DB)
-	redirectURIsParsed []string `gorm:"-" json:"redirect_uris,omitempty"`
-	scopesParsed       []string `gorm:"-" json:"scopes,omitempty"`
+	redirectURIsParsed []string `gorm:"-" json:"-"`
+	scopesParsed       []string `gorm:"-" json:"-"`
 }
 
 func (oac *OAuthClientModel) TableName() string {

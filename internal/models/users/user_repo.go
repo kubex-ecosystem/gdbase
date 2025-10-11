@@ -71,6 +71,9 @@ func (ur *UserRepo) Create(um IUser) (IUser, error) {
 }
 func (ur *UserRepo) FindOne(where ...interface{}) (IUser, error) {
 	var um UserModel
+
+	ur.g.AutoMigrate(&UserModel{})
+
 	err := ur.g.Where(where[0], where[1:]...).First(&um).Error
 	if err != nil {
 		return nil, fmt.Errorf("UserModel repository: failed to find UserModel: %w", err)

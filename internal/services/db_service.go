@@ -121,9 +121,12 @@ func (d *DBServiceImpl) Initialize(ctx context.Context) error {
 		}
 		if dsn == "" {
 			dbHost = dbConfig.Host
-			dbPort = dbConfig.Port.(string)
 			dbUser = dbConfig.Username
 			if dbConfig.Type != "postgresql" {
+				if dbConfig.Port == nil {
+					dbConfig.Port = "5432" // Padrão PostgreSQL
+				}
+				dbPort = dbConfig.Port.(string)
 				dbPass = dbConfig.Password
 				if dbPass == "" {
 					dbPassKey, dbPassErr := gl.GetOrGenPasswordKeyringPass("pgpass")
@@ -168,13 +171,17 @@ func (d *DBServiceImpl) Initialize(ctx context.Context) error {
 
 	// Conecta (Messagery habilitados)
 	if config.Messagery != nil {
-		if config.Messagery.RabbitMQ.Enabled {
-			// Implementar conexão com RabbitMQ se necessário
-			gl.Log("info", "RabbitMQ habilitado")
+		if config.Messagery.RabbitMQ != nil {
+			if config.Messagery.RabbitMQ.Enabled {
+				// Implementar conexão com RabbitMQ se necessário
+				gl.Log("info", "RabbitMQ habilitado")
+			}
 		}
-		if config.Messagery.Redis.Enabled {
-			// Implementar conexão com Redis se necessário
-			gl.Log("info", "Redis habilitado")
+		if config.Messagery.Redis != nil {
+			if config.Messagery.Redis.Enabled {
+				// Implementar conexão com Redis se necessário
+				gl.Log("info", "Redis habilitado")
+			}
 		}
 	}
 
@@ -551,7 +558,7 @@ func connectDatabase(_ context.Context, config *ti.Database) (*gorm.DB, bool, er
 		return nil, false, fmt.Errorf("banco de dados não suportado: %s", config.Type)
 	}
 	if err != nil {
-		return nil, true, fmt.Errorf("❌ Erro ao abrir conexão SQL: %v", err)
+		return nil, true, fmt.Errorf("erro ao abrir conexão SQL: %v", err)
 	}
 
 	var gormDialector gorm.Dialector
