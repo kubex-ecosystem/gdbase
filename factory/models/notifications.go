@@ -6,10 +6,11 @@ import (
 
 	"github.com/google/uuid"
 	n "github.com/kubex-ecosystem/gdbase/internal/models/mcp/notifications"
-	t "github.com/kubex-ecosystem/gdbase/types"
+	t "github.com/kubex-ecosystem/gdbase/internal/types"
 )
 
 // Notification Rules
+
 type NotificationRule = n.NotificationRule
 type NotificationRuleModel = n.INotificationRule
 type NotificationRuleStatus = n.NotificationRuleStatus
@@ -18,6 +19,7 @@ type NotificationRulePlatform = n.NotificationRulePlatform
 type NotificationRulePriority = n.NotificationRulePriority
 
 // Notification Rules Constants
+
 const (
 	// Status
 	NotificationRuleStatusActive   = n.NotificationRuleStatusActive
@@ -47,6 +49,7 @@ const (
 )
 
 // Notification Templates
+
 type NotificationTemplate = n.NotificationTemplate
 type NotificationTemplateModel = n.INotificationTemplate
 type NotificationTemplateType = n.NotificationTemplateType
@@ -54,6 +57,7 @@ type NotificationTemplateFormat = n.NotificationTemplateFormat
 type NotificationTemplateStatus = n.NotificationTemplateStatus
 
 // Notification Templates Constants
+
 const (
 	// Types
 	NotificationTemplateTypeJobCompleted = n.NotificationTemplateTypeJobCompleted
@@ -77,12 +81,14 @@ const (
 )
 
 // Notification History
+
 type NotificationHistory = n.NotificationHistory
 type NotificationHistoryModel = n.INotificationHistory
 type NotificationHistoryStatus = n.NotificationHistoryStatus
 type NotificationHistoryPlatform = n.NotificationHistoryPlatform
 
 // Notification History Constants
+
 const (
 	// Status
 	NotificationHistoryStatusPending   = n.NotificationHistoryStatusPending
@@ -103,12 +109,14 @@ const (
 )
 
 // Notification Events
+
 type NotificationEvent = n.NotificationEvent
 type NotificationEventType = n.NotificationEventType
 type NotificationEventProcessor = n.INotificationEventProcessor
 type NotificationEventHandler = n.EventHandler
 
 // Notification Events Constants
+
 const (
 	NotificationEventTypeJobStatusChanged = n.NotificationEventTypeJobStatusChanged
 	NotificationEventTypeJobCompleted     = n.NotificationEventTypeJobCompleted
@@ -121,15 +129,18 @@ const (
 )
 
 // Integration
+
 type AnalysisJobNotificationIntegration = n.AnalysisJobNotificationIntegration
 type AnalysisJobNotificationHooks = n.AnalysisJobNotificationHooks
 
 // Factory functions for Notification Rules
+
 func NewNotificationRuleModel() NotificationRuleModel {
 	return n.NewNotificationRuleModel()
 }
 
 // Repository and Service interfaces
+
 type NotificationRuleRepo = n.INotificationRuleRepo
 type NotificationRuleService interface {
 	CreateRule(ctx context.Context, rule NotificationRuleModel) (NotificationRuleModel, error)
@@ -144,6 +155,7 @@ type NotificationRuleService interface {
 }
 
 // Factory functions for Notification Templates
+
 func NewNotificationTemplateModel() NotificationTemplateModel {
 	return n.NewNotificationTemplateModel()
 }
@@ -161,6 +173,7 @@ func NewScoreAlertTemplate(name, language string, createdBy uuid.UUID) Notificat
 }
 
 // Repository and Service interfaces for Templates
+
 type NotificationTemplateRepo = n.INotificationTemplateRepo
 type NotificationTemplateService interface {
 	CreateTemplate(ctx context.Context, template NotificationTemplateModel) (NotificationTemplateModel, error)
@@ -173,6 +186,7 @@ type NotificationTemplateService interface {
 }
 
 // Factory functions for Notification History
+
 func NewNotificationHistoryModel() NotificationHistoryModel {
 	return n.NewNotificationHistoryModel()
 }
@@ -186,6 +200,7 @@ func NewScheduledNotification(ruleID uuid.UUID, platform NotificationHistoryPlat
 }
 
 // Repository and Service interfaces for History
+
 type NotificationHistoryRepo = n.INotificationHistoryRepo
 type NotificationHistoryService interface {
 	CreateNotification(ctx context.Context, notification NotificationHistoryModel) (NotificationHistoryModel, error)
@@ -200,6 +215,7 @@ type NotificationHistoryService interface {
 }
 
 // Factory functions for Event Processing
+
 func NewNotificationEventProcessor(
 	ruleRepo NotificationRuleRepo,
 	templateRepo NotificationTemplateRepo,
@@ -210,6 +226,7 @@ func NewNotificationEventProcessor(
 }
 
 // Factory functions for Integration
+
 func NewAnalysisJobNotificationIntegration(eventProcessor NotificationEventProcessor) *AnalysisJobNotificationIntegration {
 	return n.NewAnalysisJobNotificationIntegration(eventProcessor)
 }
@@ -219,6 +236,7 @@ func NewAnalysisJobNotificationHooks(integration *AnalysisJobNotificationIntegra
 }
 
 // Event creation helpers
+
 func NewJobStatusChangedEvent(jobID, userID uuid.UUID, projectID *uuid.UUID, oldStatus, newStatus string, jobData map[string]interface{}) *NotificationEvent {
 	return n.NewJobStatusChangedEvent(jobID, userID, projectID, oldStatus, newStatus, jobData)
 }
@@ -236,8 +254,10 @@ func NewScoreAlertEvent(jobID, userID uuid.UUID, projectID *uuid.UUID, score flo
 }
 
 // Notification Management Service - High-level interface for managing all notification functionality
+
 type NotificationManagementService interface {
 	// Rules management
+
 	CreateRule(ctx context.Context, rule NotificationRuleModel) (NotificationRuleModel, error)
 	UpdateRule(ctx context.Context, rule NotificationRuleModel) (NotificationRuleModel, error)
 	DeleteRule(ctx context.Context, id uuid.UUID) error
@@ -314,6 +334,7 @@ func CreateDefaultNotificationRules(userID uuid.UUID, platforms map[string]Notif
 }
 
 // Helper function to create default notification templates
+
 func CreateDefaultNotificationTemplates(createdBy uuid.UUID, language string) []NotificationTemplateModel {
 	templates := make([]NotificationTemplateModel, 0)
 
@@ -333,6 +354,7 @@ func CreateDefaultNotificationTemplates(createdBy uuid.UUID, language string) []
 }
 
 // Configuration helper for target setup
+
 type NotificationTargetConfig struct {
 	Platform NotificationRulePlatform `json:"platform"`
 	TargetID string                   `json:"target_id"`
@@ -341,7 +363,8 @@ type NotificationTargetConfig struct {
 }
 
 // Helper function to create target configuration for rules
-func CreateTargetConfig(targets []NotificationTargetConfig) t.JSONB {
+
+func CreateTargetConfig(targets []NotificationTargetConfig) t.JSONBImpl {
 	config := make(map[string]interface{})
 
 	for _, target := range targets {

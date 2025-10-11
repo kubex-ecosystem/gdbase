@@ -1,14 +1,17 @@
 package preferences
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/google/uuid"
+
 	gl "github.com/kubex-ecosystem/gdbase/internal/module/logger"
-	is "github.com/kubex-ecosystem/gdbase/internal/services"
+	svc "github.com/kubex-ecosystem/gdbase/internal/services"
 	t "github.com/kubex-ecosystem/gdbase/types"
 	l "github.com/kubex-ecosystem/logz"
 	xtt "github.com/kubex-ecosystem/xtui/types"
+
 	"gorm.io/gorm"
 )
 
@@ -22,7 +25,7 @@ type IPreferencesRepo interface {
 	Delete(id string) error
 	Close() error
 	List(where ...interface{}) (xtt.TableDataHandler, error)
-	GetContextDBService() t.IDBService
+	GetContextDBService() *t.DBServiceImpl
 }
 
 type PreferencesRepo struct {
@@ -30,12 +33,17 @@ type PreferencesRepo struct {
 	g *gorm.DB
 }
 
-func NewPreferencesRepo(db *gorm.DB) IPreferencesRepo {
-	if db == nil {
-		gl.Log("error", "PreferencesModel repository: gorm DB is nil")
+func NewPreferencesRepo(ctx context.Context, dbService *svc.DBServiceImpl) IPreferencesRepo {
+	if dbService == nil {
+		gl.Log("error", "PreferencesModel repository: dbService is nil")
 		return nil
 	}
-	return &PreferencesRepo{db}
+	db, err := svc.GetDB(ctx, dbService)
+	if err != nil {
+		return nil
+	}
+
+	return &PreferencesRepo{g: db}
 }
 
 func (pr *PreferencesRepo) TableName() string {
@@ -164,11 +172,11 @@ func (pr *PreferencesRepo) List(where ...interface{}) (xtt.TableDataHandler, err
 	return xtt.NewTableHandlerFromRows([]string{"#", "ID", "Scope", "Config Size", "Created At", "Updated At"}, tableHandlerMap), nil
 }
 
-func (pr *PreferencesRepo) GetContextDBService() t.IDBService {
-	dbService, dbServiceErr := is.NewDatabaseService(t.NewDBConfigWithDBConnection(pr.g), l.GetLogger("GdoBase"))
+func (pr *PreferencesRepo) GetContextDBService() *t.DBServiceImpl {
+	dbService, dbServiceErr := svc.NewDatabaseService(context.Background(), svc.NewDBConfigWithDBConnection(pr.g), l.GetLogger("GdoBase"))
 	if dbServiceErr != nil {
 		gl.Log("error", fmt.Sprintf("PreferencesModel repository: failed to get context DB service: %v", dbServiceErr))
 		return nil
 	}
-	return dbService
+	return dbService.(*t.DBServiceImpl)
 }

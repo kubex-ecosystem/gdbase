@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"io"
@@ -9,9 +10,9 @@ import (
 	"text/template"
 
 	gl "github.com/kubex-ecosystem/gdbase/internal/module/logger"
-	is "github.com/kubex-ecosystem/gdbase/internal/services"
-	t "github.com/kubex-ecosystem/gdbase/types"
+	svc "github.com/kubex-ecosystem/gdbase/internal/services"
 	l "github.com/kubex-ecosystem/logz"
+
 	_ "gorm.io/driver/mysql"
 	_ "gorm.io/driver/postgres"
 	_ "gorm.io/driver/sqlite"
@@ -71,28 +72,27 @@ func titleCase(s string) string {
 }
 
 func initDB() (*gorm.DB, *sql.DB, error) {
-	dbConfig := t.NewDBConfigWithFilePath("GoBE-DB", "/home/user/.kubex/gdbase/config/config.json")
+	dbConfig := svc.NewDBConfigWithFilePath("GoBE-DB", "/home/user/.kubex/gdbase/config/config.json")
 	if dbConfig == nil {
 		gl.Log("fatal", "Error loading database configuration")
 		return nil, nil, fmt.Errorf("error loading database configuration")
 	}
 	// Initialize database
 	// Create database service
-	dbService, err := is.NewDatabaseService(dbConfig, l.GetLogger("gen_models"))
+	dbService, err := svc.NewDatabaseService(context.Background(), dbConfig, l.GetLogger("gen_models"))
 	if err != nil {
 		gl.Log("fatal", fmt.Sprintf("Error creating database service: %v", err))
 		return nil, nil, err
 	}
 	// Initialize database service
-	err = dbService.Initialize()
+	err = dbService.Initialize(context.Background())
 	if err != nil {
 		gl.Log("fatal", fmt.Sprintf("Error initializing database service: %v", err))
 		return nil, nil, err
 	}
-	// Get database configuration
-	db, err := dbService.GetDB()
+	db, err := svc.GetDB(context.Background(), dbService.(*svc.DBServiceImpl))
 	if err != nil {
-		gl.Log("fatal", fmt.Sprintf("Error getting database: %v", err))
+		gl.Log("fatal", fmt.Sprintf("Error getting database instance: %v", err))
 		return nil, nil, err
 	}
 	// Database connection
@@ -101,8 +101,6 @@ func initDB() (*gorm.DB, *sql.DB, error) {
 		gl.Log("fatal", fmt.Sprintf("Error getting database connection: %v", err))
 		return nil, nil, err
 	}
-	//defer dbSql.Close()
-
 	if err := dbSQL.Ping(); err != nil {
 		gl.Log("fatal", fmt.Sprintf("Error connecting to database: %v", err))
 		return nil, nil, err

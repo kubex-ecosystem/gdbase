@@ -1,8 +1,10 @@
 package models
 
 import (
+	"context"
+
 	d "github.com/kubex-ecosystem/gdbase/internal/models/discord"
-	"gorm.io/gorm"
+	svc "github.com/kubex-ecosystem/gdbase/internal/services"
 )
 
 type DiscordModel = d.DiscordModel
@@ -11,11 +13,13 @@ type DiscordService = d.IDiscordService
 type DiscordRepo = d.IDiscordRepo
 
 // Type aliases for enums
+
 type DiscordUserType = d.DiscordUserType
 type DiscordStatus = d.DiscordStatus
 type DiscordIntegrationType = d.DiscordIntegrationType
 
 // Enum constants
+
 const (
 	DiscordUserTypeBot    = d.DiscordUserTypeBot
 	DiscordUserTypeUser   = d.DiscordUserTypeUser
@@ -35,8 +39,8 @@ func NewDiscordService(discordRepo DiscordRepo) DiscordService {
 	return d.NewDiscordService(discordRepo)
 }
 
-func NewDiscordRepo(db *gorm.DB) DiscordRepo {
-	return d.NewDiscordRepo(db)
+func NewDiscordRepo(ctx context.Context, dbService *svc.DBServiceImpl) DiscordRepo {
+	return d.NewDiscordRepo(ctx, dbService)
 }
 
 func NewDiscordModel() DiscordModelInterface {

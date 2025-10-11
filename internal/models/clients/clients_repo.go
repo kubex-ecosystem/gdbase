@@ -2,9 +2,11 @@
 package clients
 
 import (
+	"context"
 	"fmt"
 
 	gl "github.com/kubex-ecosystem/gdbase/internal/module/logger"
+	svc "github.com/kubex-ecosystem/gdbase/internal/services"
 	"gorm.io/gorm"
 )
 
@@ -32,9 +34,14 @@ type ClientRepo struct {
 }
 
 // NewClientRepo cria uma nova instância de ClientRepo.
-func NewClientRepo(db *gorm.DB) IClientRepo {
-	if db == nil {
-		gl.Log("error", "ClientRepo: gorm DB is nil")
+func NewClientRepo(ctx context.Context, dbService *svc.DBServiceImpl) IClientRepo {
+	if dbService == nil {
+		gl.Log("error", "ClientRepo: dbService is nil")
+		return nil
+	}
+	db, err := svc.GetDB(ctx, dbService)
+	if err != nil {
+		gl.Log("error", fmt.Sprintf("ClientRepo: failed to get DB from dbService: %v", err))
 		return nil
 	}
 	return &ClientRepo{db: db}

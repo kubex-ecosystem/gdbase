@@ -8,8 +8,8 @@ import (
 
 func DatabaseCmd() *cobra.Command {
 	var configFile string
-	shortDesc := "Database management commands for GodoBase"
-	longDesc := "Database management commands for GodoBase"
+	shortDesc := "Database management commands for GDBase"
+	longDesc := "Database management commands for GDBase"
 	cmd := &cobra.Command{
 		Use:         "database",
 		Short:       shortDesc,

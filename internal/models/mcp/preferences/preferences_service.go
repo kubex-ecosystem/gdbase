@@ -4,7 +4,8 @@ import (
 	"errors"
 	"fmt"
 
-	t "github.com/kubex-ecosystem/gdbase/types"
+	is "github.com/kubex-ecosystem/gdbase/internal/services"
+	t "github.com/kubex-ecosystem/gdbase/internal/types"
 )
 
 type IPreferencesService interface {
@@ -15,8 +16,8 @@ type IPreferencesService interface {
 	ListPreferences() ([]IPreferencesModel, error)
 	GetPreferencesByScope(scope string) (IPreferencesModel, error)
 	GetPreferencesByUserID(userID string) ([]IPreferencesModel, error)
-	UpsertPreferencesByScope(scope string, config t.JSONB, userID string) (IPreferencesModel, error)
-	GetContextDBService() t.IDBService
+	UpsertPreferencesByScope(scope string, config t.JSONBImpl, userID string) (IPreferencesModel, error)
+	GetContextDBService() *is.DBServiceImpl
 }
 
 type PreferencesService struct {
@@ -101,7 +102,7 @@ func (ps *PreferencesService) GetPreferencesByUserID(userID string) ([]IPreferen
 	return preferences, nil
 }
 
-func (ps *PreferencesService) UpsertPreferencesByScope(scope string, config t.JSONB, userID string) (IPreferencesModel, error) {
+func (ps *PreferencesService) UpsertPreferencesByScope(scope string, config t.JSONBImpl, userID string) (IPreferencesModel, error) {
 	// Try to find existing preferences by scope
 	existing, err := ps.repo.FindOne("scope = ?", scope)
 	if err != nil {
@@ -124,6 +125,6 @@ func (ps *PreferencesService) UpsertPreferencesByScope(scope string, config t.JS
 	return ps.UpdatePreferences(existing)
 }
 
-func (ps *PreferencesService) GetContextDBService() t.IDBService {
+func (ps *PreferencesService) GetContextDBService() *is.DBServiceImpl {
 	return ps.repo.GetContextDBService()
 }

@@ -5,9 +5,8 @@ import (
 	"os"
 
 	"github.com/docker/go-connections/nat"
-	glb "github.com/kubex-ecosystem/gdbase/internal/globals"
-	gl "github.com/kubex-ecosystem/gdbase/internal/module/logger"
-	t "github.com/kubex-ecosystem/gdbase/types"
+	gl "github.com/kubex-ecosystem/gdbase/internal/module/kbx"
+	t "github.com/kubex-ecosystem/gdbase/internal/types"
 )
 
 func SetupRabbitMQ(config *t.RabbitMQ, dockerService IDockerService) error {
@@ -26,7 +25,7 @@ func SetupRabbitMQ(config *t.RabbitMQ, dockerService IDockerService) error {
 		config.Username = "gobe"
 	}
 	if config.Password == "" {
-		rabbitPassKey, rabbitPassErr := glb.GetOrGenPasswordKeyringPass("rabbitmq")
+		rabbitPassKey, rabbitPassErr := gl.GetOrGenPasswordKeyringPass("rabbitmq")
 		if rabbitPassErr != nil {
 			gl.Log("error", "Skipping RabbitMQ setup due to error generating password")
 			gl.Log("debug", fmt.Sprintf("Error generating key: %v", rabbitPassErr))
@@ -45,7 +44,7 @@ func SetupRabbitMQ(config *t.RabbitMQ, dockerService IDockerService) error {
 		config.ManagementPort = "15672"
 	}
 	if config.ErlangCookie == "" {
-		rabbitCookieKey, rabbitCookieErr := glb.GetOrGenPasswordKeyringPass("rabbitmq-cookie")
+		rabbitCookieKey, rabbitCookieErr := gl.GetOrGenPasswordKeyringPass("rabbitmq-cookie")
 		if rabbitCookieErr != nil {
 			gl.Log("error", "Skipping RabbitMQ setup due to error generating password")
 			gl.Log("debug", fmt.Sprintf("Error generating key: %v", rabbitCookieErr))
@@ -55,7 +54,7 @@ func SetupRabbitMQ(config *t.RabbitMQ, dockerService IDockerService) error {
 		}
 	}
 	if config.Volume == "" {
-		config.Volume = os.ExpandEnv(glb.DefaultRabbitMQVolume)
+		config.Volume = os.ExpandEnv(DefaultRabbitMQVolume)
 	}
 
 	// Cria o volume, se necessário

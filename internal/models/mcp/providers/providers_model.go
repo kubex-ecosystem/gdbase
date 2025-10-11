@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	t "github.com/kubex-ecosystem/gdbase/types"
+	t "github.com/kubex-ecosystem/gdbase/internal/types"
 )
 
 type IProvidersModel interface {
@@ -16,8 +16,8 @@ type IProvidersModel interface {
 	SetProvider(provider string)
 	GetOrgOrGroup() string
 	SetOrgOrGroup(orgOrGroup string)
-	GetConfig() t.JSONB
-	SetConfig(config t.JSONB)
+	GetConfig() t.JSONBImpl
+	SetConfig(config t.JSONBImpl)
 	GetCreatedAt() time.Time
 	SetCreatedAt(createdAt time.Time)
 	GetUpdatedAt() time.Time
@@ -31,24 +31,21 @@ type IProvidersModel interface {
 }
 
 type ProvidersModel struct {
-	ID         string  `gorm:"type:uuid;primaryKey" json:"id"`
-	Provider   string  `gorm:"type:text;not null" json:"provider" example:"github"`
-	OrgOrGroup string  `gorm:"type:text;not null" json:"org_or_group" example:"my-org"`
-	Config     t.JSONB `json:"config" binding:"omitempty"`
-	CreatedAt  string  `gorm:"type:timestamp;default:now()" json:"created_at,omitempty" example:"2024-01-01T00:00:00Z"`
-	UpdatedAt  string  `gorm:"type:timestamp;default:now()" json:"updated_at,omitempty" example:"2024-01-01T00:00:00Z"`
-	CreatedBy  string  `gorm:"type:uuid;references:users(id)" json:"created_by,omitempty" example:"123e4567-e89b-12d3-a456-426614174001"`
-	UpdatedBy  string  `gorm:"type:uuid;references:users(id)" json:"updated_by,omitempty" example:"123e4567-e89b-12d3-a456-426614174002"`
+	ID         string      `gorm:"type:uuid;primaryKey" json:"id"`
+	Provider   string      `gorm:"type:text;not null" json:"provider" example:"github"`
+	OrgOrGroup string      `gorm:"type:text;not null" json:"org_or_group" example:"my-org"`
+	Config     t.JSONBImpl `json:"config" binding:"omitempty"`
+	CreatedAt  string      `gorm:"type:timestamp;default:now()" json:"created_at,omitempty" example:"2024-01-01T00:00:00Z"`
+	UpdatedAt  string      `gorm:"type:timestamp;default:now()" json:"updated_at,omitempty" example:"2024-01-01T00:00:00Z"`
+	CreatedBy  string      `gorm:"type:uuid;references:users(id)" json:"created_by,omitempty" example:"123e4567-e89b-12d3-a456-426614174001"`
+	UpdatedBy  string      `gorm:"type:uuid;references:users(id)" json:"updated_by,omitempty" example:"123e4567-e89b-12d3-a456-426614174002"`
 }
 
 func NewProvidersModel() *ProvidersModel {
 	return &ProvidersModel{
-		ID:         "",
-		Provider:   "",
-		OrgOrGroup: "",
-		Config:     make(t.JSONB),
-		CreatedAt:  time.Now().Format(time.RFC3339),
-		UpdatedAt:  time.Now().Format(time.RFC3339),
+		Config:    *t.NewJSONBData().(*t.JSONBImpl),
+		CreatedAt: time.Now().Format(time.RFC3339),
+		UpdatedAt: time.Now().Format(time.RFC3339),
 	}
 }
 
@@ -59,8 +56,8 @@ func (p *ProvidersModel) GetProvider() string             { return p.Provider }
 func (p *ProvidersModel) SetProvider(provider string)     { p.Provider = provider }
 func (p *ProvidersModel) GetOrgOrGroup() string           { return p.OrgOrGroup }
 func (p *ProvidersModel) SetOrgOrGroup(orgOrGroup string) { p.OrgOrGroup = orgOrGroup }
-func (p *ProvidersModel) GetConfig() t.JSONB              { return p.Config }
-func (p *ProvidersModel) SetConfig(config t.JSONB)        { p.Config = config }
+func (p *ProvidersModel) GetConfig() t.JSONBImpl          { return p.Config }
+func (p *ProvidersModel) SetConfig(config t.JSONBImpl)    { p.Config = config }
 func (p *ProvidersModel) GetCreatedAt() time.Time {
 	createdAt, _ := time.Parse(time.RFC3339, p.CreatedAt)
 	return createdAt
@@ -88,7 +85,7 @@ func (p *ProvidersModel) Validate() error {
 		return fmt.Errorf("org_or_group cannot be empty")
 	}
 	if p.Config.IsNil() {
-		p.Config = make(t.JSONB) // Initialize if nil
+		p.Config = make(t.JSONBImpl) // Initialize if nil
 	}
 	return nil
 }

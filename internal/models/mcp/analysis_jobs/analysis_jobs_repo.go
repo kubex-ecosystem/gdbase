@@ -9,6 +9,8 @@ import (
 
 	"github.com/google/uuid"
 	"gorm.io/gorm"
+
+	svc "github.com/kubex-ecosystem/gdbase/internal/services"
 )
 
 type IAnalysisJobRepo interface {
@@ -38,7 +40,11 @@ type AnalysisJobRepository struct {
 	db *gorm.DB
 }
 
-func NewAnalysisJobRepository(db *gorm.DB) IAnalysisJobRepo {
+func NewAnalysisJobRepository(ctx context.Context, dbService *svc.DBServiceImpl) IAnalysisJobRepo {
+	db, err := svc.GetDB(ctx, dbService)
+	if err != nil {
+		return nil
+	}
 	return &AnalysisJobRepository{db: db}
 }
 

@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	t "github.com/kubex-ecosystem/gdbase/types"
+	t "github.com/kubex-ecosystem/gdbase/internal/types"
 )
 
 // DiscordUserType represents the type of Discord user/entity
@@ -78,8 +78,8 @@ type IDiscordModel interface {
 	SetScopes(scopes []string)
 	GetBotPermissions() int64
 	SetBotPermissions(permissions int64)
-	GetConfig() t.JSONB
-	SetConfig(config t.JSONB)
+	GetConfig() t.JSONBImpl
+	SetConfig(config t.JSONBImpl)
 	GetLastActivity() time.Time
 	SetLastActivity(lastActivity time.Time)
 	GetUserID() string
@@ -119,7 +119,7 @@ type DiscordModel struct {
 	WebhookURL      string                 `gorm:"type:text" json:"webhook_url,omitempty"`
 	Scopes          []string               `gorm:"type:text[]" json:"scopes,omitempty" example:"[\"bot\", \"identify\"]"`
 	BotPermissions  int64                  `gorm:"type:bigint;default:0" json:"bot_permissions" example:"274877908992"`
-	Config          t.JSONB                `json:"config" binding:"omitempty"`
+	Config          t.JSONBImpl            `json:"config" binding:"omitempty"`
 	LastActivity    string                 `gorm:"type:timestamp;default:now()" json:"last_activity,omitempty" example:"2024-01-01T00:00:00Z"`
 	UserID          string                 `gorm:"type:uuid;references:users(id)" json:"user_id,omitempty" example:"123e4567-e89b-12d3-a456-426614174001"`
 	TargetTaskID    string                 `gorm:"type:uuid;references:mcp_sync_tasks(id)" json:"target_task_id,omitempty" example:"123e4567-e89b-12d3-a456-426614174002"`
@@ -150,7 +150,7 @@ func NewDiscordModel() *DiscordModel {
 		WebhookURL:      "",
 		Scopes:          []string{},
 		BotPermissions:  0,
-		Config:          t.JSONB{},
+		Config:          t.JSONBImpl{},
 		LastActivity:    time.Now().Format(time.RFC3339),
 		UserID:          "",
 		TargetTaskID:    "",
@@ -164,6 +164,7 @@ func NewDiscordModel() *DiscordModel {
 func (d *DiscordModel) TableName() string { return "mcp_discord_integrations" }
 
 // Basic getters and setters
+
 func (d *DiscordModel) GetID() string                         { return d.ID }
 func (d *DiscordModel) SetID(id string)                       { d.ID = id }
 func (d *DiscordModel) GetDiscordUserID() string              { return d.DiscordUserID }
@@ -182,6 +183,7 @@ func (d *DiscordModel) GetLocale() string                     { return d.Locale 
 func (d *DiscordModel) SetLocale(locale string)               { d.Locale = locale }
 
 // Type-specific getters and setters
+
 func (d *DiscordModel) GetUserType() DiscordUserType               { return d.UserType }
 func (d *DiscordModel) SetUserType(userType DiscordUserType)       { d.UserType = userType }
 func (d *DiscordModel) GetStatus() DiscordStatus                   { return d.Status }
@@ -192,6 +194,7 @@ func (d *DiscordModel) SetIntegrationType(integrationType DiscordIntegrationType
 }
 
 // Discord-specific getters and setters
+
 func (d *DiscordModel) GetGuildID() string                  { return d.GuildID }
 func (d *DiscordModel) SetGuildID(guildID string)           { d.GuildID = guildID }
 func (d *DiscordModel) GetChannelID() string                { return d.ChannelID }
@@ -215,8 +218,8 @@ func (d *DiscordModel) GetScopes() []string                 { return d.Scopes }
 func (d *DiscordModel) SetScopes(scopes []string)           { d.Scopes = scopes }
 func (d *DiscordModel) GetBotPermissions() int64            { return d.BotPermissions }
 func (d *DiscordModel) SetBotPermissions(permissions int64) { d.BotPermissions = permissions }
-func (d *DiscordModel) GetConfig() t.JSONB                  { return d.Config }
-func (d *DiscordModel) SetConfig(config t.JSONB)            { d.Config = config }
+func (d *DiscordModel) GetConfig() t.JSONBImpl              { return d.Config }
+func (d *DiscordModel) SetConfig(config t.JSONBImpl)        { d.Config = config }
 
 func (d *DiscordModel) GetLastActivity() time.Time {
 	lastActivity, _ := time.Parse(time.RFC3339, d.LastActivity)
@@ -227,12 +230,14 @@ func (d *DiscordModel) SetLastActivity(lastActivity time.Time) {
 }
 
 // MCP integration getters and setters
+
 func (d *DiscordModel) GetUserID() string                   { return d.UserID }
 func (d *DiscordModel) SetUserID(userID string)             { d.UserID = userID }
 func (d *DiscordModel) GetTargetTaskID() string             { return d.TargetTaskID }
 func (d *DiscordModel) SetTargetTaskID(targetTaskID string) { d.TargetTaskID = targetTaskID }
 
 // Timestamp getters and setters
+
 func (d *DiscordModel) GetCreatedAt() time.Time {
 	createdAt, _ := time.Parse(time.RFC3339, d.CreatedAt)
 	return createdAt
@@ -253,6 +258,7 @@ func (d *DiscordModel) GetUpdatedBy() string          { return d.UpdatedBy }
 func (d *DiscordModel) SetUpdatedBy(updatedBy string) { d.UpdatedBy = updatedBy }
 
 // Validation method
+
 func (d *DiscordModel) Validate() error {
 	if d.DiscordUserID == "" {
 		return fmt.Errorf("discord_user_id is required")

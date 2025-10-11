@@ -1,8 +1,10 @@
 package models
 
 import (
+	"context"
+
 	t "github.com/kubex-ecosystem/gdbase/internal/models/telegram"
-	"gorm.io/gorm"
+	svc "github.com/kubex-ecosystem/gdbase/internal/services"
 )
 
 type TelegramModel = t.TelegramModel
@@ -11,6 +13,7 @@ type TelegramService = t.ITelegramService
 type TelegramRepo = t.ITelegramRepo
 
 // Type aliases for enums
+
 type TelegramUserType = t.TelegramUserType
 type TelegramStatus = t.TelegramStatus
 type TelegramIntegrationType = t.TelegramIntegrationType
@@ -38,8 +41,8 @@ func NewTelegramService(telegramRepo TelegramRepo) TelegramService {
 	return t.NewTelegramService(telegramRepo)
 }
 
-func NewTelegramRepo(db *gorm.DB) TelegramRepo {
-	return t.NewTelegramRepository(db)
+func NewTelegramRepo(ctx context.Context, dbService *svc.DBServiceImpl) TelegramRepo {
+	return t.NewTelegramRepository(ctx, dbService)
 }
 
 func NewTelegramModel() TelegramModelInterface {

@@ -2,6 +2,7 @@ package services
 
 import (
 	"bufio"
+	"context"
 	"embed"
 	"fmt"
 	"math/rand"
@@ -13,9 +14,8 @@ import (
 	"time"
 
 	"github.com/docker/go-connections/nat"
-	glb "github.com/kubex-ecosystem/gdbase/internal/globals"
-	gl "github.com/kubex-ecosystem/gdbase/internal/module/logger"
-	t "github.com/kubex-ecosystem/gdbase/types"
+
+	gl "github.com/kubex-ecosystem/gdbase/internal/module/kbx"
 	u "github.com/kubex-ecosystem/gdbase/utils"
 )
 
@@ -128,7 +128,7 @@ func WriteInitDBSQL(initVolumePath, initDBSQL, initDBSQLData string) (string, er
 	gl.Log("info", fmt.Sprintf("✅ File %s created successfully!\n", filePath))
 	return filePath, nil
 }
-func SetupDatabaseServices(d IDockerService, config *t.DBConfig) error {
+func SetupDatabaseServices(ctx context.Context, d IDockerService, config *DBConfig) error {
 	if config == nil {
 		return fmt.Errorf("❌ Configuração do banco de dados não encontrada")
 	}
@@ -153,48 +153,49 @@ func SetupDatabaseServices(d IDockerService, config *t.DBConfig) error {
 							// Check if Password is empty, if so, try to retrieve it from keyring
 							// if not found, generate a new one
 							if dbConfig.Password == "" {
-								pgPassKey, pgPassErr := glb.GetOrGenPasswordKeyringPass("pgpass")
+								pgPassKey, pgPassErr := gl.GetOrGenPasswordKeyringPass("pgpass")
 								if pgPassErr != nil {
 									gl.Log("error", fmt.Sprintf("Error generating key: %v", pgPassErr))
 									continue
 								}
 								dbConfig.Password = string(pgPassKey)
 							} else {
-								gl.Log("debug", fmt.Sprintf("Password found in config: %s", dbConfig.Password))
+								gl.Log("debug", fmt.Sprintf("Password found in config: %s", dbConfig.Password[0:2]))
 							}
 							if dbConfig.Volume == "" {
-								dbConfig.Volume = os.ExpandEnv(glb.DefaultPostgresVolume)
+								dbConfig.Volume = os.ExpandEnv(DefaultPostgresVolume)
 							}
 							pgVolRootDir := os.ExpandEnv(dbConfig.Volume)
 							pgVolInitDir := filepath.Join(pgVolRootDir, "init")
-							initDBSQLs, initDBSQLErr := embed.FS.ReadDir(initDBSQLFiles, "assets")
+							vols := map[string]struct{}{
+								strings.Join([]string{pgVolInitDir, "/docker-entrypoint-initdb.d"}, ":"): {},
+							}
+							initDBSQLs, initDBSQLErr := embed.FS.ReadDir(initDBSQLFiles, "embedded")
 							if initDBSQLErr != nil {
 								gl.Log("error", fmt.Sprintf("❌ Erro ao ler diretório de scripts SQL: %v", initDBSQLErr))
 								continue
-							}
-							for _, initDBSQL := range initDBSQLs {
-								initDBSQLData, initDBSQLErr := embed.FS.ReadFile(initDBSQLFiles, filepath.Join("assets", initDBSQL.Name()))
-								if initDBSQLErr != nil {
-									gl.Log("error", fmt.Sprintf("❌ Erro ao ler script SQL %s: %v", initDBSQL.Name(), initDBSQLErr))
+							} else {
+								for _, initDBSQL := range initDBSQLs {
+									initDBSQLData, initDBSQLErr := embed.FS.ReadFile(initDBSQLFiles, filepath.Join("embedded", initDBSQL.Name()))
+									if initDBSQLErr != nil {
+										gl.Log("error", fmt.Sprintf("❌ Erro ao ler script SQL %s: %v", initDBSQL.Name(), initDBSQLErr))
+										continue
+									}
+									if _, err := WriteInitDBSQL(pgVolInitDir, initDBSQL.Name(), string(initDBSQLData)); err != nil {
+										gl.Log("error", fmt.Sprintf("❌ Erro ao criar diretório do PostgreSQL: %v", err))
+										continue
+									}
+								}
+								if err := d.CreateVolume("gdbase-pg-init", pgVolInitDir); err != nil {
+									gl.Log("error", fmt.Sprintf("❌ Erro ao criar volume do PostgreSQL: %v", err))
 									continue
 								}
-								if _, err := WriteInitDBSQL(pgVolInitDir, initDBSQL.Name(), string(initDBSQLData)); err != nil {
-									gl.Log("error", fmt.Sprintf("❌ Erro ao criar diretório do PostgreSQL: %v", err))
+								pgVolDataDir := filepath.Join(pgVolRootDir, "pgdata")
+								if err := d.CreateVolume("gdbase-pg-data", pgVolDataDir); err != nil {
+									gl.Log("error", fmt.Sprintf("❌ Erro ao criar volume do PostgreSQL: %v", err))
 									continue
 								}
-							}
-							if err := d.CreateVolume("gdbase-pg-init", pgVolInitDir); err != nil {
-								gl.Log("error", fmt.Sprintf("❌ Erro ao criar volume do PostgreSQL: %v", err))
-								continue
-							}
-							pgVolDataDir := filepath.Join(pgVolRootDir, "pgdata")
-							// if err := u.EnsureDir(pgVolDataDir, 0755, []string{}); err != nil {
-							// 	gl.Log("error", fmt.Sprintf("❌ Erro ao criar diretório pgdata do PostgreSQL: %v", err))
-							// 	continue
-							// }
-							if err := d.CreateVolume("gdbase-pg-data", pgVolDataDir); err != nil {
-								gl.Log("error", fmt.Sprintf("❌ Erro ao criar volume do PostgreSQL: %v", err))
-								continue
+								vols[strings.Join([]string{pgVolDataDir, "/var/lib/postgresql/data"}, ":")] = struct{}{}
 							}
 							// Check if the port is already in use and find an available one if necessary
 							if dbConfig.Port == nil || dbConfig.Port == "" {
@@ -218,7 +219,9 @@ func SetupDatabaseServices(d IDockerService, config *t.DBConfig) error {
 								"gdbase-pg",
 								"postgres:17-alpine",
 								[]string{
+									// "POSTGRES_HOST_AUTH_METHOD=trust", // Use only for development, not recommended for production
 									"POSTGRES_HOST_AUTH_METHOD=trust",
+									// Necessary for Postgres 12+
 									"POSTGRES_INITDB_ARGS=--data-checksums",
 									"POSTGRES_INITDB_ARGS=--encoding=UTF8",
 									"POSTGRES_INITDB_ARGS=--locale=pt_BR.UTF-8",
@@ -228,15 +231,19 @@ func SetupDatabaseServices(d IDockerService, config *t.DBConfig) error {
 									"POSTGRES_PORT=" + dbConfig.Port.(string),
 									"POSTGRES_DB_NAME=" + dbConfig.Name,
 									"POSTGRES_DB_VOLUME=" + dbConfig.Volume,
+									"POSTGRES_DB_SSLMODE=disable",
+									"POSTGRES_DB_INITDB_ARGS=--data-checksums",
+									// Necessary for some clients
+									"PGUSER=" + dbConfig.Username,
+									"PGPASSWORD=" + dbConfig.Password,
+									"PGDATABASE=" + dbConfig.Name,
+									"PGPORT=" + dbConfig.Port.(string),
+									"PGHOST=localhost",
 									"PGDATA=/var/lib/postgresql/data/pgdata",
 									"PGSSLMODE=disable",
-								}, []nat.PortMap{portMap},
-								map[string]struct{}{
-									// pgVolInitDir + ":/docker-entrypoint-initdb.d":                            {},
-									// pgVolDataDir + ":/var/lib/postgresql/data":                               {},
-									strings.Join([]string{pgVolInitDir, "/docker-entrypoint-initdb.d"}, ":"): {},
-									strings.Join([]string{pgVolDataDir, "/var/lib/postgresql/data"}, ":"):    {},
 								},
+								[]nat.PortMap{portMap},
+								vols,
 							)
 							services = append(services, dbConnObj)
 						}
@@ -260,7 +267,7 @@ func SetupDatabaseServices(d IDockerService, config *t.DBConfig) error {
 					rabbitUser = "gobe"
 				}
 				if rabbitCfg.Password == "" {
-					rabbitPassKey, rabbitPassErr := glb.GetOrGenPasswordKeyringPass(rabbitCfg.Reference.Name)
+					rabbitPassKey, rabbitPassErr := gl.GetOrGenPasswordKeyringPass(rabbitCfg.Reference.Name)
 					if rabbitPassErr != nil {
 						gl.Log("error", "Skipping RabbitMQ setup due to error generating password")
 						gl.Log("debug", fmt.Sprintf("Error generating key: %v", rabbitPassErr))
@@ -313,7 +320,7 @@ func SetupDatabaseServices(d IDockerService, config *t.DBConfig) error {
 				// Then, set the value in the RABBITMQ_ERLANG_COOKIE environment variable.
 				// More info: https://www.rabbitmq.com/clustering.html#erlang-cookie
 				if rabbitCfg.ErlangCookie == "" {
-					rabbitCookieKey, rabbitCookieErr := glb.GetOrGenPasswordKeyringPass("rabbitmq-cookie")
+					rabbitCookieKey, rabbitCookieErr := gl.GetOrGenPasswordKeyringPass("rabbitmq-cookie")
 					if rabbitCookieErr != nil {
 						gl.Log("error", "Skipping RabbitMQ setup due to error generating password")
 						gl.Log("debug", fmt.Sprintf("Error generating key: %v", rabbitCookieErr))

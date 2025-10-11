@@ -6,6 +6,9 @@ import (
 	"log"
 
 	"github.com/kubex-ecosystem/gdbase/factory/models"
+	svc "github.com/kubex-ecosystem/gdbase/internal/services"
+	l "github.com/kubex-ecosystem/logz"
+
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
@@ -15,10 +18,13 @@ func main() {
 	fmt.Println("===============================")
 
 	// 1. Setup Database
-	db := setupDatabase()
+	dbService, err := setupDatabase()
+	if err != nil {
+		log.Fatal("❌ Failed to set up database:", err)
+	}
 
 	// 2. Initialize Services
-	services := initializeServices(db)
+	services := initializeServices(dbService)
 
 	// 3. Run Examples
 	runExamples(services)
@@ -33,7 +39,7 @@ type BotServices struct {
 	ConversationRepo models.ConversationRepo
 }
 
-func setupDatabase() *gorm.DB {
+func setupDatabase() (*svc.DBServiceImpl, error) {
 	fmt.Println("\n📊 Setting up database...")
 
 	// Use SQLite in-memory for example (replace with your actual DB)
@@ -55,17 +61,28 @@ func setupDatabase() *gorm.DB {
 	}
 
 	fmt.Println("   ✅ Database setup complete")
-	return db
+
+	dbService, err := svc.NewDatabaseService(
+		context.Background(),
+		&svc.DBConfig{},
+		l.GetLogger("bot_models_example"),
+	)
+	if err != nil {
+		log.Fatal("❌ Failed to create database service:", err)
+	}
+
+	return dbService.(*svc.DBServiceImpl), nil
 }
 
-func initializeServices(db *gorm.DB) *BotServices {
+func initializeServices(dbService *svc.DBServiceImpl) *BotServices {
 	fmt.Println("\n⚙️ Initializing services...")
-
+	ctx := context.Background()
+	// Initialize repositories and services
 	return &BotServices{
-		TelegramService:  models.NewTelegramService(models.NewTelegramRepo(db)),
-		WhatsAppService:  models.NewWhatsAppService(models.NewWhatsAppRepo(db)),
-		DiscordService:   models.NewDiscordService(models.NewDiscordRepo(db)),
-		ConversationRepo: models.NewConversationRepo(db),
+		TelegramService:  models.NewTelegramService(models.NewTelegramRepo(ctx, dbService)),
+		WhatsAppService:  models.NewWhatsAppService(models.NewWhatsAppRepo(ctx, dbService)),
+		DiscordService:   models.NewDiscordService(models.NewDiscordRepo(ctx, dbService)),
+		ConversationRepo: models.NewConversationRepo(ctx, dbService),
 	}
 }
 

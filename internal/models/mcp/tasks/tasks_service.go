@@ -46,7 +46,7 @@ type ITasksService interface {
 	ConvertTaskToCronJob(taskID string) (*CronJobIntegration, error)
 	SyncTaskWithCronJob(taskID string, cronJob *CronJobIntegration) error
 
-	GetContextDBService() t.IDBService
+	GetContextDBService() t.DBService
 }
 
 type TasksService struct {
@@ -309,6 +309,6 @@ func (ts *TasksService) SyncTaskWithCronJob(taskID string, cronJob *CronJobInteg
 	return nil
 }
 
-func (ts *TasksService) GetContextDBService() t.IDBService {
+func (ts *TasksService) GetContextDBService() t.DBService {
 	return ts.repo.GetContextDBService()
 }

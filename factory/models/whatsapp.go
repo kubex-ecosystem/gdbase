@@ -1,8 +1,10 @@
 package models
 
 import (
+	"context"
+
 	w "github.com/kubex-ecosystem/gdbase/internal/models/whatsapp"
-	"gorm.io/gorm"
+	svc "github.com/kubex-ecosystem/gdbase/internal/services"
 )
 
 type WhatsAppModel = w.WhatsAppModel
@@ -11,6 +13,7 @@ type WhatsAppService = w.IWhatsAppService
 type WhatsAppRepo = w.IWhatsAppRepo
 
 // Type aliases for enums
+
 type WhatsAppUserType = w.WhatsAppUserType
 type WhatsAppStatus = w.WhatsAppStatus
 type WhatsAppIntegrationType = w.WhatsAppIntegrationType
@@ -50,8 +53,8 @@ func NewWhatsAppService(whatsappRepo WhatsAppRepo) WhatsAppService {
 	return w.NewWhatsAppService(whatsappRepo)
 }
 
-func NewWhatsAppRepo(db *gorm.DB) WhatsAppRepo {
-	return w.NewWhatsAppRepository(db)
+func NewWhatsAppRepo(ctx context.Context, dbService *svc.DBServiceImpl) WhatsAppRepo {
+	return w.NewWhatsAppRepository(ctx, dbService)
 }
 
 func NewWhatsAppModel() WhatsAppModelInterface {

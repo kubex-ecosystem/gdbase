@@ -1,12 +1,13 @@
 package mcp
 
 import (
+	"context"
 	"time"
 
 	"github.com/google/uuid"
 	m "github.com/kubex-ecosystem/gdbase/internal/models/mcp/preferences"
-	t "github.com/kubex-ecosystem/gdbase/types"
-	"gorm.io/gorm"
+	svc "github.com/kubex-ecosystem/gdbase/internal/services"
+	t "github.com/kubex-ecosystem/gdbase/internal/types"
 )
 
 type PreferencesModelType = m.PreferencesModel
@@ -18,13 +19,13 @@ func NewPreferencesService(preferencesRepo PreferencesRepo) PreferencesService {
 	return m.NewPreferencesService(preferencesRepo)
 }
 
-func NewPreferencesRepo(db *gorm.DB) PreferencesRepo {
-	return m.NewPreferencesRepo(db)
+func NewPreferencesRepo(ctx context.Context, dbService *svc.DBServiceImpl) PreferencesRepo {
+	return m.NewPreferencesRepo(ctx, dbService)
 }
 
 func NewPreferencesModel(
 	scope string,
-	config t.JSONB,
+	config t.JSONBImpl,
 ) PreferencesModel {
 	return &m.PreferencesModel{
 		ID:        uuid.New().String(),

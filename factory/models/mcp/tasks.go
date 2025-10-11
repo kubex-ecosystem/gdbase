@@ -1,12 +1,13 @@
 package mcp
 
 import (
+	"context"
 	"time"
 
 	"github.com/google/uuid"
 	m "github.com/kubex-ecosystem/gdbase/internal/models/mcp/tasks"
-	tp "github.com/kubex-ecosystem/gdbase/types"
-	"gorm.io/gorm"
+	svc "github.com/kubex-ecosystem/gdbase/internal/services"
+	tp "github.com/kubex-ecosystem/gdbase/internal/types"
 )
 
 type TaskSearchOptions = m.TaskSearchOptions
@@ -24,8 +25,8 @@ func NewTasksService(tasksRepo TasksRepo) TasksService {
 	return m.NewTasksService(tasksRepo)
 }
 
-func NewTasksRepo(db *gorm.DB) TasksRepo {
-	return m.NewTasksRepo(db)
+func NewTasksRepo(ctx context.Context, dbService *svc.DBServiceImpl) TasksRepo {
+	return m.NewTasksRepo(ctx, dbService)
 }
 
 func NewTasksModel(
@@ -37,8 +38,8 @@ func NewTasksModel(
 	taskCommandType string,
 	taskMethod HTTPMethod,
 	taskAPIEndpoint string,
-	taskPayload tp.JSONB,
-	taskHeaders tp.JSONB,
+	taskPayload tp.JSONBImpl,
+	taskHeaders tp.JSONBImpl,
 	taskRetries int,
 	taskTimeout int,
 	taskStatus TaskStatus,
@@ -48,7 +49,7 @@ func NewTasksModel(
 	taskLastRunMessage string,
 	taskCommand string,
 	taskActivated bool,
-	taskConfig tp.JSONB,
+	taskConfig tp.JSONBImpl,
 	taskTags []string,
 	taskPriority int,
 	taskNotes string,
@@ -58,7 +59,7 @@ func NewTasksModel(
 	taskUpdatedBy string,
 	taskLastExecutedBy string,
 	taskLastExecutedAt *time.Time,
-	config tp.JSONB,
+	config tp.JSONBImpl,
 	active bool,
 ) TasksModel {
 	return &m.TasksModel{

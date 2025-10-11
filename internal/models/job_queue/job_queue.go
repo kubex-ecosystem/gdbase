@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	t "github.com/kubex-ecosystem/gdbase/types"
+	t "github.com/kubex-ecosystem/gdbase/internal/types"
 )
 
 type IJobQueue interface {
@@ -50,10 +50,10 @@ type IJobQueue interface {
 	SetJobMethod(jobMethod string)
 	GetJobAPIEndpoint() string
 	SetJobAPIEndpoint(jobAPIEndpoint string)
-	GetJobPayload() t.JSONB
-	SetJobPayload(jobPayload t.JSONB)
-	GetJobHeaders() t.JSONB
-	SetJobHeaders(jobHeaders t.JSONB)
+	GetJobPayload() t.JSONBImpl
+	SetJobPayload(jobPayload t.JSONBImpl)
+	GetJobHeaders() t.JSONBImpl
+	SetJobHeaders(jobHeaders t.JSONBImpl)
 	GetJobRetries() int
 	SetJobRetries(jobRetries int)
 	GetJobTimeout() int
@@ -61,31 +61,31 @@ type IJobQueue interface {
 }
 
 type JobQueue struct {
-	ID             uuid.UUID `json:"id" xml:"id" yaml:"id" gorm:"column:id;primaryKey;type:uuid;default:uuid_generate_v4()"`
-	Code           int       `json:"code" xml:"code" yaml:"code" gorm:"column:code;primaryKey;autoIncrement"`
-	CronJobID      uuid.UUID `json:"cronjob_id" xml:"cronjob_id" yaml:"cronjob_id" gorm:"column:cronjob_id"`
-	Status         string    `json:"status" xml:"status" yaml:"status" gorm:"column:status;default:'PENDING'"`
-	ScheduledAt    time.Time `json:"scheduled_time" xml:"scheduled_time" yaml:"scheduled_time" gorm:"column:scheduled_time;default:now()"`
-	ExecutionTime  time.Time `json:"execution_time" xml:"execution_time" yaml:"execution_time" gorm:"column:execution_time"`
-	ErrorMessage   string    `json:"error_message" xml:"error_message" yaml:"error_message" gorm:"column:error_message;default:null"`
-	RetryCount     int       `json:"retry_count" xml:"retry_count" yaml:"retry_count" gorm:"column:retry_count;default:0"`
-	NextRunTime    time.Time `json:"next_run_time" xml:"next_run_time" yaml:"next_run_time" gorm:"column:next_run_time"`
-	CreatedAt      time.Time `json:"created_at" xml:"created_at" yaml:"created_at" gorm:"column:created_at;default:now()"`
-	UpdatedAt      time.Time `json:"updated_at" xml:"updated_at" yaml:"updated_at" gorm:"column:updated_at;default:now()"`
-	Metadata       string    `json:"metadata" xml:"metadata" yaml:"metadata" gorm:"column:metadata;default:null"`
-	UserID         uuid.UUID `json:"user_id" xml:"user_id" yaml:"user_id" gorm:"column:user_id;references:users(id)"`
-	CreatedBy      uuid.UUID `json:"created_by" xml:"created_by" yaml:"created_by" gorm:"column:created_by;references:users(id)"`
-	UpdatedBy      uuid.UUID `json:"updated_by" xml:"updated_by" yaml:"updated_by" gorm:"column:updated_by;references:users(id)"`
-	LastExecutedBy uuid.UUID `json:"last_executed_by" xml:"last_executed_by" yaml:"last_executed_by" gorm:"column:last_executed_by;references:users(id)"`
-	JobType        string    `json:"job_type" xml:"job_type" yaml:"job_type" gorm:"column:job_type;default:'cron'"`
-	JobExpression  string    `json:"job_expression" xml:"job_expression" yaml:"job_expression" gorm:"column:job_expression;default:'2 * * * *'"`
-	JobCommand     string    `json:"job_command" xml:"job_command" yaml:"job_command" gorm:"column:job_command"`
-	JobMethod      string    `json:"job_method" xml:"job_method" yaml:"job_method" gorm:"column:job_method"`
-	JobAPIEndpoint string    `json:"job_api_endpoint" xml:"job_api_endpoint" yaml:"job_api_endpoint" gorm:"column:job_api_endpoint"`
-	JobPayload     t.JSONB   `json:"job_payload" xml:"job_payload" yaml:"job_payload" gorm:"column:job_payload"`
-	JobHeaders     t.JSONB   `json:"job_headers" xml:"job_headers" yaml:"job_headers" gorm:"column:job_headers"`
-	JobRetries     int       `json:"job_retries" xml:"job_retries" yaml:"job_retries" gorm:"column:job_retries;default:0"`
-	JobTimeout     int       `json:"job_timeout" xml:"job_timeout" yaml:"job_timeout" gorm:"column:job_timeout;default:0"`
+	ID             uuid.UUID   `json:"id" xml:"id" yaml:"id" gorm:"column:id;primaryKey;type:uuid;default:uuid_generate_v4()"`
+	Code           int         `json:"code" xml:"code" yaml:"code" gorm:"column:code;primaryKey;autoIncrement"`
+	CronJobID      uuid.UUID   `json:"cronjob_id" xml:"cronjob_id" yaml:"cronjob_id" gorm:"column:cronjob_id"`
+	Status         string      `json:"status" xml:"status" yaml:"status" gorm:"column:status;default:'PENDING'"`
+	ScheduledAt    time.Time   `json:"scheduled_time" xml:"scheduled_time" yaml:"scheduled_time" gorm:"column:scheduled_time;default:now()"`
+	ExecutionTime  time.Time   `json:"execution_time" xml:"execution_time" yaml:"execution_time" gorm:"column:execution_time"`
+	ErrorMessage   string      `json:"error_message" xml:"error_message" yaml:"error_message" gorm:"column:error_message;default:null"`
+	RetryCount     int         `json:"retry_count" xml:"retry_count" yaml:"retry_count" gorm:"column:retry_count;default:0"`
+	NextRunTime    time.Time   `json:"next_run_time" xml:"next_run_time" yaml:"next_run_time" gorm:"column:next_run_time"`
+	CreatedAt      time.Time   `json:"created_at" xml:"created_at" yaml:"created_at" gorm:"column:created_at;default:now()"`
+	UpdatedAt      time.Time   `json:"updated_at" xml:"updated_at" yaml:"updated_at" gorm:"column:updated_at;default:now()"`
+	Metadata       string      `json:"metadata" xml:"metadata" yaml:"metadata" gorm:"column:metadata;default:null"`
+	UserID         uuid.UUID   `json:"user_id" xml:"user_id" yaml:"user_id" gorm:"column:user_id;references:users(id)"`
+	CreatedBy      uuid.UUID   `json:"created_by" xml:"created_by" yaml:"created_by" gorm:"column:created_by;references:users(id)"`
+	UpdatedBy      uuid.UUID   `json:"updated_by" xml:"updated_by" yaml:"updated_by" gorm:"column:updated_by;references:users(id)"`
+	LastExecutedBy uuid.UUID   `json:"last_executed_by" xml:"last_executed_by" yaml:"last_executed_by" gorm:"column:last_executed_by;references:users(id)"`
+	JobType        string      `json:"job_type" xml:"job_type" yaml:"job_type" gorm:"column:job_type;default:'cron'"`
+	JobExpression  string      `json:"job_expression" xml:"job_expression" yaml:"job_expression" gorm:"column:job_expression;default:'2 * * * *'"`
+	JobCommand     string      `json:"job_command" xml:"job_command" yaml:"job_command" gorm:"column:job_command"`
+	JobMethod      string      `json:"job_method" xml:"job_method" yaml:"job_method" gorm:"column:job_method"`
+	JobAPIEndpoint string      `json:"job_api_endpoint" xml:"job_api_endpoint" yaml:"job_api_endpoint" gorm:"column:job_api_endpoint"`
+	JobPayload     t.JSONBImpl `json:"job_payload" xml:"job_payload" yaml:"job_payload" gorm:"column:job_payload"`
+	JobHeaders     t.JSONBImpl `json:"job_headers" xml:"job_headers" yaml:"job_headers" gorm:"column:job_headers"`
+	JobRetries     int         `json:"job_retries" xml:"job_retries" yaml:"job_retries" gorm:"column:job_retries;default:0"`
+	JobTimeout     int         `json:"job_timeout" xml:"job_timeout" yaml:"job_timeout" gorm:"column:job_timeout;default:0"`
 }
 
 func NewJobQueueModel() IJobQueue {
@@ -138,10 +138,10 @@ func (j *JobQueue) GetJobMethod() string                       { return j.JobMet
 func (j *JobQueue) SetJobMethod(jobMethod string)              { j.JobMethod = jobMethod }
 func (j *JobQueue) GetJobAPIEndpoint() string                  { return j.JobAPIEndpoint }
 func (j *JobQueue) SetJobAPIEndpoint(jobAPIEndpoint string)    { j.JobAPIEndpoint = jobAPIEndpoint }
-func (j *JobQueue) GetJobPayload() t.JSONB                     { return j.JobPayload }
-func (j *JobQueue) SetJobPayload(jobPayload t.JSONB)           { j.JobPayload = jobPayload }
-func (j *JobQueue) GetJobHeaders() t.JSONB                     { return j.JobHeaders }
-func (j *JobQueue) SetJobHeaders(jobHeaders t.JSONB)           { j.JobHeaders = jobHeaders }
+func (j *JobQueue) GetJobPayload() t.JSONBImpl                 { return j.JobPayload }
+func (j *JobQueue) SetJobPayload(jobPayload t.JSONBImpl)       { j.JobPayload = jobPayload }
+func (j *JobQueue) GetJobHeaders() t.JSONBImpl                 { return j.JobHeaders }
+func (j *JobQueue) SetJobHeaders(jobHeaders t.JSONBImpl)       { j.JobHeaders = jobHeaders }
 func (j *JobQueue) GetJobRetries() int                         { return j.JobRetries }
 func (j *JobQueue) SetJobRetries(jobRetries int)               { j.JobRetries = jobRetries }
 func (j *JobQueue) GetJobTimeout() int                         { return j.JobTimeout }

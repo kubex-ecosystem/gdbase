@@ -1,8 +1,10 @@
 package models
 
 import (
+	"context"
+
 	m "github.com/kubex-ecosystem/gdbase/internal/models/mcp/analysis_jobs"
-	"gorm.io/gorm"
+	svc "github.com/kubex-ecosystem/gdbase/internal/services"
 )
 
 type AnalysisJob = m.AnalysisJob
@@ -14,8 +16,8 @@ func NewAnalysisJobService(analysisJobRepo AnalysisJobRepo) AnalysisJobService {
 	return m.NewAnalysisJobService(analysisJobRepo)
 }
 
-func NewAnalysisJobRepo(db *gorm.DB) AnalysisJobRepo {
-	return m.NewAnalysisJobRepository(db)
+func NewAnalysisJobRepo(ctx context.Context, dbService *svc.DBServiceImpl) AnalysisJobRepo {
+	return m.NewAnalysisJobRepository(ctx, dbService)
 }
 
 func NewAnalysisJobModel() AnalysisJobModel {
