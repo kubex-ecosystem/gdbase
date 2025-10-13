@@ -9,7 +9,7 @@ require (
 	github.com/fatih/color v1.18.0
 	github.com/goccy/go-json v0.10.5
 	github.com/google/uuid v1.6.0
-	github.com/kubex-ecosystem/logz v1.5.0
+	github.com/kubex-ecosystem/logz v1.5.1
 	github.com/opencontainers/image-spec v1.1.1
 	github.com/pelletier/go-toml/v2 v2.2.4
 	github.com/spf13/cobra v1.10.1
