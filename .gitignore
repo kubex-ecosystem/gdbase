@@ -71,3 +71,4 @@ CLAUDE.md
 supabase/
 .venv-hooks/
 .venv-hooks/
+.venv-hooks

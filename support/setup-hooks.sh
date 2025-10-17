@@ -20,12 +20,18 @@ shopt -s inherit_errexit # Inherit the errexit option in functions
 _SCRIPT_DIR="$(git rev-parse --show-toplevel)"
 cd "$_SCRIPT_DIR" || exit 1
 
+# gitleaks_config_path="support/hooks/.pre-commit-gitleaks.yaml"
+# if [[ ! -f $gitleaks_config_path ]]; then
+#   echo "❌ Gitleaks config file not found at $gitleaks_config_path"
+#   exit 1
+# fi
+
 _default_pre_commit_config() {
   echo "🚀 Configurando pre-commit hooks (defaults)..."
 
-  # Create support/pre-commit-config.yaml if it doesn't exist
-  if [[ ! -f support/.pre-commit-config.yaml || -z "$(cat support/.pre-commit-config.yaml)" ]]; then
-    echo "🛠️  Creating support/.pre-commit-config.yaml..."
+  # Create support/hooks/.pre-commit-config.yaml if it doesn't exist
+  if [[ ! -f support/hooks/.pre-commit-config.yaml || -z "$(cat support/hooks/.pre-commit-config.yaml)" ]]; then
+    echo "🛠️  Creating support/hooks/.pre-commit-config.yaml..."
     printf '%s\n' '
 # This is the default pre-commit configuration file.
 # It includes basic hygiene checks, security scans
@@ -88,7 +94,7 @@ repos:
             "protect",
             "--staged",
             "--no-banner",
-            "--config=support/.gitleaks.toml",
+            "--config=support/hooks/.gitleaks.toml",
           ]
 
   # -------- Go tools --------
@@ -99,10 +105,10 @@ repos:
       - id: go-vet
       - id: go-mod-tidy
         # - id: golangci-lint
-        # args: ["run", "--config=./support/.golangci.yaml"]
-' | tee "support/.pre-commit-config.yaml"
+        # args: ["run", "--config=support/hooks/.golangci.yaml"]
+' | tee "support/hooks/.pre-commit-config.yaml"
   # else
-  #   cat support/pre-commit-config.yaml
+  #   cat support/hooks/pre-commit-config.yaml
   fi
 }
 
@@ -122,15 +128,15 @@ _install_pre_commit_tools() {
   . .venv-hooks/bin/activate
 
   # Install requirements file from support/ if it exists
-  if [[ -f support/requirements-hooks.txt ]]; then
-    pip install -r support/requirements-hooks.txt
+  if [[ -f support/hooks/requirements-hooks.txt ]]; then
+    pip install -r support/hooks/requirements-hooks.txt
   fi
 
   pip install -U pip setuptools wheel
   pip install pre-commit detect-secrets
 
   # Install pre-commit hooks
-  pre-commit install --config support/.pre-commit-config.yaml --install-hooks
+  pre-commit install --config support/hooks/.pre-commit-config.yaml --install-hooks
 }
 
 _create_baseline() {

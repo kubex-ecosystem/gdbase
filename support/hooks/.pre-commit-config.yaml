@@ -59,7 +59,7 @@ repos:
             "protect",
             "--staged",
             "--no-banner",
-            "--config=support/.gitleaks.toml",
+            "--config=support/hooks/.gitleaks.toml",
           ]
 
   # -------- Go tools --------
@@ -70,4 +70,4 @@ repos:
       - id: go-vet
       - id: go-mod-tidy
         # - id: golangci-lint
-        # args: ["run", "--config=./support/.golangci.yaml"]
+        # args: ["run", "--config=support/hooks/.golangci.yaml"]
