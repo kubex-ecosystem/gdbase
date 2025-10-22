@@ -2,7 +2,7 @@ package main
 
 import (
 	"github.com/kubex-ecosystem/gdbase/internal/module"
-	gl "github.com/kubex-ecosystem/gdbase/internal/module/logger"
+	gl "github.com/kubex-ecosystem/logz/logger"
 )
 
 // main initializes the logger and creates a new GDBase instance.

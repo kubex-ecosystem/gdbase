@@ -11,13 +11,14 @@ import (
 	// gl "github.com/kubex-ecosystem/gdbase/logger"
 	"sync"
 
+	"github.com/kubex-ecosystem/gdbase/internal/module/kbx"
 	crp "github.com/kubex-ecosystem/gdbase/internal/security/crypto"
 	krs "github.com/kubex-ecosystem/gdbase/internal/security/external"
 
 	ci "github.com/kubex-ecosystem/gdbase/internal/interfaces"
-	gl "github.com/kubex-ecosystem/gdbase/internal/module/kbx"
 	ti "github.com/kubex-ecosystem/gdbase/internal/types"
 	l "github.com/kubex-ecosystem/logz"
+	gl "github.com/kubex-ecosystem/logz/logger"
 	"gorm.io/driver/mysql"
 	"gorm.io/driver/postgres"
 	"gorm.io/driver/sqlite"
@@ -129,7 +130,7 @@ func (d *DBServiceImpl) Initialize(ctx context.Context) error {
 				dbPort = dbConfig.Port.(string)
 				dbPass = dbConfig.Password
 				if dbPass == "" {
-					dbPassKey, dbPassErr := gl.GetOrGenPasswordKeyringPass("pgpass")
+					dbPassKey, dbPassErr := kbx.GetOrGenPasswordKeyringPass("pgpass")
 					if dbPassErr != nil {
 						gl.Log("error", fmt.Sprintf("❌ Erro ao recuperar senha do banco de dados: %v", dbPassErr))
 						continue

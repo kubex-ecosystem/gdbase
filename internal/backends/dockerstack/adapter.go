@@ -7,11 +7,12 @@ import (
 	"os"
 	"time"
 
+	"github.com/kubex-ecosystem/gdbase/internal/module/kbx"
 	"github.com/kubex-ecosystem/gdbase/internal/provider"
 
-	gl "github.com/kubex-ecosystem/gdbase/internal/module/kbx"
 	svc "github.com/kubex-ecosystem/gdbase/internal/services"
 	"github.com/kubex-ecosystem/gdbase/internal/types"
+	gl "github.com/kubex-ecosystem/logz/logger"
 
 	l "github.com/kubex-ecosystem/logz"
 )
@@ -104,7 +105,7 @@ func (p *DockerStackProvider) ConvertSpecToDBConfig(spec provider.StartSpec) *sv
 		case provider.EnginePostgres:
 			key = "kubex_db"
 			db.Enabled = true
-			db.Volume = gl.GetEnvOrDefault("GOBE_POSTGRES_VOLUME", os.ExpandEnv(gl.DefaultPostgresVolume))
+			db.Volume = kbx.GetEnvOrDefault("GOBE_POSTGRES_VOLUME", os.ExpandEnv(kbx.DefaultPostgresVolume))
 			db.Type = "postgresql"
 			db.Name = "kubex_db"
 			db.Username = "kubex_adm"

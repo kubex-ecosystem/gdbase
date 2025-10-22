@@ -9,9 +9,10 @@ import (
 	"reflect"
 
 	ci "github.com/kubex-ecosystem/gdbase/internal/interfaces"
-	gl "github.com/kubex-ecosystem/gdbase/internal/module/kbx"
+	"github.com/kubex-ecosystem/gdbase/internal/module/kbx"
 	crp "github.com/kubex-ecosystem/gdbase/internal/security/crypto"
 	krs "github.com/kubex-ecosystem/gdbase/internal/security/external"
+	gl "github.com/kubex-ecosystem/logz/logger"
 
 	ti "github.com/kubex-ecosystem/gdbase/internal/types"
 	l "github.com/kubex-ecosystem/logz"
@@ -144,49 +145,49 @@ func newDBConfig(name, filePath string, enabled bool, logger l.Logger, debug boo
 			}
 			dsn := fmt.Sprintf(
 				"postgres://%s:%s@localhost:5432/%s?sslmode=disable",
-				gl.GetEnvOrDefault("POSTGRES_USER", "kubex_adm"),
+				kbx.GetEnvOrDefault("POSTGRES_USER", "kubex_adm"),
 				pgPass,
-				gl.GetEnvOrDefault("POSTGRES_DB", "kubex_db"),
+				kbx.GetEnvOrDefault("POSTGRES_DB", "kubex_db"),
 			)
 			dbConfigDefault := &DBConfig{
 				Databases: map[string]*ti.Database{
 					"kubex_db": {
-						Enabled:          (gl.GetEnvOrDefault("GDBASE_POSTGRES_ENABLED", "true") != "false"),
+						Enabled:          (kbx.GetEnvOrDefault("GDBASE_POSTGRES_ENABLED", "true") != "false"),
 						Reference:        ti.NewReference(name).GetReference(),
 						Type:             "postgresql",
 						Driver:           "postgres",
-						ConnectionString: gl.GetEnvOrDefault("GDBASE_POSTGRES_CONNECTION_STRING", dsn),
-						Dsn:              gl.GetEnvOrDefault("GDBASE_POSTGRES_DSN", dsn),
-						Path:             gl.GetEnvOrDefault("GDBASE_POSTGRES_PATH", os.ExpandEnv(DefaultPostgresVolume)),
-						Host:             gl.GetEnvOrDefault("GDBASE_POSTGRES_HOST", "localhost"),
-						Port:             gl.GetEnvOrDefault("GDBASE_POSTGRES_PORT", "5432"),
-						Username:         gl.GetEnvOrDefault("GDBASE_POSTGRES_USER", "kubex_adm"),
-						Password:         gl.GetEnvOrDefault("GDBASE_POSTGRES_PASSWORD", pgPass),
-						Volume:           gl.GetEnvOrDefault("GDBASE_POSTGRES_VOLUME", os.ExpandEnv(DefaultPostgresVolume)),
-						Name:             gl.GetEnvOrDefault("GDBASE_POSTGRES_NAME", "kubex_db"),
-						IsDefault:        gl.GetEnvOrDefault("GDBASE_POSTGRES_IS_DEFAULT", "true") != "false",
+						ConnectionString: kbx.GetEnvOrDefault("GDBASE_POSTGRES_CONNECTION_STRING", dsn),
+						Dsn:              kbx.GetEnvOrDefault("GDBASE_POSTGRES_DSN", dsn),
+						Path:             kbx.GetEnvOrDefault("GDBASE_POSTGRES_PATH", os.ExpandEnv(DefaultPostgresVolume)),
+						Host:             kbx.GetEnvOrDefault("GDBASE_POSTGRES_HOST", "localhost"),
+						Port:             kbx.GetEnvOrDefault("GDBASE_POSTGRES_PORT", "5432"),
+						Username:         kbx.GetEnvOrDefault("GDBASE_POSTGRES_USER", "kubex_adm"),
+						Password:         kbx.GetEnvOrDefault("GDBASE_POSTGRES_PASSWORD", pgPass),
+						Volume:           kbx.GetEnvOrDefault("GDBASE_POSTGRES_VOLUME", os.ExpandEnv(DefaultPostgresVolume)),
+						Name:             kbx.GetEnvOrDefault("GDBASE_POSTGRES_NAME", "kubex_db"),
+						IsDefault:        kbx.GetEnvOrDefault("GDBASE_POSTGRES_IS_DEFAULT", "true") != "false",
 					},
 				},
 				Messagery: &ti.Messagery{
 					Redis: &ti.Redis{
-						Enabled:   (gl.GetEnvOrDefault("GDBASE_REDIS_ENABLED", "true") != "false"),
+						Enabled:   (kbx.GetEnvOrDefault("GDBASE_REDIS_ENABLED", "true") != "false"),
 						Reference: ti.NewReference(name + "_Redis").GetReference(),
-						FilePath:  gl.GetEnvOrDefault("GDBASE_REDIS_FILE_PATH", filePath),
-						Addr:      gl.GetEnvOrDefault("GDBASE_REDIS_ADDR", "localhost"),
-						Port:      gl.GetEnvOrDefault("GDBASE_REDIS_PORT", "6379"),
-						Username:  gl.GetEnvOrDefault("GDBASE_REDIS_USER", "default"),
-						Password:  gl.GetEnvOrDefault("GDBASE_REDIS_PASSWORD", redisPass),
+						FilePath:  kbx.GetEnvOrDefault("GDBASE_REDIS_FILE_PATH", filePath),
+						Addr:      kbx.GetEnvOrDefault("GDBASE_REDIS_ADDR", "localhost"),
+						Port:      kbx.GetEnvOrDefault("GDBASE_REDIS_PORT", "6379"),
+						Username:  kbx.GetEnvOrDefault("GDBASE_REDIS_USER", "default"),
+						Password:  kbx.GetEnvOrDefault("GDBASE_REDIS_PASSWORD", redisPass),
 						DB:        0,
 					},
 					RabbitMQ: &ti.RabbitMQ{
-						Enabled:        (gl.GetEnvOrDefault("GDBASE_RABBITMQ_ENABLED", "true") != "false"),
+						Enabled:        (kbx.GetEnvOrDefault("GDBASE_RABBITMQ_ENABLED", "true") != "false"),
 						Reference:      ti.NewReference(name + "_RabbitMQ").GetReference(),
-						FilePath:       gl.GetEnvOrDefault("GDBASE_RABBITMQ_FILE_PATH", filePath),
-						Username:       gl.GetEnvOrDefault("GDBASE_RABBITMQ_USER", "gobe"),
-						Password:       gl.GetEnvOrDefault("GDBASE_RABBITMQ_PASSWORD", rabbitPass),
-						Port:           gl.GetEnvOrDefault("GDBASE_RABBITMQ_PORT", "5672"),
-						ManagementPort: gl.GetEnvOrDefault("GDBASE_RABBITMQ_MANAGEMENT_PORT", "15672"),
-						Vhost:          gl.GetEnvOrDefault("GDBASE_RABBITMQ_VHOST", "gobe"),
+						FilePath:       kbx.GetEnvOrDefault("GDBASE_RABBITMQ_FILE_PATH", filePath),
+						Username:       kbx.GetEnvOrDefault("GDBASE_RABBITMQ_USER", "gobe"),
+						Password:       kbx.GetEnvOrDefault("GDBASE_RABBITMQ_PASSWORD", rabbitPass),
+						Port:           kbx.GetEnvOrDefault("GDBASE_RABBITMQ_PORT", "5672"),
+						ManagementPort: kbx.GetEnvOrDefault("GDBASE_RABBITMQ_MANAGEMENT_PORT", "15672"),
+						Vhost:          kbx.GetEnvOrDefault("GDBASE_RABBITMQ_VHOST", "gobe"),
 					},
 				},
 			}
@@ -305,7 +306,7 @@ func (d *DBConfig) GetEnvironment() string {
 	}
 	var env *ti.Environment
 	if d.env == nil {
-		e, err := ti.NewEnvironmentType(gl.GetEnvOrDefault("GDBASE_ENV_FILE", ".env"), d.IsConfidential, d.Logger)
+		e, err := ti.NewEnvironmentType(kbx.GetEnvOrDefault("GDBASE_ENV_FILE", ".env"), d.IsConfidential, d.Logger)
 		if err != nil {
 			gl.Log("error", fmt.Sprintf("Error creating environment: %v", err))
 			return "development"
@@ -320,7 +321,7 @@ func (d *DBConfig) GetEnvironment() string {
 	} else {
 		env = d.env.GetValue()
 	}
-	dotEnvMode, _ := gl.GetValueOrDefault(env.Getenv("GDBASE_ENV"), "development")
+	dotEnvMode, _ := kbx.GetValueOrDefault(env.Getenv("GDBASE_ENV"), "development")
 	envs := os.Environ()
 	for _, env := range envs {
 		pair := os.ExpandEnv(env)

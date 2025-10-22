@@ -6,9 +6,9 @@ import (
 	"os"
 
 	"github.com/kubex-ecosystem/gdbase/factory"
-	gl "github.com/kubex-ecosystem/gdbase/internal/module/logger"
 	s "github.com/kubex-ecosystem/gdbase/internal/services"
 	l "github.com/kubex-ecosystem/logz"
+	gl "github.com/kubex-ecosystem/logz/logger"
 	"github.com/spf13/cobra"
 )
 

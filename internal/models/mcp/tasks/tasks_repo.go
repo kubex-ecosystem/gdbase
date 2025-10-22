@@ -5,9 +5,9 @@ import (
 	"fmt"
 
 	"github.com/google/uuid"
-	gl "github.com/kubex-ecosystem/gdbase/internal/module/logger"
 	svc "github.com/kubex-ecosystem/gdbase/internal/services"
 	l "github.com/kubex-ecosystem/logz"
+	gl "github.com/kubex-ecosystem/logz/logger"
 	xtt "github.com/kubex-ecosystem/xtui/types"
 	"gorm.io/gorm"
 )

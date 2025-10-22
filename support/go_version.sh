@@ -23,26 +23,29 @@ get_required_go_version() {
   go_mod_path="${go_mod_path:-${_ROOT_DIR:-$(git rev-parse --show-toplevel)}/go.mod}"
 
   if [[ ! -f "${go_mod_path}" ]]; then
-    echo "1.25.1" # fallback
+    echo "1.25.3" # fallback
     return 0
   fi
 
   # Extract go version from go.mod
   _VERSION_GO="$(awk '/^go / {print $2; exit}' "${go_mod_path}" || echo "")"
   if [[ -z "${_VERSION_GO:-}" ]]; then
-    echo "1.25.1" # fallback
+    echo "1.25.3" # fallback
   else
     echo "${_VERSION_GO:-}"
   fi
 }
 
 get_current_go_version() {
-  if ! command -v go >/dev/null 2>&1; then
-    echo "not-installed"
-    return
+  local go_version=""
+  if [[ -f "$(command -v go 2>/dev/null)" ]]; then
+    go_version="$(go version | awk '{print $3}' | sed 's/go//')"
   fi
-
-  go version | awk '{print $3}' | sed 's/go//'
+  if [[ -z "${go_version}" ]]; then
+    echo "not-installed"
+    return 0
+  fi
+  echo "${go_version}"
 }
 
 check_go_version_compatibility() {
@@ -76,7 +79,7 @@ auto_install_go_with_gosetup() {
 
   log info "Installing Go ${required_version} using GoSetup..."
 
-  local go_installation_output
+  local go_installation_output=""
   if [[ ! -d /dev/stdin ]]; then
     # Interactive mode
     go_installation_output="$(bash -c "$(curl -sSfL "${go_setup_url}")" -s install "${required_version}" 2>&1)"

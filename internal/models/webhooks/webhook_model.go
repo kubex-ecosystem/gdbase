@@ -7,8 +7,8 @@ import (
 
 	"github.com/google/uuid"
 	ci "github.com/kubex-ecosystem/gdbase/internal/interfaces"
-	gl "github.com/kubex-ecosystem/gdbase/internal/module/logger"
 	t "github.com/kubex-ecosystem/gdbase/internal/types"
+	gl "github.com/kubex-ecosystem/logz/logger"
 )
 
 type IWebhook interface {

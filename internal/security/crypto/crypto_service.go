@@ -10,8 +10,8 @@ import (
 	"regexp"
 	"strings"
 
-	gl "github.com/kubex-ecosystem/gdbase/internal/module/logger"
 	sci "github.com/kubex-ecosystem/gdbase/internal/security/interfaces"
+	gl "github.com/kubex-ecosystem/logz/logger"
 	"golang.org/x/crypto/chacha20poly1305"
 )
 

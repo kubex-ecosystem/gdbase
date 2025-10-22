@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"time"
 
-	gl "github.com/kubex-ecosystem/gdbase/internal/module/logger"
+	gl "github.com/kubex-ecosystem/logz/logger"
 )
 
 // IAuthCodeService interface for authorization code service operations

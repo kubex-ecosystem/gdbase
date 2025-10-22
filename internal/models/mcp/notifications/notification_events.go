@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	gl "github.com/kubex-ecosystem/gdbase/internal/module/logger"
+	gl "github.com/kubex-ecosystem/logz/logger"
 )
 
 // NotificationEventType representa o tipo de evento de notificação

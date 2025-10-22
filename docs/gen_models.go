@@ -9,10 +9,10 @@ import (
 	"strings"
 	"text/template"
 
-	gl "github.com/kubex-ecosystem/gdbase/internal/module/kbx"
 	svc "github.com/kubex-ecosystem/gdbase/internal/services"
 	tp "github.com/kubex-ecosystem/gdbase/internal/types"
 	l "github.com/kubex-ecosystem/logz"
+	gl "github.com/kubex-ecosystem/logz/logger"
 
 	_ "gorm.io/driver/mysql"
 	_ "gorm.io/driver/postgres"

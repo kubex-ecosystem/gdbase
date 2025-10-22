@@ -4,9 +4,6 @@ package kbx
 import (
 	"os"
 	"reflect"
-
-	gl "github.com/kubex-ecosystem/gdbase/internal/module/logger"
-	l "github.com/kubex-ecosystem/logz"
 )
 
 type InitArgs struct {
@@ -24,14 +21,6 @@ type InitArgs struct {
 	PubCertKeyPath string
 	PubKeyPath     string
 	Pwd            string
-}
-
-type ILogger = l.Logger
-
-type Logger = gl.GLog[ILogger]
-
-func Log(level string, payload ...any) {
-	gl.Log(level, payload...)
 }
 
 func GetEnvOrDefault(key, defaultValue string) string {

@@ -7,7 +7,7 @@ import (
 	m "github.com/kubex-ecosystem/gdbase/internal/models/users"
 )
 
-type UserModelType = m.UserModel
+type UserModelImpl = m.UserModel
 type UserModel = m.IUser
 type UserService = m.IUserService
 type UserRepo = m.IUserRepo

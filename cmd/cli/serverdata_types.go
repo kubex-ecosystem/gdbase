@@ -1,7 +1,7 @@
 package cli
 
 import (
-	gl "github.com/kubex-ecosystem/gdbase/internal/module/logger"
+	gl "github.com/kubex-ecosystem/logz/logger"
 )
 
 type IWebSrvServerData interface {

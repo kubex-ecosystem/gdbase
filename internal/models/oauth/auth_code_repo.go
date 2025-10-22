@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	gl "github.com/kubex-ecosystem/gdbase/internal/module/logger"
+	gl "github.com/kubex-ecosystem/logz/logger"
 	"gorm.io/gorm"
 )
 

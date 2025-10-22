@@ -6,10 +6,10 @@ import (
 
 	"github.com/google/uuid"
 
-	gl "github.com/kubex-ecosystem/gdbase/internal/module/logger"
 	svc "github.com/kubex-ecosystem/gdbase/internal/services"
 	t "github.com/kubex-ecosystem/gdbase/types"
 	l "github.com/kubex-ecosystem/logz"
+	gl "github.com/kubex-ecosystem/logz/logger"
 	xtt "github.com/kubex-ecosystem/xtui/types"
 
 	"gorm.io/gorm"

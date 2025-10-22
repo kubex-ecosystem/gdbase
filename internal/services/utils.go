@@ -15,8 +15,9 @@ import (
 
 	"github.com/docker/go-connections/nat"
 
-	gl "github.com/kubex-ecosystem/gdbase/internal/module/kbx"
+	"github.com/kubex-ecosystem/gdbase/internal/module/kbx"
 	u "github.com/kubex-ecosystem/gdbase/utils"
+	gl "github.com/kubex-ecosystem/logz/logger"
 )
 
 func SlitMessage(recPayload []string) (id, msg []string) {
@@ -153,7 +154,7 @@ func SetupDatabaseServices(ctx context.Context, d IDockerService, config *DBConf
 							// Check if Password is empty, if so, try to retrieve it from keyring
 							// if not found, generate a new one
 							if dbConfig.Password == "" {
-								pgPassKey, pgPassErr := gl.GetOrGenPasswordKeyringPass("pgpass")
+								pgPassKey, pgPassErr := kbx.GetOrGenPasswordKeyringPass("pgpass")
 								if pgPassErr != nil {
 									gl.Log("error", fmt.Sprintf("Error generating key: %v", pgPassErr))
 									continue
@@ -267,7 +268,7 @@ func SetupDatabaseServices(ctx context.Context, d IDockerService, config *DBConf
 					rabbitUser = "gobe"
 				}
 				if rabbitCfg.Password == "" {
-					rabbitPassKey, rabbitPassErr := gl.GetOrGenPasswordKeyringPass(rabbitCfg.Reference.Name)
+					rabbitPassKey, rabbitPassErr := kbx.GetOrGenPasswordKeyringPass(rabbitCfg.Reference.Name)
 					if rabbitPassErr != nil {
 						gl.Log("error", "Skipping RabbitMQ setup due to error generating password")
 						gl.Log("debug", fmt.Sprintf("Error generating key: %v", rabbitPassErr))
@@ -320,7 +321,7 @@ func SetupDatabaseServices(ctx context.Context, d IDockerService, config *DBConf
 				// Then, set the value in the RABBITMQ_ERLANG_COOKIE environment variable.
 				// More info: https://www.rabbitmq.com/clustering.html#erlang-cookie
 				if rabbitCfg.ErlangCookie == "" {
-					rabbitCookieKey, rabbitCookieErr := gl.GetOrGenPasswordKeyringPass("rabbitmq-cookie")
+					rabbitCookieKey, rabbitCookieErr := kbx.GetOrGenPasswordKeyringPass("rabbitmq-cookie")
 					if rabbitCookieErr != nil {
 						gl.Log("error", "Skipping RabbitMQ setup due to error generating password")
 						gl.Log("debug", fmt.Sprintf("Error generating key: %v", rabbitCookieErr))

@@ -3,8 +3,8 @@ package module
 
 import (
 	"github.com/kubex-ecosystem/gdbase/cmd/cli"
-	gl "github.com/kubex-ecosystem/gdbase/internal/module/logger"
 	"github.com/kubex-ecosystem/gdbase/internal/module/version"
+	gl "github.com/kubex-ecosystem/logz/logger"
 	"github.com/spf13/cobra"
 
 	"os"

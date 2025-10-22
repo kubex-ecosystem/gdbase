@@ -11,7 +11,7 @@ import (
 	"os"
 	"strings"
 
-	gl "github.com/kubex-ecosystem/gdbase/internal/module/logger"
+	gl "github.com/kubex-ecosystem/logz/logger"
 )
 
 func EncryptEnv(value string, isConfidential bool) (string, error) {

@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"os"
 
-	gl "github.com/kubex-ecosystem/gdbase/internal/module/logger"
 	crp "github.com/kubex-ecosystem/gdbase/internal/security/crypto"
 	krg "github.com/kubex-ecosystem/gdbase/internal/security/external"
+	gl "github.com/kubex-ecosystem/logz/logger"
 )
 
 const (

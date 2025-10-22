@@ -4,9 +4,9 @@ import (
 	"fmt"
 
 	ci "github.com/kubex-ecosystem/gdbase/internal/interfaces"
-	gl "github.com/kubex-ecosystem/gdbase/internal/module/logger"
 	tu "github.com/kubex-ecosystem/gdbase/utils"
 	l "github.com/kubex-ecosystem/logz"
+	gl "github.com/kubex-ecosystem/logz/logger"
 
 	"reflect"
 

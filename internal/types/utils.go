@@ -6,7 +6,7 @@ import (
 	"os"
 
 	ci "github.com/kubex-ecosystem/gdbase/internal/interfaces"
-	gl "github.com/kubex-ecosystem/gdbase/internal/module/logger"
+	gl "github.com/kubex-ecosystem/logz/logger"
 )
 
 func IsShellSpecialVar(c uint8) bool {

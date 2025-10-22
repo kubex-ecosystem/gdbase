@@ -10,8 +10,8 @@ import (
 	"time"
 
 	"github.com/kubex-ecosystem/gdbase/internal/bootstrap"
-	gl "github.com/kubex-ecosystem/gdbase/internal/module/kbx"
 	l "github.com/kubex-ecosystem/logz"
+	gl "github.com/kubex-ecosystem/logz/logger"
 
 	_ "github.com/lib/pq"
 )

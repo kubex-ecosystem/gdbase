@@ -2,7 +2,7 @@ package utils
 
 import (
 	ci "github.com/kubex-ecosystem/gdbase/internal/interfaces"
-	gl "github.com/kubex-ecosystem/gdbase/internal/module/logger"
+	gl "github.com/kubex-ecosystem/logz/logger"
 
 	"fmt"
 	"reflect"

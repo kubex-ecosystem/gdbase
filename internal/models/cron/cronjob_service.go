@@ -11,8 +11,8 @@ import (
 
 	"github.com/google/uuid"
 	jobqueue "github.com/kubex-ecosystem/gdbase/internal/models/job_queue"
-	gl "github.com/kubex-ecosystem/gdbase/internal/module/logger"
 	svc "github.com/kubex-ecosystem/gdbase/internal/services"
+	gl "github.com/kubex-ecosystem/logz/logger"
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 

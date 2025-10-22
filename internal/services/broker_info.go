@@ -7,7 +7,7 @@ import (
 	"sync"
 	"time"
 
-	gl "github.com/kubex-ecosystem/gdbase/internal/module/logger"
+	gl "github.com/kubex-ecosystem/logz/logger"
 )
 
 type BrokerInfo struct {

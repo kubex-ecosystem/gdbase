@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	gl "github.com/kubex-ecosystem/gdbase/internal/module/kbx"
 	svc "github.com/kubex-ecosystem/gdbase/internal/services"
+	gl "github.com/kubex-ecosystem/logz/logger"
 
 	"gorm.io/gorm"
 )

@@ -9,7 +9,7 @@ import (
 	"net/http"
 	"time"
 
-	gl "github.com/kubex-ecosystem/gdbase/internal/module/logger"
+	gl "github.com/kubex-ecosystem/logz/logger"
 )
 
 // Service: NotificationService encapsula a lógica de negócio e envio.
