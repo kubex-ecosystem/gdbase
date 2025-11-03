@@ -1403,7 +1403,6 @@ SET
     "updated_at" = now()
 RETURNING
     id;
-
 -- COMMIT;
 
 CREATE TABLE IF NOT EXISTS mcp_discord_integrations_alt (
