@@ -27,7 +27,7 @@ func BuildMongoURI(cfg *types.DBConfig) (string, string) {
 	}
 	usr := url.QueryEscape(user)
 	pwd := url.QueryEscape(pass)
-	uri := fmt.Sprintf("mongodb://%s:%s@%s:%d/%s?authSource=admin", usr, pwd, host, port, db)
+	uri := fmt.Sprintf("mongodb://%s:%s@%s:%s/%s?authSource=admin", usr, pwd, host, port, db)
 	return uri, db
 }
 
@@ -47,7 +47,7 @@ func ConnectMongo(ctx context.Context, cfg *types.DBConfig) (*mongo.Client, *mon
 
 	client, err := mongo.Connect(ctx, clientOpts)
 	if err != nil {
-		return nil, nil, fmt.Errorf("mongo connect: %w", err)
+		return nil, nil, fmt.Errorf("mongo connect: %v", err)
 	}
 
 	// Ping para garantir readiness real do driver
@@ -55,10 +55,10 @@ func ConnectMongo(ctx context.Context, cfg *types.DBConfig) (*mongo.Client, *mon
 	defer cancel()
 	if err := client.Ping(pingCtx, readpref.Primary()); err != nil {
 		_ = client.Disconnect(context.Background())
-		return nil, nil, fmt.Errorf("mongo ping: %w", err)
+		return nil, nil, fmt.Errorf("mongo ping: %v", err)
 	}
 
-	logz.Log("info", "Mongo connected", "db", dbName, "host", fmt.Sprintf("%s:%d", cfg.Host, cfg.Port))
+	logz.Log("info", "Mongo connected", "db", dbName, "host", fmt.Sprintf("%s:%s", cfg.Host, cfg.Port))
 
 	return client, client.Database(dbName), nil
 }

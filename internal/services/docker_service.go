@@ -111,7 +111,6 @@ package services
 // // 	ports := []nat.PortMap{}
 // // 	volumes := map[string]struct{}{}
 
-
 // // 	dockerService := &ci.Services{
 // // 		Name:     "DockerService",
 // // 		Image:    image,

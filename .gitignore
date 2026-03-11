@@ -74,3 +74,4 @@ supabase/
 .venv-hooks
 configs/config.json
 *.bin
+.venv-hooks

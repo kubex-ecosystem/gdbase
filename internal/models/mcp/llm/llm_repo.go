@@ -23,7 +23,7 @@ type ILLMRepo interface {
 	Update(m ILLMModel) (ILLMModel, error)
 	Delete(id string) error
 	Close() error
-// 	List(where ...interface{}) (xtt.TableDataHandler, error)
+	// 	List(where ...interface{}) (xtt.TableDataHandler, error)
 	GetContextDBService() is.DBService
 }
 

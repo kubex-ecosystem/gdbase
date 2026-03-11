@@ -10,6 +10,8 @@ import (
 
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
+
+	gl "github.com/kubex-ecosystem/logz"
 )
 
 func main() {

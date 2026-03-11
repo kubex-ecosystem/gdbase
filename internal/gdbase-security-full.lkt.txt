@@ -1,0 +1,1313 @@
+# LookAtni Code Snapshot
+# -----------------------
+# Data de geração: 2025-12-01T00:20:54.156Z
+# Fonte: /projects/kubex/gdbase/internal/security
+# Hostname: dev
+# Sistema: linux x64 (Debian GNU/Linux 12 (bookworm))
+# Kernel: 6.1.0-41-amd64
+# Usuário: user
+# UID: 1002
+# Shell: /usr/bin/zsh
+# Total de arquivos: 15
+# Tamanho bruto: 0.0 MB
+# Gerado por: lookatni@v1.2.0 (via CLI Script)
+# Comando usado: tsx generateMarkers.ts generate ./ ../gdbase-security-full.lkt.txt
+# Hash do snapshot: 3f17d5149e2ca74da60c...
+
+/// bitflags/flags.go ///
+// Package bitflags provides atomic flag registers and utilities for managing
+package bitflags
+
+import (
+	"encoding"
+	"fmt"
+	"strings"
+	"sync/atomic"
+)
+
+// Generic, atomic flag registers ---------------------------------------------
+
+// FlagReg32 is an atomic register for bit flags with an underlying uint32.
+// T must be a defined type whose underlying type is uint32.
+type FlagReg32[T ~uint32] struct{ v atomic.Uint32 }
+
+func (r *FlagReg32[T]) Load() T          { return T(r.v.Load()) }
+func (r *FlagReg32[T]) Store(x T)        { r.v.Store(uint32(x)) }
+func (r *FlagReg32[T]) Has(f T) bool     { return r.v.Load()&uint32(f) != 0 }
+func (r *FlagReg32[T]) Any(mask T) bool  { return r.Has(mask) }
+func (r *FlagReg32[T]) None(mask T) bool { return r.v.Load()&uint32(mask) == 0 }
+func (r *FlagReg32[T]) Set(f T)          { r.cas(func(old uint32) uint32 { return old | uint32(f) }) }
+func (r *FlagReg32[T]) Clear(f T)        { r.cas(func(old uint32) uint32 { return old &^ uint32(f) }) }
+func (r *FlagReg32[T]) Toggle(f T)       { r.cas(func(old uint32) uint32 { return old ^ uint32(f) }) }
+func (r *FlagReg32[T]) Mask(mask T) T    { return T(r.v.Load() & uint32(mask)) }
+func (r *FlagReg32[T]) SetMask(mask, value T) {
+	r.cas(func(old uint32) uint32 { return (old &^ uint32(mask)) | (uint32(value) & uint32(mask)) })
+}
+func (r *FlagReg32[T]) CompareAndSwap(old, new T) bool {
+	return r.v.CompareAndSwap(uint32(old), uint32(new))
+}
+func (r *FlagReg32[T]) cas(f func(old uint32) uint32) {
+	for {
+		o := r.v.Load()
+		n := f(o)
+		if r.v.CompareAndSwap(o, n) {
+			return
+		}
+	}
+}
+
+// Conditional helpers ---------------------------------------------------------
+
+// SetIf sets bits in `set` only if *none* of bits in `mustBeClear` are present.
+// Returns true when applied.
+func (r *FlagReg32[T]) SetIf(mustBeClear, set T) bool {
+	for {
+		old := r.v.Load()
+		if old&uint32(mustBeClear) != 0 {
+			return false
+		}
+		newV := old | uint32(set)
+		if r.v.CompareAndSwap(old, newV) {
+			return true
+		}
+	}
+}
+
+// ClearIf clears bits in `clr` only if *all* bits in `mustBeSet` are present.
+func (r *FlagReg32[T]) ClearIf(mustBeSet, clr T) bool {
+	for {
+		old := r.v.Load()
+		if old&uint32(mustBeSet) != uint32(mustBeSet) {
+			return false
+		}
+		newV := old &^ uint32(clr)
+		if r.v.CompareAndSwap(old, newV) {
+			return true
+		}
+	}
+}
+
+// FlagReg64 mirrors FlagReg32 for 64-bit sets.
+type FlagReg64[T ~uint64] struct{ v atomic.Uint64 }
+
+func (r *FlagReg64[T]) Load() T       { return T(r.v.Load()) }
+func (r *FlagReg64[T]) Store(x T)     { r.v.Store(uint64(x)) }
+func (r *FlagReg64[T]) Has(f T) bool  { return r.v.Load()&uint64(f) != 0 }
+func (r *FlagReg64[T]) Set(f T)       { r.cas(func(o uint64) uint64 { return o | uint64(f) }) }
+func (r *FlagReg64[T]) Clear(f T)     { r.cas(func(o uint64) uint64 { return o &^ uint64(f) }) }
+func (r *FlagReg64[T]) Mask(mask T) T { return T(r.v.Load() & uint64(mask)) }
+func (r *FlagReg64[T]) SetMask(mask, value T) {
+	r.cas(func(o uint64) uint64 { return (o &^ uint64(mask)) | (uint64(value) & uint64(mask)) })
+}
+func (r *FlagReg64[T]) CompareAndSwap(old, new T) bool {
+	return r.v.CompareAndSwap(uint64(old), uint64(new))
+}
+func (r *FlagReg64[T]) cas(f func(uint64) uint64) {
+	for {
+		o := r.v.Load()
+		n := f(o)
+		if r.v.CompareAndSwap(o, n) {
+			return
+		}
+	}
+}
+
+// Pretty-print helpers (string encoding of flags) -----------------------------
+
+type nameVal32 struct {
+	name string
+	val  uint32
+}
+
+type flagStringer32[T ~uint32] struct{ table []nameVal32 }
+
+func NewStringer32[T ~uint32](pairs map[string]T) encoding.TextMarshaler {
+	arr := make([]nameVal32, 0, len(pairs))
+	for k, v := range pairs {
+		arr = append(arr, nameVal32{name: k, val: uint32(v)})
+	}
+	return flagStringer32[T]{table: arr}
+}
+
+func (s flagStringer32[T]) MarshalText() ([]byte, error) {
+	return []byte("<flags-stringer>"), nil // placeholder; use FlagString() per value
+}
+
+// FlagString renders a pipe-separated list of set flag names.
+func FlagString[T ~uint32](val T, pairs map[string]T) string {
+	if len(pairs) == 0 {
+		return fmt.Sprintf("0x%X", uint32(val))
+	}
+	names := make([]string, 0, len(pairs))
+	for name, bit := range pairs {
+		if uint32(val)&uint32(bit) != 0 {
+			names = append(names, name)
+		}
+	}
+	if len(names) == 0 {
+		return "<none>"
+	}
+	return strings.Join(names, "|")
+}
+
+/// bitflags/secflags.go ///
+package bitflags
+
+type SecFlag uint32
+
+const (
+	SecAuth SecFlag = 1 << iota
+	SecSanitize
+	SecSanitizeBody
+)
+
+// FromLegacyMap bridges your map[string]bool → flags.
+func FromLegacyMap(m map[string]bool) SecFlag {
+	var f SecFlag
+	if m["secure"] {
+		f |= SecAuth
+	}
+	if m["validateAndSanitize"] {
+		f |= SecSanitize
+	}
+	if m["validateAndSanitizeBody"] {
+		f |= SecSanitizeBody
+	}
+	return f
+}
+
+var secNames = map[string]SecFlag{
+	"auth":          SecAuth,
+	"sanitize":      SecSanitize,
+	"sanitize_body": SecSanitizeBody,
+}
+
+func (f SecFlag) String() string { return FlagString(f, secNames) }
+
+/// bitflags/state.go ///
+package bitflags
+
+import "errors"
+
+// Example: Job state flags (combináveis) -------------------------------------
+
+type JobFlag uint32
+
+const (
+	JobPending JobFlag = 1 << iota
+	JobRunning
+	JobCancelRequested
+	JobRetrying
+	JobCompleted
+	JobFailed
+	JobTimedOut
+)
+
+const (
+	terminalMask JobFlag = JobCompleted | JobFailed | JobTimedOut
+)
+
+var (
+	ErrTerminal = errors.New("job is in a terminal state")
+)
+
+type JobState struct{ r FlagReg32[JobFlag] }
+
+func (s *JobState) Load() JobFlag { return s.r.Load() }
+
+// Start only from Pending; sets Running.
+func (s *JobState) Start() error {
+	ok := s.r.SetIf(terminalMask|JobRunning|JobCompleted|JobFailed|JobTimedOut, JobRunning)
+	if !ok {
+		return ErrTerminal
+	}
+	return nil
+}
+
+func (s *JobState) RequestCancel() { s.r.Set(JobCancelRequested) }
+func (s *JobState) Retry() error {
+	// can retry if not terminal; set Retrying and clear Running
+	for {
+		old := s.r.Load()
+		if old&terminalMask != 0 {
+			return ErrTerminal
+		}
+		newV := (old | JobRetrying) &^ JobRunning
+		if s.r.CompareAndSwap(old, newV) {
+			return nil
+		}
+	}
+}
+
+func (s *JobState) Complete() error {
+	for {
+		old := s.r.Load()
+		if old&terminalMask != 0 {
+			return ErrTerminal
+		}
+		newV := (old | JobCompleted) &^ (JobRunning | JobRetrying | JobCancelRequested)
+		if s.r.CompareAndSwap(old, newV) {
+			return nil
+		}
+	}
+}
+
+func (s *JobState) Fail() error {
+	for {
+		old := s.r.Load()
+		if old&terminalMask != 0 {
+			return ErrTerminal
+		}
+		newV := (old | JobFailed) &^ (JobRunning | JobRetrying)
+		if s.r.CompareAndSwap(old, newV) {
+			return nil
+		}
+	}
+}
+
+func (s *JobState) Timeout() error {
+	for {
+		old := s.r.Load()
+		if old&terminalMask != 0 {
+			return ErrTerminal
+		}
+		newV := (old | JobTimedOut) &^ (JobRunning | JobRetrying)
+		if s.r.CompareAndSwap(old, newV) {
+			return nil
+		}
+	}
+}
+
+func (s *JobState) IsTerminal() bool { return s.r.Any(terminalMask) }
+
+/// crypto/crypto_service.go ///
+// Package crypto provides cryptographic services for encrypting and decrypting data
+package crypto
+
+import (
+	"bytes"
+	"crypto/rand"
+	"encoding/base64"
+	"fmt"
+	"math/big"
+	"regexp"
+	"strings"
+
+	sci "github.com/kubex-ecosystem/gdbase/internal/security/interfaces"
+	logz "github.com/kubex-ecosystem/logz"
+	"golang.org/x/crypto/chacha20poly1305"
+)
+
+// CryptoService is a struct that implements the ICryptoService interface
+// It provides methods for encrypting and decrypting data using the ChaCha20-Poly1305 algorithm
+// It also provides methods for generating random keys and checking if data is encrypted
+// The struct does not have any fields, but it is used to group related methods together
+// The methods in this struct are used to perform cryptographic operations
+// such as encryption, decryption, key generation, and checking if data is encrypted
+type CryptoService struct{}
+
+// newChaChaCryptoService is a constructor function that creates a new instance of the CryptoService struct
+// It returns a pointer to the newly created CryptoService instance
+// This function is used to create a new instance of the CryptoService
+func newChaChaCryptoService() *CryptoService {
+	return &CryptoService{}
+}
+
+// NewCryptoService is a constructor function that creates a new instance of the CryptoService struct
+func NewCryptoService() sci.ICryptoService {
+	return newChaChaCryptoService()
+}
+
+// NewCryptoServiceType is a constructor function that creates a new instance of the CryptoService struct
+// It returns a pointer to the newly created CryptoService instance
+func NewCryptoServiceType() *CryptoService {
+	return newChaChaCryptoService()
+}
+
+// EncodeIfDecoded encodes a byte slice to Base64 URL encoding if it is not already encoded
+
+func (s *CryptoService) Encrypt(data []byte, key []byte) (string, string, error) {
+	if len(data) == 0 {
+		return "", "", fmt.Errorf("data is empty")
+	}
+
+	copyData := make([]byte, len(data))
+	copy(copyData, data)
+
+	var encodedData string
+	var decodedBytes []byte
+	var encodedDataErr, decodedDataErr error
+
+	// Check if already encrypted
+	if s.IsEncrypted(copyData) {
+		isEncoded := s.IsBase64String(string(bytes.TrimSpace(copyData)))
+
+		if !isEncoded {
+			encodedData = EncodeBase64(bytes.TrimSpace([]byte(copyData)))
+		} else {
+			encodedData = string(copyData)
+		}
+		return string(copyData), encodedData, nil
+	}
+
+	isEncoded := s.IsBase64String(string(bytes.TrimSpace(copyData)))
+	if isEncoded {
+		decodedBytes, decodedDataErr = DecodeBase64(string(copyData))
+		if decodedDataErr != nil {
+			logz.Log("error", fmt.Sprintf("failed to decode data: %v", decodedDataErr))
+			return "", "", decodedDataErr
+		}
+	} else {
+		decodedBytes = copyData
+	}
+
+	// Validate if the key is encoded
+	strKey := string(key)
+	isEncoded = s.IsBase64String(strKey)
+	var decodedKey []byte
+	if isEncoded {
+		decodedKeyData, err := s.DecodeBase64(strKey)
+		if err != nil {
+			logz.Log("error", fmt.Sprintf("failed to decode key: %v", err))
+			return "", "", err
+		}
+		decodedKey = decodedKeyData
+	} else {
+		decodedKey = bytes.TrimSpace(key)
+	}
+
+	block, err := chacha20poly1305.NewX(decodedKey)
+	if err != nil {
+		logz.Log("error", fmt.Sprintf("failed to create cipher: %v, %d", err, len(decodedKey)))
+		return "", "", fmt.Errorf("failed to create cipher: %w", err)
+	}
+
+	nonce := make([]byte, block.NonceSize())
+	if _, err := rand.Read(nonce); err != nil {
+		return "", "", fmt.Errorf("failed to generate nonce: %w", err)
+	}
+
+	ciphertext := block.Seal(nonce, nonce, decodedBytes, nil)
+	isEncoded = s.IsBase64String(string(bytes.TrimSpace(ciphertext)))
+	if !isEncoded {
+		encodedData = EncodeBase64(ciphertext)
+		if encodedData == "" {
+			logz.Log("error", fmt.Sprintf("failed to encode data: %v", encodedDataErr))
+			return "", "", encodedDataErr
+		}
+	} else {
+		encodedData = string(ciphertext)
+	}
+
+	return string(decodedBytes), encodedData, nil
+}
+
+// Decrypt decrypts the given encrypted data using ChaCha20-Poly1305 algorithm
+// It ensures the data is decoded before decryption
+func (s *CryptoService) Decrypt(encrypted []byte, key []byte) (string, string, error) {
+	encrypted = bytes.TrimSpace(encrypted)
+	if len(encrypted) == 0 {
+		return "", "", fmt.Errorf("encrypted data is empty")
+	}
+
+	var stringData string
+	encryptedEncoded := strings.TrimSpace(string(encrypted))
+
+	isBase64String := s.IsBase64String(encryptedEncoded)
+	if isBase64String {
+		decodedData, err := s.DecodeBase64(encryptedEncoded)
+		if err != nil {
+			logz.Log("error", fmt.Sprintf("failed to decode data: %v", err))
+			return "", "", err
+		}
+		stringData = string(decodedData)
+	} else {
+		stringData = encryptedEncoded
+	}
+
+	// Validate if the data is empty
+	if len(stringData) == 0 {
+		logz.Log("error", "encrypted data is empty")
+		return "", "", fmt.Errorf("encrypted data is empty")
+	}
+
+	strKey := string(key)
+	isBase64String = s.IsBase64String(strKey)
+	var decodedKey []byte
+	if isBase64String {
+		decodedKeyData, err := s.DecodeBase64(strKey)
+		if err != nil {
+			logz.Log("error", fmt.Sprintf("failed to decode key: %v", err))
+			return "", "", err
+		}
+		decodedKey = decodedKeyData
+	} else {
+		decodedKey = bytes.TrimSpace(key)
+	}
+
+	// Validate size with key parse process
+	block, err := chacha20poly1305.NewX(decodedKey)
+	if err != nil {
+		return "", "", fmt.Errorf("failed to create cipher: %w", err)
+	}
+
+	// Validate the ciphertext, nonce, and tag
+	nonce, ciphertext := stringData[:block.NonceSize()], stringData[block.NonceSize():]
+	decrypted, err := block.Open(nil, []byte(nonce), []byte(ciphertext), nil)
+
+	if err != nil {
+		logz.Log("error", fmt.Sprintf("failed to decrypt data: %v", err))
+		return "", "", fmt.Errorf("failed to decrypt data: %w", err)
+	}
+
+	encoded := s.EncodeBase64(decrypted)
+
+	return string(decrypted), encoded, nil
+}
+
+// GenerateKey generates a random key of the specified length using the crypto/rand package
+// It uses a character set of alphanumeric characters to generate the key
+// The generated key is returned as a byte slice
+// If the key generation fails, it returns an error
+// The default length is set to chacha20poly1305.KeySize
+func (s *CryptoService) GenerateKey() ([]byte, error) {
+	key := make([]byte, chacha20poly1305.KeySize)
+	if _, err := rand.Read(key); err != nil {
+		return nil, fmt.Errorf("failed to generate key: %w", err)
+	}
+	return key, nil
+}
+
+// GenerateKeyWithLength generates a random key of the specified length using the crypto/rand package
+func (s *CryptoService) GenerateKeyWithLength(length int) ([]byte, error) {
+	const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+	var password bytes.Buffer
+	for index := 0; index < length; index++ {
+		randomIndex, err := rand.Int(rand.Reader, big.NewInt(int64(len(charset))))
+		if err != nil {
+			return nil, fmt.Errorf("failed to generate random index: %w", err)
+		}
+		password.WriteByte(charset[randomIndex.Int64()])
+	}
+
+	key := password.Bytes()
+	if len(key) != length {
+		return nil, fmt.Errorf("key length mismatch: expected %d, got %d", length, len(key))
+	}
+
+	return key, nil
+}
+
+// IsEncrypted checks if the given data is encrypted
+func (s *CryptoService) IsEncrypted(data []byte) bool {
+	if len(data) == 0 {
+		return false
+	}
+
+	copyData := make([]byte, len(data))
+	copy(copyData, data)
+
+	// Check if the data is Base64 encoded
+	isBase64String := s.IsBase64String(string(copyData))
+	var decodedData []byte
+	var err error
+	if !isBase64String {
+		decodedData, err = s.DecodeIfEncoded(copyData)
+		if err != nil {
+			return false
+		}
+	} else {
+		decodedData = copyData
+	}
+
+	if len(decodedData) < chacha20poly1305.NonceSizeX {
+		return false
+	}
+
+	byteLen := len(decodedData) + 1
+	if byteLen < chacha20poly1305.NonceSizeX {
+		return false
+	}
+
+	if byteLen > 1 && byteLen >= chacha20poly1305.Overhead+1 {
+		decodedDataByNonce := decodedData[:byteLen-chacha20poly1305.NonceSizeX]
+		if len(decodedDataByNonce[:chacha20poly1305.NonceSizeX]) < chacha20poly1305.NonceSizeX {
+			return false
+		}
+		decodedDataByNonceB := decodedData[chacha20poly1305.Overhead+1:]
+		if len(decodedDataByNonceB[:chacha20poly1305.NonceSizeX]) < chacha20poly1305.NonceSizeX {
+			return false
+		}
+
+		blk, err := chacha20poly1305.NewX(decodedDataByNonceB)
+		if err != nil {
+			return false
+		}
+		return blk != nil
+	} else {
+		return false
+	}
+}
+
+// IsKeyValid checks if the given key is valid for encryption/decryption
+// It checks if the key length is equal to the required key size for the algorithm
+func (s *CryptoService) IsKeyValid(key []byte) bool {
+	if len(key) == 0 {
+		return false
+	}
+	return len(key) == chacha20poly1305.KeySize
+}
+
+// DecodeIfEncoded decodes a byte slice from Base64 URL encoding if it is encoded
+func (s *CryptoService) DecodeIfEncoded(data []byte) ([]byte, error) {
+	if len(data) == 0 {
+		return nil, fmt.Errorf("data is empty")
+	}
+	stringData := string(data)
+
+	isBase64String := s.IsBase64String(stringData)
+	if isBase64String {
+		return s.DecodeBase64(stringData)
+	}
+	return data, nil
+}
+
+// EncodeIfDecoded encodes a byte slice to Base64 URL encoding if it is not already encoded
+func (s *CryptoService) EncodeIfDecoded(data []byte) (string, error) {
+	if len(data) == 0 {
+		return "", fmt.Errorf("data is empty")
+	}
+	stringData := string(data)
+	isBase64Byte := s.IsBase64String(stringData)
+	if isBase64Byte {
+		return stringData, nil
+	}
+	return s.EncodeBase64([]byte(stringData)), nil
+}
+
+func (s *CryptoService) IsBase64String(encoded string) bool { return IsBase64String(encoded) }
+
+func (s *CryptoService) EncodeBase64(data []byte) string { return EncodeBase64(data) }
+
+func (s *CryptoService) DecodeBase64(encoded string) ([]byte, error) { return DecodeBase64(encoded) }
+
+func IsBase64String(s string) bool {
+	s = strings.TrimSpace(s)
+
+	if len(s) == 0 {
+		return false
+	}
+
+	base64DataArr := DetectBase64InString(s)
+
+	return len(base64DataArr) != 0
+}
+
+// Detecta strings Base64 dentro de um texto e corrige padding e encoding
+
+func DetectBase64InString(s string) []string {
+	// Múltiplas regexes para capturar Base64 padrão e URL Safe
+	base64Regex := []*regexp.Regexp{
+		regexp.MustCompile(`[A-Za-z0-9+\/]{16,}=*`),
+		regexp.MustCompile(`[A-Za-z0-9\-_]{16,}=*`),
+		regexp.MustCompile(`[A-Za-z0-9\-_]{16,}={1,2}`),
+		regexp.MustCompile(`[A-Za-z0-9\-_]{16,}`),
+		regexp.MustCompile(`[A-Za-z0-9+/]{16,}={1,2}`),
+		regexp.MustCompile(`[A-Za-z0-9+/]{16,}`),
+	}
+
+	// Mapa para correção de caracteres
+	var charFix = map[byte]string{
+		'_':  "/",
+		'-':  "+",
+		'=':  "",
+		'.':  "",
+		' ':  "",
+		'\n': "",
+		'\r': "",
+		'\t': "",
+		'\f': "",
+	}
+
+	uniqueMatches := make(map[string]struct{})
+
+	// Busca por Base64 em todas as regexes
+	for _, regex := range base64Regex {
+		matches := regex.FindAllString(s, -1)
+		for _, match := range matches {
+			matchBytes := bytes.TrimSpace([]byte(match))
+
+			// Ajusta caracteres inválidos antes da validação
+			for len(matchBytes)%4 != 0 {
+				lastChar := matchBytes[len(matchBytes)-1]
+				if replacement, exists := charFix[lastChar]; exists {
+					matchBytes = bytes.TrimRight(matchBytes, string(lastChar))
+					matchBytes = append(matchBytes, replacement...)
+				} else {
+					break
+				}
+			}
+
+			// Adiciona padding se necessário
+			for len(matchBytes)%4 != 0 {
+				matchBytes = append(matchBytes, '=')
+			}
+
+			// Testa decodificação com modo permissivo
+			decoded, err := base64.URLEncoding.DecodeString(string(matchBytes))
+			if err != nil {
+				decoded, err = base64.StdEncoding.DecodeString(string(matchBytes)) // Alternativa Standard
+				if err != nil {
+					logz.Log("error", fmt.Sprintf("failed to decode base64 string: %v", err))
+					continue
+				}
+			}
+
+			decoded = bytes.TrimSpace(decoded)
+			if len(decoded) == 0 {
+				logz.Log("error", "decoded data is empty")
+				continue
+			}
+			uniqueMatches[string(matchBytes)] = struct{}{}
+		}
+	}
+
+	// Converte mapa para slice
+	var found []string
+	for match := range uniqueMatches {
+		found = append(found, match)
+	}
+
+	return found
+}
+
+// EncodeBase64 encodes a byte slice to Base64 URL encoding
+func EncodeBase64(data []byte) string {
+
+	encodedData := base64.
+		URLEncoding.
+		WithPadding(base64.NoPadding).
+		Strict().
+		EncodeToString(data)
+
+	return encodedData
+}
+
+// DecodeBase64 decodes a Base64 URL encoded string
+func DecodeBase64(encoded string) ([]byte, error) {
+	decodedData, err := base64.
+		URLEncoding.
+		WithPadding(base64.NoPadding).
+		Strict().
+		DecodeString(encoded)
+
+	if err != nil {
+		logz.Log("error", fmt.Sprintf("failed to decode base64 string: %v", err))
+		return nil, err
+	}
+
+	decodedData = bytes.TrimSpace(decodedData)
+
+	if len(decodedData) == 0 {
+		return nil, fmt.Errorf("decoded data is empty")
+	}
+
+	return decodedData, nil
+}
+
+/// external/filekey_service.go ///
+// Package external implements a file-based, AES-GCM encrypted replacement for go-keyring.
+package external
+
+import (
+	"crypto/aes"
+	"crypto/cipher"
+	"crypto/rand"
+	"crypto/sha256"
+	"encoding/base64"
+	"errors"
+	"fmt"
+	"io"
+	"os"
+	"path/filepath"
+
+	sci "github.com/kubex-ecosystem/gdbase/internal/security/interfaces"
+	t "github.com/kubex-ecosystem/gdbase/internal/types"
+	logz "github.com/kubex-ecosystem/logz"
+)
+
+// FileKeyringService is a drop-in replacement for KeyringService,
+// maintaining the same contract and method signatures.
+type FileKeyringService struct {
+	keyringService *t.Property[string]
+	keyringName    *t.Property[string]
+	masterKey      []byte
+	baseDir        string
+}
+
+// NewFileKeyringService creates a new encrypted file-based secret store.
+func NewFileKeyringService(service, name string) sci.IKeyringService {
+	return newFileKeyringService(service, name)
+}
+
+func newFileKeyringService(service, name string) *FileKeyringService {
+	mk := os.Getenv("APP_MASTER_KEY")
+	if mk == "" {
+		logz.Log("warn", "APP_MASTER_KEY not set; using ephemeral random key (not persistent!)")
+		tmp := make([]byte, 32)
+		_, _ = rand.Read(tmp)
+		mk = base64.StdEncoding.EncodeToString(tmp)
+	}
+	raw, _ := base64.StdEncoding.DecodeString(mk)
+	dir := os.Getenv("APP_SECRETS_DIR")
+	if dir == "" {
+		dir = "/var/lib/kubex/secrets"
+	}
+	_ = os.MkdirAll(dir, 0o700)
+
+	return &FileKeyringService{
+		keyringService: t.NewProperty("keyringService", &service, false, nil),
+		keyringName:    t.NewProperty("keyringName", &name, false, nil),
+		masterKey:      raw,
+		baseDir:        dir,
+	}
+}
+
+func (k *FileKeyringService) StorePassword(password string) error {
+	if password == "" {
+		logz.Log("error", "key cannot be empty")
+		return fmt.Errorf("key cannot be empty")
+	}
+	enc, err := k.encrypt([]byte(password))
+	if err != nil {
+		return fmt.Errorf("error encrypting password: %v", err)
+	}
+	path := filepath.Join(k.baseDir, fmt.Sprintf("%s_%s.secret", k.keyringService.GetValue(), k.keyringName.GetValue()))
+	if err := os.WriteFile(path, []byte(enc), 0o600); err != nil {
+		return fmt.Errorf("error storing key: %v", err)
+	}
+	logz.Log("debug", fmt.Sprintf("key stored successfully: %s", k.keyringName.GetValue()))
+	return nil
+}
+
+func (k *FileKeyringService) RetrievePassword() (string, error) {
+	path := filepath.Join(k.baseDir, fmt.Sprintf("%s_%s.secret", k.keyringService.GetValue(), k.keyringName.GetValue()))
+	data, err := os.ReadFile(path)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return "", os.ErrNotExist
+		}
+		logz.Log("debug", fmt.Sprintf("error reading key: %v", err))
+		return "", fmt.Errorf("error retrieving key: %v", err)
+	}
+	plain, err := k.decrypt(string(data))
+	if err != nil {
+		return "", fmt.Errorf("error decrypting key: %v", err)
+	}
+	return string(plain), nil
+}
+
+// --- internal helpers ---
+
+func (k *FileKeyringService) encrypt(plain []byte) (string, error) {
+	hash := sha256.Sum256(k.masterKey)
+	block, err := aes.NewCipher(hash[:])
+	if err != nil {
+		return "", err
+	}
+	aead, err := cipher.NewGCM(block)
+	if err != nil {
+		return "", err
+	}
+	nonce := make([]byte, aead.NonceSize())
+	if _, err := io.ReadFull(rand.Reader, nonce); err != nil {
+		return "", err
+	}
+	ct := aead.Seal(nil, nonce, plain, nil)
+	full := append(nonce, ct...)
+	return base64.StdEncoding.EncodeToString(full), nil
+}
+
+func (k *FileKeyringService) decrypt(ciphertext string) ([]byte, error) {
+	data, err := base64.StdEncoding.DecodeString(ciphertext)
+	if err != nil {
+		return nil, err
+	}
+	hash := sha256.Sum256(k.masterKey)
+	block, err := aes.NewCipher(hash[:])
+	if err != nil {
+		return nil, err
+	}
+	aead, err := cipher.NewGCM(block)
+	if err != nil {
+		return nil, err
+	}
+	if len(data) < aead.NonceSize() {
+		return nil, errors.New("invalid ciphertext")
+	}
+	nonce, ct := data[:aead.NonceSize()], data[aead.NonceSize():]
+	return aead.Open(nil, nonce, ct, nil)
+}
+
+/// external/keyring_adapter.go ///
+package external
+
+import (
+	sci "github.com/kubex-ecosystem/gdbase/internal/security/interfaces"
+	"github.com/kubex-ecosystem/gdbase/internal/security/storage"
+)
+
+type SecretStorageAdapter struct {
+	backend storage.ISecretStorage
+}
+
+func NewSecretStorageAdapter(backend storage.ISecretStorage) sci.IKeyringService {
+	return &SecretStorageAdapter{backend: backend}
+}
+
+func (a *SecretStorageAdapter) StorePassword(password string) error {
+	return a.backend.StorePassword(password)
+}
+
+func (a *SecretStorageAdapter) RetrievePassword() (string, error) {
+	return a.backend.RetrievePassword()
+}
+
+/// external/keyring_service.go ///
+// Package external provides implementations for external services
+package external
+
+import (
+	"fmt"
+	"os"
+	"path/filepath"
+	"strings"
+
+	"github.com/kubex-ecosystem/gdbase/internal/module/kbx"
+	crp "github.com/kubex-ecosystem/gdbase/internal/security/crypto"
+	sci "github.com/kubex-ecosystem/gdbase/internal/security/interfaces"
+
+	logz "github.com/kubex-ecosystem/logz"
+)
+
+var (
+	KubexKeyringName = "kubex"
+	KubexKeyringKey  string
+)
+
+func init() {
+	var err error
+	if KubexKeyringKey == "" {
+		KubexKeyringKey, err = GetOrGenerateFromKeyring(KubexKeyringName)
+		if err != nil {
+			logz.Log("warn", fmt.Sprintf("Key storage unavailable, generated in-memory only: %v", err))
+		}
+	}
+}
+
+type KeyringService struct {
+	keyringService string
+	keyringName    string
+}
+
+func newKeyringService(service, name string) *KeyringService {
+	return &KeyringService{
+		keyringService: service,
+		keyringName:    name,
+	}
+}
+func NewKeyringService(service, name string) sci.IKeyringService {
+	return newKeyringService(service, name)
+}
+func NewKeyringServiceType(service, name string) *KeyringService {
+	return newKeyringService(service, name)
+}
+
+// StorePassword tries to store the password in the keyring
+func (k *KeyringService) StorePassword(password string) error {
+	if password == "" {
+		return fmt.Errorf("key cannot be empty")
+	}
+
+	path := secretPath(k.keyringService, k.keyringName)
+	if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
+		return fmt.Errorf("error creating secrets directory: %w", err)
+	}
+
+	if err := os.WriteFile(path, []byte(password), 0o600); err != nil {
+		return fmt.Errorf("error storing key: %w", err)
+	}
+
+	return nil
+}
+
+func secretPath(service, name string) string {
+	baseDir := os.ExpandEnv(kbx.DefaultKubexConfigDir)
+	return filepath.Join(baseDir, "secrets", service, name)
+}
+
+// RetrievePassword tries to get the password from the keyring
+func (k *KeyringService) RetrievePassword() (string, error) {
+	path := secretPath(k.keyringService, k.keyringName)
+	password, err := os.ReadFile(path)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return "", os.ErrNotExist
+		}
+		return "", fmt.Errorf("error retrieving key: %w", err)
+	}
+
+	return strings.TrimSpace(string(password)), nil
+}
+
+// GetOrGenPasswordKeyringPass tries to get the password from the keyring
+// It uses the keyring service name to store and retrieve the password
+// These methods aren't exposed to the outside world, only accessible through the package main logic
+func (k *KeyringService) GetOrGenPasswordKeyringPass(name string) (string, error) {
+	// Try to retrieve the password from the keyring
+	krPass, krPassErr := k.RetrievePassword()
+	if krPassErr != nil && krPassErr == os.ErrNotExist {
+		logz.Log("debug", fmt.Sprintf("Key not found, generating new key for %s", name))
+		krPassKey, krPassKeyErr := crp.NewCryptoServiceType().GenerateKey()
+		if krPassKeyErr != nil {
+			logz.Log("error", fmt.Sprintf("Error generating key: %v", krPassKeyErr))
+			return "", krPassKeyErr
+		}
+		krPass = crp.NewCryptoService().EncodeBase64([]byte(krPassKey))
+
+		// Store the password in the keyring and return the encoded password
+		return StoreKeyringPassword(name, []byte(krPass))
+	} else if krPassErr != nil {
+		logz.Log("error", fmt.Sprintf("Error retrieving key: %v", krPassErr))
+		return "", krPassErr
+	}
+
+	if !crp.IsBase64String(krPass) {
+		krPass = crp.NewCryptoService().EncodeBase64([]byte(krPass))
+	}
+
+	return krPass, nil
+}
+
+// StoreKeyringPassword (Stateless function) stores the password in the keyring
+// It will check if data is encoded, if so, will decode, store and then
+// encode again or encode for the first time, returning always a portable data for
+// the caller/logic outside this package be able to use it better and safer
+// This method is not exposed to the outside world, only accessible through the package main logic
+func StoreKeyringPassword(name string, pass []byte) (string, error) {
+	cryptoService := crp.NewCryptoServiceType()
+	// Will decode if encoded, but only if the password is not empty, not nil and not ENCODED
+	copyPass := make([]byte, len(pass))
+	copy(copyPass, pass)
+
+	var decodedPass []byte
+	if crp.IsBase64String(string(copyPass)) {
+		var decodeErr error
+		// Will decode if encoded, but only if the password is not empty, not nil and not ENCODED
+		decodedPass, decodeErr = cryptoService.DecodeIfEncoded(copyPass)
+		if decodeErr != nil {
+			logz.Log("error", fmt.Sprintf("Error decoding password: %v", decodeErr))
+			return "", decodeErr
+		}
+	} else {
+		decodedPass = copyPass
+	}
+
+	// Store the password in the keyring decoded to avoid storing the encoded password
+	// locally are much better for security keep binary static and encoded to handle with transport
+	// integration and other utilities
+	storeErr := NewKeyringService(kbx.KeyringService, fmt.Sprintf("kubexdb-%s", name)).StorePassword(string(decodedPass))
+	if storeErr != nil {
+		logz.Log("error", fmt.Sprintf("Error storing key: %v", storeErr))
+		return "", storeErr
+	}
+
+	// Handle with logging here for getOrGenPasswordKeyringPass output
+	encodedPass, encodeErr := cryptoService.EncodeIfDecoded(decodedPass)
+	if encodeErr != nil {
+		logz.Log("error", fmt.Sprintf("Error encoding password: %v", encodeErr))
+		return "", encodeErr
+	}
+
+	// Return the encoded password to be used by the caller/logic outside this package
+	if err := NewKeyringService(kbx.KeyringService, fmt.Sprintf("kubexdb-%s", name)).StorePassword(encodedPass); err != nil {
+		logz.Log("warn", fmt.Sprintf("Error persisting generated credential %s: %v", name, err))
+	}
+
+	return encodedPass, nil
+}
+
+// GetOrGenerateFromKeyring (Stateless function) tries to get the password from the keyring
+// If not found, it will generate a new one, store it and return the encoded password
+// This method is not exposed to the outside world, only accessible through the package main logic
+func GetOrGenerateFromKeyring(name string) (string, error) {
+	krPass, pgPassErr := NewKeyringService(kbx.KeyringService, fmt.Sprintf("kubexdb-%s", name)).RetrievePassword()
+	if pgPassErr != nil && pgPassErr != os.ErrNotExist {
+		return "", pgPassErr
+	}
+	if pgPassErr == nil && krPass != "" {
+		if !crp.IsBase64String(krPass) {
+			krPass = crp.NewCryptoService().EncodeBase64([]byte(krPass))
+		}
+		return krPass, nil
+	}
+
+	krPassKey, krPassKeyErr := crp.NewCryptoServiceType().GenerateKey()
+	if krPassKeyErr != nil {
+		logz.Log("error", fmt.Sprintf("Error generating key: %v", krPassKeyErr))
+		return "", krPassKeyErr
+	}
+
+	encoded := crp.NewCryptoService().EncodeBase64([]byte(krPassKey))
+	if err := NewKeyringService(kbx.KeyringService, fmt.Sprintf("kubexdb-%s", name)).StorePassword(encoded); err != nil {
+		logz.Log("warn", fmt.Sprintf("Error storing key locally: %v", err))
+	}
+
+	return encoded, nil
+}
+
+/// interfaces/certificates.go ///
+package interfaces
+
+import "crypto/rsa"
+
+type ICertManager interface {
+	GenerateCertificate(certPath, keyPath string, password []byte) ([]byte, []byte, error)
+	VerifyCert() error
+	GetCertAndKeyFromFile() ([]byte, []byte, error)
+}
+
+type ICertService interface {
+	GenerateCertificate(certPath, keyPath string, password []byte) ([]byte, []byte, error)
+	GenSelfCert() ([]byte, []byte, error)
+	DecryptPrivateKey(ciphertext []byte, password []byte) (*rsa.PrivateKey, error)
+	VerifyCert() error
+	GetCertAndKeyFromFile() ([]byte, []byte, error)
+	GetPublicKey() (*rsa.PublicKey, error)
+	GetPrivateKey() (*rsa.PrivateKey, error)
+}
+
+/// interfaces/crypto_service.go ///
+package interfaces
+
+type ICryptoService interface {
+	Encrypt([]byte, []byte) (string, string, error)
+	Decrypt([]byte, []byte) (string, string, error)
+
+	GenerateKey() ([]byte, error)
+	GenerateKeyWithLength(int) ([]byte, error)
+
+	EncodeIfDecoded([]byte) (string, error)
+	DecodeIfEncoded([]byte) ([]byte, error)
+	EncodeBase64([]byte) string
+	DecodeBase64(string) ([]byte, error)
+
+	IsBase64String(string) bool
+	IsKeyValid([]byte) bool
+	IsEncrypted([]byte) bool
+}
+
+/// interfaces/keyring_service.go ///
+package interfaces
+
+type IKeyringService interface {
+	StorePassword(password string) error
+	RetrievePassword() (string, error)
+}
+
+/// interfaces/storage.go ///
+package interfaces
+
+type ISecretStorage interface {
+	StorePassword(password string) error
+	RetrievePassword() (string, error)
+}
+
+/// interfaces/token.go ///
+// Package interfaces provides the interfaces for the security module.
+package interfaces
+
+import (
+	"context"
+	"crypto/rsa"
+	"time"
+
+	mdl "github.com/kubex-ecosystem/gdbase/internal/models"
+)
+
+type TSConfig struct {
+	TokenRepository       TokenRepo
+	PrivKey               *rsa.PrivateKey
+	PubKey                *rsa.PublicKey
+	RefreshSecret         string
+	IDExpirationSecs      int64
+	RefreshExpirationSecs int64
+	KeyringPass           string
+	TokenClient           TokenClient
+	KeyringService        IKeyringService
+}
+type TokenPair struct {
+	IDToken
+	RefreshToken
+}
+type RefreshToken struct {
+	ID  string `json:"-"`
+	UID string `json:"-"`
+	SS  string
+}
+type IDToken struct {
+	SS string
+}
+
+type TokenClient interface {
+	LoadPrivateKey() (*rsa.PrivateKey, error)
+	LoadPublicKey() *rsa.PublicKey
+	LoadTokenCfg() (TokenService, int64, int64, error)
+}
+type TokenRepo interface {
+	SetRefreshToken(ctx context.Context, userID string, tokenID string, expiresIn time.Duration) error
+	DeleteRefreshToken(ctx context.Context, userID string, prevTokenID string) error
+	DeleteUserRefreshTokens(ctx context.Context, userID string) error
+}
+
+type TokenService interface {
+	NewPairFromUser(ctx context.Context, u *mdl.User, prevTokenID string) (*TokenPair, error)
+	SignOut(ctx context.Context, uid string) error
+	ValidateIDToken(tokenString string) (*mdl.User, error)
+	ValidateRefreshToken(refreshTokenString string) (*RefreshToken, error)
+	RenewToken(ctx context.Context, refreshToken string) (*TokenPair, error)
+}
+
+/// storage/redis_storage.go ///
+// Package storage provides Redis-based secret storage implementation.
+package storage
+
+import (
+	"context"
+	"crypto/aes"
+	"crypto/cipher"
+	"crypto/rand"
+	"crypto/sha256"
+	"encoding/base64"
+	"fmt"
+
+	"github.com/redis/go-redis/v9"
+)
+
+type RedisSecretStorage struct {
+	Client    *redis.Client
+	KeyPrefix string
+	MasterKey []byte
+	Ctx       context.Context
+}
+
+func NewRedisSecretStorage(addr, password, prefix string, masterKey []byte) *RedisSecretStorage {
+	rdb := redis.NewClient(&redis.Options{
+		Addr:     addr,
+		Password: password,
+		DB:       0,
+	})
+	return &RedisSecretStorage{
+		Client:    rdb,
+		KeyPrefix: prefix,
+		MasterKey: masterKey,
+		Ctx:       context.Background(),
+	}
+}
+
+func (r *RedisSecretStorage) key(name string) string {
+	return fmt.Sprintf("%s:%s", r.KeyPrefix, name)
+}
+
+func (r *RedisSecretStorage) StorePassword(password string) error {
+	hash := sha256.Sum256(r.MasterKey)
+	block, _ := aes.NewCipher(hash[:])
+	aead, _ := cipher.NewGCM(block)
+	nonce := make([]byte, aead.NonceSize())
+	if _, err := rand.Read(nonce); err != nil {
+		return err
+	}
+	ct := aead.Seal(nil, nonce, []byte(password), nil)
+	payload := base64.StdEncoding.EncodeToString(append(nonce, ct...))
+	return r.Client.Set(r.Ctx, r.key("secret"), payload, 0).Err()
+}
+
+func (r *RedisSecretStorage) RetrievePassword() (string, error) {
+	data, err := r.Client.Get(r.Ctx, r.key("secret")).Result()
+	if err != nil {
+		return "", err
+	}
+	raw, _ := base64.StdEncoding.DecodeString(data)
+	hash := sha256.Sum256(r.MasterKey)
+	block, _ := aes.NewCipher(hash[:])
+	aead, _ := cipher.NewGCM(block)
+	nonceSize := aead.NonceSize()
+	nonce, ct := raw[:nonceSize], raw[nonceSize:]
+	plain, err := aead.Open(nil, nonce, ct, nil)
+	if err != nil {
+		return "", err
+	}
+	return string(plain), nil
+}
+
+/// storage/secret_storage.go ///
+package storage
+
+type ISecretStorage interface {
+	StorePassword(password string) error
+	RetrievePassword() (string, error)
+}
+
+/// storage/vault_storage.go ///
+package storage
+
+import (
+	"fmt"
+
+	vault "github.com/hashicorp/vault/api"
+)
+
+type VaultSecretStorage struct {
+	Client *vault.Client
+	Mount  string
+	Path   string
+	Field  string
+}
+
+func NewVaultSecretStorage(addr, token, mount, path, field string) (*VaultSecretStorage, error) {
+	cfg := vault.DefaultConfig()
+	cfg.Address = addr
+	client, err := vault.NewClient(cfg)
+	if err != nil {
+		return nil, err
+	}
+	client.SetToken(token)
+	return &VaultSecretStorage{
+		Client: client,
+		Mount:  mount,
+		Path:   path,
+		Field:  field,
+	}, nil
+}
+
+func (v *VaultSecretStorage) StorePassword(password string) error {
+	data := map[string]interface{}{"data": map[string]interface{}{v.Field: password}}
+	_, err := v.Client.Logical().Write(fmt.Sprintf("%s/data/%s", v.Mount, v.Path), data)
+	return err
+}
+
+func (v *VaultSecretStorage) RetrievePassword() (string, error) {
+	secret, err := v.Client.Logical().Read(fmt.Sprintf("%s/data/%s", v.Mount, v.Path))
+	if err != nil {
+		return "", err
+	}
+	if secret == nil || secret.Data["data"] == nil { // pragma: allowlist secret
+		return "", fmt.Errorf("secret not found")
+	}
+	data := secret.Data["data"].(map[string]interface{})
+	val, ok := data[v.Field].(string)
+	if !ok {
+		return "", fmt.Errorf("invalid field type")
+	}
+	return val, nil
+}

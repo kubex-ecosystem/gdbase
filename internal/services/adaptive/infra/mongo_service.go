@@ -101,6 +101,6 @@ func EnsureMongoUp(ctx context.Context, cfg *types.DBConfig, logger *logz.Logger
 	}
 
 	// Build application URI (not admin)
-	hostport := fmt.Sprintf("localhost:%d", cfg.Port)
+	hostport := fmt.Sprintf("localhost:%s", cfg.Port)
 	return fmt.Sprintf("mongodb://%s:%s@%s/%s", appUser, appPass, hostport, cfg.DBName), nil // pragma: allowlist secret
 }

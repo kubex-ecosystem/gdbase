@@ -9,7 +9,7 @@ package types
 // 	ci "github.com/kubex-ecosystem/kubex_be/interfaces"
 // 	"github.com/kubex-ecosystem/logz"
 // 	gl "github.com/kubex-ecosystem/logz"
-// 	l "github.com/kubex-ecosystem/logz"
+// 	gl "github.com/kubex-ecosystem/logz"
 // )
 
 // type SignalManager[T chan string] struct {
